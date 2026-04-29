@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-primary: #1A2F45; /* Everest Navy */
+  --color-primary-foreground: var(--color-white);
+  
+  --color-accent: #F58220; /* Everest Orange */
+  --color-accent-foreground: var(--color-white);
+  
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+}
+
+@layer base {
+  body {
+    @apply font-sans text-slate-900 bg-slate-50 antialiased;
+  }
+}
+
+.glass {
+  @apply bg-white/80 backdrop-blur-md border border-white/20;
+}
+
+.card-shadow {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+@layer utilities {
+  .animate-in {
+    animation: fade-in 0.3s ease-out;
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
