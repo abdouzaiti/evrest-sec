@@ -3,17 +3,18 @@ import { Search, Plus, Phone, CheckCircle2, XCircle, Clock, BookOpen, Users, Loa
 import { Student, SchoolClass } from '../types';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { classesService, studentsService } from '../services/supabaseService';
 import { Modal } from '../components/Modal';
 
 export function Classes() {
   const { t, isRTL } = useLanguage();
+  const { activeRole } = useAuth();
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const [configError, setConfigError] = useState<string | null>(null);
 
   // Modal states
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
@@ -30,7 +31,6 @@ export function Classes() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      setConfigError(null);
       const [classesData, studentsData] = await Promise.all([
         classesService.getAll(),
         studentsService.getAll()
@@ -42,9 +42,6 @@ export function Classes() {
       }
     } catch (error: any) {
       console.error('Error fetching data:', error);
-      if (error.message?.includes('Supabase credentials missing')) {
-        setConfigError(error.message);
-      }
     } finally {
       setLoading(false);
     }
@@ -126,28 +123,6 @@ export function Classes() {
     );
   }
 
-  if (configError) {
-    return (
-      <div className="h-[60vh] flex flex-col items-center justify-center p-8 text-center max-w-md mx-auto">
-        <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-6">
-          <AlertCircle size={32} />
-        </div>
-        <h2 className="text-2xl font-black text-primary mb-4 tracking-tight">
-          {isRTL ? "Configuration Requise" : "Configuration Required"}
-        </h2>
-        <p className="text-slate-500 font-medium leading-relaxed mb-8">
-          {configError}
-        </p>
-        <button 
-          onClick={fetchData}
-          className="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20"
-        >
-          {isRTL ? "Réessayer" : "Check Again"}
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className={cn("space-y-6 animate-in", isRTL && "text-right")}>
       <header className={cn("flex flex-col md:flex-row justify-between items-start md:items-end gap-4", isRTL && "md:flex-row-reverse")}>
@@ -155,13 +130,20 @@ export function Classes() {
           <h1 className="text-3xl font-bold text-primary tracking-tight">{t('academic_classes')}</h1>
           <p className="text-slate-500 mt-1">{t('manage_rosters')}</p>
         </div>
-        <button 
-          onClick={() => setIsClassModalOpen(true)}
-          className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl text-sm font-semibold shadow-lg shadow-primary/10 transition-all flex items-center justify-center gap-2"
-        >
-          <Plus size={18} />
-          {t('create_class')}
-        </button>
+        {activeRole === 'director' ? (
+          <button 
+            onClick={() => setIsClassModalOpen(true)}
+            className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl text-sm font-semibold shadow-lg shadow-primary/10 transition-all flex items-center justify-center gap-2"
+          >
+            <Plus size={18} />
+            {t('create_class')}
+          </button>
+        ) : (
+          <div className="flex items-center gap-2 text-xs font-black text-slate-400 bg-slate-50 border border-slate-100 px-4 py-3 rounded-2xl">
+            <AlertCircle size={15} className="text-amber-500" />
+            <span>{isRTL ? "Créativité réservée au Dir. Mohamed" : "Class creation reserved for Director Mohamed"}</span>
+          </div>
+        )}
       </header>
 
       <div className={cn("grid grid-cols-1 lg:grid-cols-12 gap-10 pt-8 border-t border-slate-100", isRTL && "lg:flex lg:flex-row-reverse")}>
@@ -193,16 +175,18 @@ export function Classes() {
                     <h4 className="font-black text-lg leading-tight tracking-tight">{c.name}</h4>
                   </div>
                 </button>
-                <button
-                  onClick={(e) => handleDeleteClass(c.id, e)}
-                  className={cn(
-                    "absolute top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all z-20",
-                    isRTL ? "left-2" : "right-2",
-                    selectedClassId === c.id && "text-white/40 hover:text-white"
-                  )}
-                >
-                  <Trash2 size={16} />
-                </button>
+                {activeRole === 'director' && (
+                  <button
+                    onClick={(e) => handleDeleteClass(c.id, e)}
+                    className={cn(
+                      "absolute top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all z-20",
+                      isRTL ? "left-2" : "right-2",
+                      selectedClassId === c.id && "text-white/40 hover:text-white"
+                    )}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
             ))}
           </div>

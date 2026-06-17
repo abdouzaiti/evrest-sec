@@ -2,6 +2,12 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 let supabaseInstance: SupabaseClient | null = null;
 
+export const isSupabaseConfigured = (): boolean => {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  return !!(supabaseUrl && supabaseAnonKey);
+};
+
 export const getSupabase = () => {
   if (supabaseInstance) return supabaseInstance;
 
@@ -9,9 +15,8 @@ export const getSupabase = () => {
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      'Supabase credentials missing. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment variables in the Settings menu.'
-    );
+    // Return a dummy object if missing to support proxy getters without throwing at import time
+    return {} as SupabaseClient;
   }
 
   supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
@@ -25,3 +30,4 @@ export const supabase = new Proxy({} as SupabaseClient, {
     return (instance as any)[prop];
   }
 });
+

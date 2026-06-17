@@ -6,12 +6,15 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
+  activeRole: 'director' | 'secretary';
+  switchRole: (role: 'director' | 'secretary') => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [activeRole, setActiveRole] = useState<'director' | 'secretary'>('director');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -20,9 +23,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (savedUserStr) {
       try {
         const savedUser = JSON.parse(savedUserStr);
-        // Only keep the session if it's the specific authorized user "mohamed"
-        if (savedUser && savedUser.email === 'mohamed@everest.dz') {
+        if (savedUser && (savedUser.email === 'mohamed@everest.dz' || savedUser.email === 'secretary@everest.dz')) {
           setUser(savedUser);
+          setActiveRole(savedUser.role);
         } else {
           localStorage.removeItem('user');
         }
@@ -38,7 +41,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 800));
     
-    if (username === 'mohamed' && password === 'mostarunclub') {
+    const normalizedUsername = username.toLowerCase().trim();
+    if (normalizedUsername === 'mohamed' && password === 'mostarunclub') {
       const mockUser: User = {
         uid: '1',
         email: 'mohamed@everest.dz',
@@ -46,6 +50,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: 'director'
       };
       setUser(mockUser);
+      setActiveRole('director');
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      setIsLoading(false);
+    } else if ((normalizedUsername === 'secretary' || normalizedUsername === 'secretaire') && password === 'everest123') {
+      const mockUser: User = {
+        uid: '2',
+        email: 'secretary@everest.dz',
+        displayName: 'Sécrétariat Everest',
+        role: 'secretary'
+      };
+      setUser(mockUser);
+      setActiveRole('secretary');
       localStorage.setItem('user', JSON.stringify(mockUser));
       setIsLoading(false);
     } else {
@@ -59,8 +75,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('user');
   };
 
+  const switchRole = (role: 'director' | 'secretary') => {
+    setActiveRole(role);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading, activeRole, switchRole }}>
       {children}
     </AuthContext.Provider>
   );
