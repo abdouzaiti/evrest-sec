@@ -8,7 +8,7 @@ import { classesService, studentsService } from '../services/supabaseService';
 import { Modal } from '../components/Modal';
 
 export function Classes() {
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, language } = useLanguage();
   const { activeRole } = useAuth();
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
@@ -24,13 +24,13 @@ export function Classes() {
 
   // Form states
   const [newClass, setNewClass] = useState<Omit<SchoolClass, 'id'>>({ name: '', price: 0, description: '' });
-  const [newStudent, setNewStudent] = useState<Omit<Student, 'id'>>({ name: '', parentPhone: '', paymentStatus: 'Pending', classId: '' });
+  const [newStudent, setNewStudent] = useState<Omit<Student, 'id'>>({ name: '', parentPhone: '', paymentStatus: 'Pending', classId: '', tokenId: '' });
 
   const [editingClassId, setEditingClassId] = useState<string>('');
   const [editClass, setEditClass] = useState<Omit<SchoolClass, 'id'>>({ name: '', price: 0, description: '' });
 
   const [editingStudentId, setEditingStudentId] = useState<string>('');
-  const [editStudent, setEditStudent] = useState<Omit<Student, 'id'>>({ name: '', parentPhone: '', paymentStatus: 'Pending', classId: '' });
+  const [editStudent, setEditStudent] = useState<Omit<Student, 'id'>>({ name: '', parentPhone: '', paymentStatus: 'Pending', classId: '', tokenId: '' });
 
   useEffect(() => {
     fetchData();
@@ -88,7 +88,7 @@ export function Classes() {
       const created = await studentsService.create({ ...newStudent, classId: selectedClassId });
       setStudents(prev => [...prev, created]);
       setIsStudentModalOpen(false);
-      setNewStudent({ name: '', parentPhone: '', paymentStatus: 'Pending', classId: '' });
+      setNewStudent({ name: '', parentPhone: '', paymentStatus: 'Pending', classId: '', tokenId: '' });
     } catch (error) {
       console.error('Error creating student:', error);
     }
@@ -296,6 +296,7 @@ export function Classes() {
                       <tr className="bg-slate-50/50 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
                         <th className="px-8 py-5">{t('student_name')}</th>
                         <th className="px-8 py-5">{t('parent_phone')}</th>
+                        <th className="px-8 py-5">{t('token_id')}</th>
                         <th className="px-8 py-5">{t('status')}</th>
                         <th className={cn("px-8 py-5", isRTL ? "text-left" : "text-right")}>{isRTL ? "الإجراءات" : "Actions"}</th>
                       </tr>
@@ -316,6 +317,19 @@ export function Classes() {
                             <div className={cn("flex items-center gap-2 text-slate-500 font-black text-sm", isRTL && "flex-row-reverse text-right")}>
                               <Phone size={14} className="text-accent" />
                               <span>{s.parentPhone}</span>
+                            </div>
+                          </td>
+                          <td className="px-8 py-6">
+                            <div className="flex items-center gap-1">
+                              {s.tokenId ? (
+                                <span className="font-mono text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 px-2 py-1 rounded-md font-bold select-all">
+                                  {s.tokenId}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-slate-300 italic">
+                                  {t('no_token_assigned')}
+                                </span>
+                              )}
                             </div>
                           </td>
                           <td className="px-8 py-6">
@@ -342,7 +356,7 @@ export function Classes() {
                                  <button
                                    onClick={() => {
                                      setEditingStudentId(s.id);
-                                     setEditStudent({ name: s.name, parentPhone: s.parentPhone, paymentStatus: s.paymentStatus, classId: s.classId });
+                                     setEditStudent({ name: s.name, parentPhone: s.parentPhone, paymentStatus: s.paymentStatus, classId: s.classId, tokenId: s.tokenId || '' });
                                      setIsEditStudentModalOpen(true);
                                    }}
                                    className="p-2 text-slate-300 hover:text-accent transition-colors"
@@ -462,6 +476,16 @@ export function Classes() {
             />
           </div>
           <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} ({language === 'ar' ? 'اختياري' : 'Optionnel'})</label>
+            <input
+              type="text"
+              value={newStudent.tokenId || ''}
+              onChange={e => setNewStudent({ ...newStudent, tokenId: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold placeholder:font-medium font-mono uppercase"
+              placeholder="Ex: S101"
+            />
+          </div>
+          <div className="space-y-1">
             <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('status')}</label>
             <select
               value={newStudent.paymentStatus}
@@ -546,6 +570,16 @@ export function Classes() {
               value={editStudent.parentPhone}
               onChange={e => setEditStudent({ ...editStudent, parentPhone: e.target.value })}
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} ({language === 'ar' ? 'اختياري' : 'Optionnel'})</label>
+            <input
+              type="text"
+              value={editStudent.tokenId || ''}
+              onChange={e => setEditStudent({ ...editStudent, tokenId: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold placeholder:font-medium font-mono uppercase"
+              placeholder="Ex: S101"
             />
           </div>
           <div className="space-y-1">

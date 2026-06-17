@@ -7,7 +7,8 @@ import {
   CreditCard, 
   Bell, 
   LogOut,
-  X
+  X,
+  Scan
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
@@ -27,6 +28,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     { icon: Users, label: t('classes'), href: '/classes' },
     { icon: UserSquare2, label: t('teachers'), href: '/teachers' },
     { icon: CreditCard, label: t('payments'), href: '/payments' },
+    { icon: Scan, label: t('pointage_terminal'), href: '/pointage' },
   ];
 
   return (

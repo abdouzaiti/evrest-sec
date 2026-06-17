@@ -22,8 +22,11 @@
 -- ==========================================
 -- DROP TRIGGER IF EXISTS trg_sync_students_keys ON students;
 -- DROP TRIGGER IF EXISTS trg_sync_teachers_keys ON teachers;
+-- DROP TRIGGER IF EXISTS trg_sync_pointage_logs_keys ON pointage_logs;
 -- DROP FUNCTION IF EXISTS sync_students_keys();
 -- DROP FUNCTION IF EXISTS sync_teachers_keys();
+-- DROP FUNCTION IF EXISTS sync_pointage_logs_keys();
+-- DROP TABLE IF EXISTS pointage_logs;
 -- DROP TABLE IF EXISTS students;
 -- DROP TABLE IF EXISTS teachers;
 -- DROP TABLE IF EXISTS classes;
@@ -41,7 +44,7 @@ CREATE TABLE IF NOT EXISTS classes (
   description TEXT
 );
 
--- B. CREATE students TABLE (Supporting Dual Case naming)
+-- B. CREATE students TABLE (Supporting Dual Case naming and Tokens)
 CREATE TABLE IF NOT EXISTS students (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   name TEXT NOT NULL,
@@ -50,10 +53,12 @@ CREATE TABLE IF NOT EXISTS students (
   "paymentStatus" TEXT DEFAULT 'Pending' CHECK ("paymentStatus" IN ('Paid', 'Pending', 'Unpaid')),
   payment_status TEXT DEFAULT 'Pending' CHECK (payment_status IN ('Paid', 'Pending', 'Unpaid')),
   "classId" TEXT NOT NULL,
-  class_id TEXT
+  class_id TEXT,
+  "tokenId" TEXT,
+  token_id TEXT
 );
 
--- C. CREATE teachers TABLE (Supporting Dual Case naming)
+-- C. CREATE teachers TABLE (Supporting Dual Case naming and Tokens)
 CREATE TABLE IF NOT EXISTS teachers (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   name TEXT NOT NULL,
@@ -63,7 +68,24 @@ CREATE TABLE IF NOT EXISTS teachers (
   "paymentStatus" TEXT DEFAULT 'Unpaid' CHECK ("paymentStatus" IN ('Paid', 'Pending', 'Unpaid')),
   payment_status TEXT DEFAULT 'Unpaid' CHECK (payment_status IN ('Paid', 'Pending', 'Unpaid')),
   "lastPaymentDate" TEXT,
-  last_payment_date TEXT
+  last_payment_date TEXT,
+  "tokenId" TEXT,
+  token_id TEXT
+);
+
+-- D. CREATE pointage_logs TABLE (Supporting dual case naming)
+CREATE TABLE IF NOT EXISTS pointage_logs (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  "personId" TEXT NOT NULL,
+  person_id TEXT,
+  "personType" TEXT NOT NULL CHECK ("personType" IN ('student', 'teacher')),
+  person_type TEXT CHECK (person_type IN ('student', 'teacher')),
+  "personName" TEXT NOT NULL,
+  person_name TEXT,
+  "tokenId" TEXT NOT NULL,
+  token_id TEXT,
+  timestamp TEXT NOT NULL,
+  details TEXT NOT NULL
 );
 
 
@@ -121,6 +143,21 @@ BEGIN
     END IF;
   END IF;
 
+  -- Sync token id
+  IF NEW.token_id IS DISTINCT FROM OLD.token_id THEN
+    NEW."tokenId" := NEW.token_id;
+  ELSIF NEW."tokenId" IS DISTINCT FROM OLD."tokenId" THEN
+    NEW.token_id := NEW."tokenId";
+  END IF;
+
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.token_id IS NOT NULL AND NEW."tokenId" IS NULL THEN
+      NEW."tokenId" := NEW.token_id;
+    ELSIF NEW."tokenId" IS NOT NULL AND NEW.token_id IS NULL THEN
+      NEW.token_id := NEW."tokenId";
+    END IF;
+  END IF;
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -165,6 +202,21 @@ BEGIN
     END IF;
   END IF;
 
+  -- Sync token id
+  IF NEW.token_id IS DISTINCT FROM OLD.token_id THEN
+    NEW."tokenId" := NEW.token_id;
+  ELSIF NEW."tokenId" IS DISTINCT FROM OLD."tokenId" THEN
+    NEW.token_id := NEW."tokenId";
+  END IF;
+
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.token_id IS NOT NULL AND NEW."tokenId" IS NULL THEN
+      NEW."tokenId" := NEW.token_id;
+    ELSIF NEW."tokenId" IS NOT NULL AND NEW.token_id IS NULL THEN
+      NEW.token_id := NEW."tokenId";
+    END IF;
+  END IF;
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -175,6 +227,76 @@ FOR EACH ROW
 EXECUTE FUNCTION sync_teachers_keys();
 
 
+-- Function to keep pointage_logs columns in sync
+CREATE OR REPLACE FUNCTION sync_pointage_logs_keys()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Person ID
+  IF NEW.person_id IS DISTINCT FROM OLD.person_id THEN
+    NEW."personId" := NEW.person_id;
+  ELSIF NEW."personId" IS DISTINCT FROM OLD."personId" THEN
+    NEW.person_id := NEW."personId";
+  END IF;
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.person_id IS NOT NULL AND NEW."personId" IS NULL THEN
+      NEW."personId" := NEW.person_id;
+    ELSIF NEW."personId" IS NOT NULL AND NEW.person_id IS NULL THEN
+      NEW.person_id := NEW."personId";
+    END IF;
+  END IF;
+
+  -- Person Type
+  IF NEW.person_type IS DISTINCT FROM OLD.person_type THEN
+    NEW."personType" := NEW.person_type;
+  ELSIF NEW."personType" IS DISTINCT FROM OLD."personType" THEN
+    NEW.person_type := NEW."personType";
+  END IF;
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.person_type IS NOT NULL AND NEW."personType" IS NULL THEN
+      NEW."personType" := NEW.person_type;
+    ELSIF NEW."personType" IS NOT NULL AND NEW.person_type IS NULL THEN
+      NEW.person_type := NEW."personType";
+    END IF;
+  END IF;
+
+  -- Person Name
+  IF NEW.person_name IS DISTINCT FROM OLD.person_name THEN
+    NEW."personName" := NEW.person_name;
+  ELSIF NEW."personName" IS DISTINCT FROM OLD."personName" THEN
+    NEW.person_name := NEW."personName";
+  END IF;
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.person_name IS NOT NULL AND NEW."personName" IS NULL THEN
+      NEW."personName" := NEW.person_name;
+    ELSIF NEW."personName" IS NOT NULL AND NEW.person_name IS NULL THEN
+      NEW.person_name := NEW."personName";
+    END IF;
+  END IF;
+
+  -- Token ID
+  IF NEW.token_id IS DISTINCT FROM OLD.token_id THEN
+    NEW."tokenId" := NEW.token_id;
+  ELSIF NEW."tokenId" IS DISTINCT FROM OLD."tokenId" THEN
+    NEW.token_id := NEW."tokenId";
+  END IF;
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.token_id IS NOT NULL AND NEW."tokenId" IS NULL THEN
+      NEW."tokenId" := NEW.token_id;
+    ELSIF NEW."tokenId" IS NOT NULL AND NEW.token_id IS NULL THEN
+      NEW.token_id := NEW."tokenId";
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_sync_pointage_logs_keys
+BEFORE INSERT OR UPDATE ON pointage_logs
+FOR EACH ROW
+EXECUTE FUNCTION sync_pointage_logs_keys();
+
+
 -- ==========================================
 -- 4. ROW LEVEL SECURITY (RLS) POLICIES
 -- ==========================================
@@ -183,6 +305,7 @@ EXECUTE FUNCTION sync_teachers_keys();
 ALTER TABLE classes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE teachers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pointage_logs ENABLE ROW LEVEL SECURITY;
 
 -- Dynamic policies allowing unrestricted operations for the Director / Admin Dashboard
 CREATE POLICY "Allow public select on classes" ON classes FOR SELECT USING (true);
@@ -200,6 +323,11 @@ CREATE POLICY "Allow public insert on teachers" ON teachers FOR INSERT WITH CHEC
 CREATE POLICY "Allow public update on teachers" ON teachers FOR UPDATE USING (true);
 CREATE POLICY "Allow public delete on teachers" ON teachers FOR DELETE USING (true);
 
+CREATE POLICY "Allow public select on pointage_logs" ON pointage_logs FOR SELECT USING (true);
+CREATE POLICY "Allow public insert on pointage_logs" ON pointage_logs FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update on pointage_logs" ON pointage_logs FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete on pointage_logs" ON pointage_logs FOR DELETE USING (true);
+
 
 -- ==========================================
 -- 5. PERFORMANCE INDEXES
@@ -207,6 +335,7 @@ CREATE POLICY "Allow public delete on teachers" ON teachers FOR DELETE USING (tr
 CREATE INDEX IF NOT EXISTS idx_students_class_id ON students(class_id);
 CREATE INDEX IF NOT EXISTS idx_students_class_id_camel ON students("classId");
 CREATE INDEX IF NOT EXISTS idx_teachers_payment_status ON teachers(payment_status);
+CREATE INDEX IF NOT EXISTS idx_pointage_logs_tokenId ON pointage_logs("tokenId");
 
 
 -- =========================================================
@@ -214,7 +343,7 @@ CREATE INDEX IF NOT EXISTS idx_teachers_payment_status ON teachers(payment_statu
 -- =========================================================
 
 -- Clear existing data if you want a complete fresh restart
--- TRUNCATE classes, students, teachers CASCADE;
+-- TRUNCATE classes, students, teachers, pointage_logs CASCADE;
 
 -- Default Classes
 INSERT INTO classes (id, name, price, description) VALUES
@@ -228,33 +357,35 @@ ON CONFLICT (id) DO UPDATE SET
   price = EXCLUDED.price, 
   description = EXCLUDED.description;
 
--- Default Teachers
-INSERT INTO teachers (id, name, email, subject, salary, payment_status, last_payment_date) VALUES
-('teacher-1', 'Prof. Slimane Belkacem', 's.belkacem@everest.dz', 'Mathematics', 45000, 'Paid', '2026-06-05'),
-('teacher-2', 'Dr. Yasmina Mansouri', 'y.mansouri@everest.dz', 'Physics', 48050, 'Unpaid', NULL),
-('teacher-3', 'Prof. Mourad Bouzidi', 'm.bouzidi@everest.dz', 'French', 38000, 'Pending', NULL),
-('teacher-4', 'Prof. Amina Ouchene', 'a.ouchene@everest.dz', 'English', 35000, 'Paid', '2026-06-08')
+-- Default Teachers with Token IDs
+INSERT INTO teachers (id, name, email, subject, salary, payment_status, last_payment_date, token_id) VALUES
+('teacher-1', 'Prof. Slimane Belkacem', 's.belkacem@everest.dz', 'Mathematics', 45000, 'Paid', '2026-06-05', 'T201'),
+('teacher-2', 'Dr. Yasmina Mansouri', 'y.mansouri@everest.dz', 'Physics', 48050, 'Unpaid', NULL, 'T202'),
+('teacher-3', 'Prof. Mourad Bouzidi', 'm.bouzidi@everest.dz', 'French', 38000, 'Pending', NULL, 'T203'),
+('teacher-4', 'Prof. Amina Ouchene', 'a.ouchene@everest.dz', 'English', 35000, 'Paid', '2026-06-08', 'T204')
 ON CONFLICT (id) DO UPDATE SET 
   name = EXCLUDED.name, 
   email = EXCLUDED.email, 
   subject = EXCLUDED.subject, 
   salary = EXCLUDED.salary, 
   payment_status = EXCLUDED.payment_status, 
-  last_payment_date = EXCLUDED.last_payment_date;
+  last_payment_date = EXCLUDED.last_payment_date,
+  token_id = EXCLUDED.token_id;
 
--- Default Students
-INSERT INTO students (id, name, parent_phone, payment_status, class_id) VALUES
-('student-1', 'Abderrahmane Zaiti', '0661245892', 'Paid', 'class-1'),
-('student-2', 'Leila Kaddour', '0555321456', 'Pending', 'class-1'),
-('student-3', 'Yanis Amrani', '0772183495', 'Unpaid', 'class-2'),
-('student-4', 'Fatma-Zohra Mansouri', '0561234567', 'Paid', 'class-3'),
-('student-5', 'Mohamed Amine Bouzidi', '0662895412', 'Pending', 'class-4'),
-('student-6', 'Meriem Ouchene', '0770987654', 'Paid', 'class-5'),
-('student-7', 'Anis Belkacem', '0551743621', 'Unpaid', 'class-2'),
-('student-8', 'Khadidja Haddad', '0663152436', 'Paid', 'class-3'),
-('student-9', 'Oussama Sifi', '0792345678', 'Unpaid', 'class-5')
+-- Default Students with Token IDs
+INSERT INTO students (id, name, parent_phone, payment_status, class_id, token_id) VALUES
+('student-1', 'Abderrahmane Zaiti', '0661245892', 'Paid', 'class-1', 'S101'),
+('student-2', 'Leila Kaddour', '0555321456', 'Pending', 'class-1', 'S102'),
+('student-3', 'Yanis Amrani', '0772183495', 'Unpaid', 'class-2', 'S103'),
+('student-4', 'Fatma-Zohra Mansouri', '0561234567', 'Paid', 'class-3', 'S104'),
+('student-5', 'Mohamed Amine Bouzidi', '0662895412', 'Pending', 'class-4', 'S105'),
+('student-6', 'Meriem Ouchene', '0770987654', 'Paid', 'class-5', 'S106'),
+('student-7', 'Anis Belkacem', '0551743621', 'Unpaid', 'class-2', 'S107'),
+('student-8', 'Khadidja Haddad', '0663152436', 'Paid', 'class-3', 'S108'),
+('student-9', 'Oussama Sifi', '0792345678', 'Unpaid', 'class-5', 'S109')
 ON CONFLICT (id) DO UPDATE SET 
   name = EXCLUDED.name, 
   parent_phone = EXCLUDED.parent_phone, 
   payment_status = EXCLUDED.payment_status, 
-  class_id = EXCLUDED.class_id;
+  class_id = EXCLUDED.class_id,
+  token_id = EXCLUDED.token_id;

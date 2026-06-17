@@ -19,7 +19,8 @@ export function Teachers() {
     email: '',
     subject: '',
     salary: 0,
-    paymentStatus: 'Unpaid'
+    paymentStatus: 'Unpaid',
+    tokenId: ''
   });
 
   const [editingTeacherId, setEditingTeacherId] = useState<string>('');
@@ -28,7 +29,8 @@ export function Teachers() {
     email: '',
     subject: '',
     salary: 0,
-    paymentStatus: 'Unpaid'
+    paymentStatus: 'Unpaid',
+    tokenId: ''
   });
 
   useEffect(() => {
@@ -58,7 +60,8 @@ export function Teachers() {
         email: '',
         subject: '',
         salary: 0,
-        paymentStatus: 'Unpaid'
+        paymentStatus: 'Unpaid',
+        tokenId: ''
       });
     } catch (error) {
       console.error('Error creating teacher:', error);
@@ -136,6 +139,7 @@ export function Teachers() {
                 <tr className="bg-slate-50/50 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
                   <th className="px-8 py-5">{t('staff_member')}</th>
                   <th className="px-8 py-5">{t('subject')}</th>
+                  <th className="px-8 py-5">{t('token_id')}</th>
                   <th className="px-8 py-5 text-center">{t('salary')}</th>
                   <th className="px-8 py-5 text-center">{t('status')}</th>
                   <th className={cn("px-8 py-5", isRTL ? "text-left" : "text-right")}>{isRTL ? "الإجراءات" : "Actions"}</th>
@@ -163,6 +167,19 @@ export function Teachers() {
                     </td>
                     <td className="px-8 py-6">
                       <span className="text-xs font-black text-slate-500 uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg group-hover:bg-primary/10 group-hover:text-primary transition-all">{teacher.subject}</span>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-1">
+                        {teacher.tokenId ? (
+                          <span className="font-mono text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 px-2 py-1 rounded-md font-bold select-all">
+                            {teacher.tokenId}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-300 italic">
+                            {t('no_token_assigned')}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-8 py-6 text-center text-base text-primary font-black tracking-tight">
                       {activeRole === 'director' ? (
@@ -198,7 +215,8 @@ export function Teachers() {
                                    email: teacher.email,
                                    subject: teacher.subject,
                                    salary: teacher.salary,
-                                   paymentStatus: teacher.paymentStatus
+                                   paymentStatus: teacher.paymentStatus,
+                                   tokenId: teacher.tokenId || ''
                                  });
                                  setIsEditModalOpen(true);
                                }}
@@ -326,6 +344,16 @@ export function Teachers() {
               placeholder="120000"
             />
           </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} (Optionnel)</label>
+            <input
+              type="text"
+              value={newTeacher.tokenId || ''}
+              onChange={e => setNewTeacher({ ...newTeacher, tokenId: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold placeholder:font-medium font-mono uppercase"
+              placeholder="Ex: T201"
+            />
+          </div>
           <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
             {isRTL ? "إضافة" : "Add Teacher"}
           </button>
@@ -377,6 +405,16 @@ export function Teachers() {
               value={editTeacher.salary}
               onChange={e => setEditTeacher({ ...editTeacher, salary: Number(e.target.value) })}
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} (Optionnel)</label>
+            <input
+              type="text"
+              value={editTeacher.tokenId || ''}
+              onChange={e => setEditTeacher({ ...editTeacher, tokenId: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold placeholder:font-medium font-mono uppercase"
+              placeholder="Ex: T201"
             />
           </div>
           <div className="space-y-1 flex flex-col">

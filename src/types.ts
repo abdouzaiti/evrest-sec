@@ -6,6 +6,7 @@ export interface Student {
   parentPhone: string;
   paymentStatus: PaymentStatus;
   classId: string;
+  tokenId?: string;
 }
 
 export interface SchoolClass {
@@ -23,6 +24,17 @@ export interface Teacher {
   salary: number;
   paymentStatus: PaymentStatus;
   lastPaymentDate?: string;
+  tokenId?: string;
+}
+
+export interface PointageLog {
+  id: string;
+  personId: string;
+  personType: 'student' | 'teacher';
+  personName: string;
+  tokenId: string;
+  timestamp: string;
+  details: string;
 }
 
 export interface Notification {

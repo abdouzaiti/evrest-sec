@@ -11,22 +11,22 @@ const defaultClasses: SchoolClass[] = [
 ];
 
 const defaultStudents: Student[] = [
-  { id: 'student-1', name: 'Abderrahmane Zaiti', parentPhone: '0661245892', paymentStatus: 'Paid', classId: 'class-1' },
-  { id: 'student-2', name: 'Leila Kaddour', parentPhone: '0555321456', paymentStatus: 'Pending', classId: 'class-1' },
-  { id: 'student-3', name: 'Yanis Amrani', parentPhone: '0772183495', paymentStatus: 'Unpaid', classId: 'class-2' },
-  { id: 'student-4', name: 'Fatma-Zohra Mansouri', parentPhone: '0561234567', paymentStatus: 'Paid', classId: 'class-3' },
-  { id: 'student-5', name: 'Mohamed Amine Bouzidi', parentPhone: '0662895412', paymentStatus: 'Pending', classId: 'class-4' },
-  { id: 'student-6', name: 'Meriem Ouchene', parentPhone: '0770987654', paymentStatus: 'Paid', classId: 'class-5' },
-  { id: 'student-7', name: 'Anis Belkacem', parentPhone: '0551743621', paymentStatus: 'Unpaid', classId: 'class-2' },
-  { id: 'student-8', name: 'Khadidja Haddad', parentPhone: '0663152436', paymentStatus: 'Paid', classId: 'class-3' },
-  { id: 'student-9', name: 'Oussama Sifi', parentPhone: '0792345678', paymentStatus: 'Unpaid', classId: 'class-5' }
+  { id: 'student-1', name: 'Abderrahmane Zaiti', parentPhone: '0661245892', paymentStatus: 'Paid', classId: 'class-1', tokenId: 'S101' },
+  { id: 'student-2', name: 'Leila Kaddour', parentPhone: '0555321456', paymentStatus: 'Pending', classId: 'class-1', tokenId: 'S102' },
+  { id: 'student-3', name: 'Yanis Amrani', parentPhone: '0772183495', paymentStatus: 'Unpaid', classId: 'class-2', tokenId: 'S103' },
+  { id: 'student-4', name: 'Fatma-Zohra Mansouri', parentPhone: '0561234567', paymentStatus: 'Paid', classId: 'class-3', tokenId: 'S104' },
+  { id: 'student-5', name: 'Mohamed Amine Bouzidi', parentPhone: '0662895412', paymentStatus: 'Pending', classId: 'class-4', tokenId: 'S105' },
+  { id: 'student-6', name: 'Meriem Ouchene', parentPhone: '0770987654', paymentStatus: 'Paid', classId: 'class-5', tokenId: 'S106' },
+  { id: 'student-7', name: 'Anis Belkacem', parentPhone: '0551743621', paymentStatus: 'Unpaid', classId: 'class-2', tokenId: 'S107' },
+  { id: 'student-8', name: 'Khadidja Haddad', parentPhone: '0663152436', paymentStatus: 'Paid', classId: 'class-3', tokenId: 'S108' },
+  { id: 'student-9', name: 'Oussama Sifi', parentPhone: '0792345678', paymentStatus: 'Unpaid', classId: 'class-5', tokenId: 'S109' }
 ];
 
 const defaultTeachers: Teacher[] = [
-  { id: 'teacher-1', name: 'Prof. Slimane Belkacem', email: 's.belkacem@everest.dz', subject: 'Mathematics', salary: 45000, paymentStatus: 'Paid', lastPaymentDate: '2026-06-05' },
-  { id: 'teacher-2', name: 'Dr. Yasmina Mansouri', email: 'y.mansouri@everest.dz', subject: 'Physics', salary: 48050, paymentStatus: 'Unpaid' },
-  { id: 'teacher-3', name: 'Prof. Mourad Bouzidi', email: 'm.bouzidi@everest.dz', subject: 'French', salary: 38000, paymentStatus: 'Pending' },
-  { id: 'teacher-4', name: 'Prof. Amina Ouchene', email: 'a.ouchene@everest.dz', subject: 'English', salary: 35000, paymentStatus: 'Paid', lastPaymentDate: '2026-06-08' }
+  { id: 'teacher-1', name: 'Prof. Slimane Belkacem', email: 's.belkacem@everest.dz', subject: 'Mathematics', salary: 45000, paymentStatus: 'Paid', lastPaymentDate: '2026-06-05', tokenId: 'T201' },
+  { id: 'teacher-2', name: 'Dr. Yasmina Mansouri', email: 'y.mansouri@everest.dz', subject: 'Physics', salary: 48050, paymentStatus: 'Unpaid', tokenId: 'T202' },
+  { id: 'teacher-3', name: 'Prof. Mourad Bouzidi', email: 'm.bouzidi@everest.dz', subject: 'French', salary: 38000, paymentStatus: 'Pending', tokenId: 'T203' },
+  { id: 'teacher-4', name: 'Prof. Amina Ouchene', email: 'a.ouchene@everest.dz', subject: 'English', salary: 35000, paymentStatus: 'Paid', lastPaymentDate: '2026-06-08', tokenId: 'T204' }
 ];
 
 // Helper to load and store data in local storage when Supabase is not configured
@@ -70,7 +70,8 @@ const mapToStudent = (row: any): Student => {
     name: row.name || '',
     parentPhone: row.parentPhone !== undefined ? row.parentPhone : (row.parent_phone !== undefined ? row.parent_phone : ''),
     paymentStatus: row.paymentStatus !== undefined ? row.paymentStatus : (row.payment_status !== undefined ? row.payment_status : 'Pending'),
-    classId: row.classId !== undefined ? row.classId : (row.class_id !== undefined ? row.class_id : '')
+    classId: row.classId !== undefined ? row.classId : (row.class_id !== undefined ? row.class_id : ''),
+    tokenId: row.tokenId !== undefined ? row.tokenId : (row.token_id !== undefined ? row.token_id : undefined)
   };
 };
 
@@ -83,7 +84,8 @@ const mapToTeacher = (row: any): Teacher => {
     subject: row.subject || '',
     salary: row.salary !== undefined ? Number(row.salary) : 0,
     paymentStatus: row.paymentStatus !== undefined ? row.paymentStatus : (row.payment_status !== undefined ? row.payment_status : 'Unpaid'),
-    lastPaymentDate: row.lastPaymentDate !== undefined ? row.lastPaymentDate : (row.last_payment_date !== undefined ? row.last_payment_date : undefined)
+    lastPaymentDate: row.lastPaymentDate !== undefined ? row.lastPaymentDate : (row.last_payment_date !== undefined ? row.last_payment_date : undefined),
+    tokenId: row.tokenId !== undefined ? row.tokenId : (row.token_id !== undefined ? row.token_id : undefined)
   };
 };
 
@@ -99,7 +101,9 @@ const makeStudentPayload = (s: Omit<Student, 'id'>) => {
     paymentStatus: s.paymentStatus,
     payment_status: s.paymentStatus,
     classId: s.classId,
-    class_id: s.classId
+    class_id: s.classId,
+    tokenId: s.tokenId || null,
+    token_id: s.tokenId || null
   };
 };
 
@@ -111,8 +115,10 @@ const makeTeacherPayload = (t: Omit<Teacher, 'id'>) => {
     salary: Number(t.salary),
     paymentStatus: t.paymentStatus,
     payment_status: t.paymentStatus,
-    lastPaymentDate: t.lastPaymentDate,
-    last_payment_date: t.lastPaymentDate
+    lastPaymentDate: t.lastPaymentDate || null,
+    last_payment_date: t.lastPaymentDate || null,
+    tokenId: t.tokenId || null,
+    token_id: t.tokenId || null
   };
 };
 
@@ -518,7 +524,8 @@ export const teachersService = {
               subject: teacher.subject,
               salary: Number(teacher.salary),
               paymentStatus: teacher.paymentStatus,
-              lastPaymentDate: teacher.lastPaymentDate
+              lastPaymentDate: teacher.lastPaymentDate,
+              tokenId: teacher.tokenId
             })
             .eq('id', id)
             .select()
@@ -539,6 +546,148 @@ export const teachersService = {
         return local[index];
       }
       throw new Error('Teacher not found');
+    }
+  }
+};
+
+// ==========================================
+// Pointage / Jeton Attendance Log service
+// ==========================================
+import { PointageLog } from '../types';
+
+const defaultPointageLogs: PointageLog[] = [
+  {
+    id: 'p-1',
+    personId: 'student-1',
+    personType: 'student',
+    personName: 'Abderrahmane Zaiti',
+    tokenId: 'S101',
+    timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
+    details: 'Status: Paid'
+  },
+  {
+    id: 'p-2',
+    personId: 'teacher-1',
+    personType: 'teacher',
+    personName: 'Prof. Slimane Belkacem',
+    tokenId: 'T201',
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    details: 'Clock-In Pointage successful'
+  }
+];
+
+const mapToPointageLog = (row: any): PointageLog => {
+  return {
+    id: row.id,
+    personId: row.personId !== undefined ? row.personId : (row.person_id !== undefined ? row.person_id : ''),
+    personType: row.personType !== undefined ? row.personType : (row.person_type !== undefined ? row.person_type : 'student'),
+    personName: row.personName !== undefined ? row.personName : (row.person_name !== undefined ? row.person_name : ''),
+    tokenId: row.tokenId !== undefined ? row.tokenId : (row.token_id !== undefined ? row.token_id : ''),
+    timestamp: row.timestamp || new Date().toISOString(),
+    details: row.details || ''
+  };
+};
+
+export const pointageService = {
+  async getAll(): Promise<PointageLog[]> {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase
+          .from('pointage_logs')
+          .select('*')
+          .order('timestamp', { ascending: false });
+        if (error) throw error;
+        return (data || []).map(mapToPointageLog);
+      } catch (err) {
+        console.warn('Failed to fetch pointage logs from Supabase, falling back to LocalStorage', err);
+        return getLocalData<PointageLog>('pointage_logs', defaultPointageLogs);
+      }
+    } else {
+      const logs = getLocalData<PointageLog>('pointage_logs', defaultPointageLogs);
+      // Sort descending by timestamp
+      return [...logs].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    }
+  },
+
+  async log(logItem: Omit<PointageLog, 'id' | 'timestamp'>): Promise<PointageLog> {
+    const timestamp = new Date().toISOString();
+    if (isSupabaseConfigured()) {
+      try {
+        const payload = {
+          personId: logItem.personId,
+          person_id: logItem.personId,
+          personType: logItem.personType,
+          person_type: logItem.personType,
+          personName: logItem.personName,
+          person_name: logItem.personName,
+          tokenId: logItem.tokenId,
+          token_id: logItem.tokenId,
+          timestamp: timestamp,
+          details: logItem.details
+        };
+        const { data, error } = await supabase
+          .from('pointage_logs')
+          .insert([payload])
+          .select()
+          .single();
+        if (error) {
+          // Retry simple camelCase structure
+          const { data: retryData, error: retryError } = await supabase
+            .from('pointage_logs')
+            .insert([{
+              personId: logItem.personId,
+              personType: logItem.personType,
+              personName: logItem.personName,
+              tokenId: logItem.tokenId,
+              timestamp: timestamp,
+              details: logItem.details
+            }])
+            .select()
+            .single();
+          if (retryError) throw retryError;
+          return mapToPointageLog(retryData);
+        }
+        return mapToPointageLog(data);
+      } catch (err: any) {
+        console.error('Error logging pointage on Supabase:', err);
+        // Fallback to local
+        const local = getLocalData<PointageLog>('pointage_logs', defaultPointageLogs);
+        const newLog: PointageLog = {
+          ...logItem,
+          id: 'log-' + Date.now(),
+          timestamp
+        };
+        local.push(newLog);
+        saveLocalData('pointage_logs', local);
+        return newLog;
+      }
+    } else {
+      const local = getLocalData<PointageLog>('pointage_logs', defaultPointageLogs);
+      const newLog: PointageLog = {
+        ...logItem,
+        id: 'log-' + Date.now(),
+        timestamp
+      };
+      local.push(newLog);
+      saveLocalData('pointage_logs', local);
+      return newLog;
+    }
+  },
+
+  async clearAll(): Promise<void> {
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase
+          .from('pointage_logs')
+          .delete()
+          .neq('id', '0'); // Safe delete all
+        if (error) throw error;
+      } catch (err) {
+        console.warn('Error flushing Supabase logs, clearing LocalStorage instead', err);
+        saveLocalData('pointage_logs', []);
+      }
+    } else {
+      saveLocalData('pointage_logs', []);
     }
   }
 };

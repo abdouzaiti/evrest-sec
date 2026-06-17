@@ -9,6 +9,7 @@ import { Classes } from './pages/Classes';
 import { Teachers } from './pages/Teachers';
 import { Payments } from './pages/Payments';
 import { Notifications } from './pages/Notifications';
+import PointageTerminal from './pages/PointageTerminal';
 import { Loader2 } from 'lucide-react';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -60,6 +61,7 @@ export default function App() {
               <Route path="teachers" element={<Teachers />} />
               <Route path="payments" element={<Payments />} /> 
               <Route path="notifications" element={<Notifications />} />
+              <Route path="pointage" element={<PointageTerminal />} />
             </Route>
             
             <Route path="*" element={<Navigate to="/" replace />} />

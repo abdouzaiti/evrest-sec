@@ -66,6 +66,18 @@ export const translations: Translations = {
   // Misc
   currency: { fr: 'DA', ar: 'د.ج', en: 'DA' },
   cash_payment: { fr: 'Paiement en espèces', ar: 'دفع نقدي', en: 'Cash payment' },
+  
+  // Pointage Terminal
+  pointage_terminal: { fr: 'Terminal d\'Entrée', ar: 'محطة الدخول والبطاقات', en: 'Gate Token Terminal' },
+  scan_instruction: { fr: 'Veuillez scanner un jeton (RFID/Simulation)', ar: 'يرجى تمرير البطاقة (RFID أو محاكاة)', en: 'Please scan a token (RFID or Simulation)' },
+  pointage_logs: { fr: 'Historique des Pointages', ar: 'سجل عمليات المسح والحضور', en: 'Scans & Attendance Log' },
+  assign_token: { fr: 'Associer Jeton', ar: 'ربط بطاقة / Jeton', en: 'Assign Token' },
+  token_id: { fr: 'Code Jeton', ar: 'رمز البطاقة', en: 'Token ID' },
+  no_token_assigned: { fr: 'Aucun jeton associé', ar: 'لا توجد بطاقة مرتبطة', en: 'No token assigned' },
+  student_scan_outcome_paid: { fr: 'Élève en règle - Accès Autorisé ✓', ar: 'اشتراك التلميذ مدفوع - تفضل بالدخول ✓', en: 'Student paid - Access authorized ✓' },
+  student_scan_outcome_unpaid: { fr: 'Élève non à jour - Accès Bloqué ✗', ar: 'الاشتراك غير مدفوع - يرجى مراجعة الإدارة! ✗', en: 'Student unpaid - Access blocked! ✗' },
+  teacher_scan_outcome: { fr: 'Présence Enseignante Enregistrée ✓', ar: 'تم تسجيل حضور الأستاذ بنجاح ✓', en: 'Teacher clock-in attendance registered ✓' },
+  clear_logs: { fr: 'Effacer l\'historique', ar: 'مسح السجل', en: 'Clear logs' },
 };
 
 interface LanguageContextType {
