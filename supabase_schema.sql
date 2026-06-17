@@ -89,6 +89,49 @@ CREATE TABLE IF NOT EXISTS pointage_logs (
 );
 
 
+-- ========================================================
+-- 2.5 ENSURE ALL COLUMNS EXIST ON OLDER TABLES
+-- ========================================================
+-- These statements ensure that if tables already exist in your database,
+-- they receive the required columns (like token_id / tokenId) without errors!
+
+ALTER TABLE classes ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE classes ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0;
+ALTER TABLE classes ADD COLUMN IF NOT EXISTS description TEXT;
+
+ALTER TABLE students ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS "classId" TEXT;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS class_id TEXT;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS "tokenId" TEXT;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS token_id TEXT;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS "parentPhone" TEXT;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS parent_phone TEXT;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS "paymentStatus" TEXT DEFAULT 'Pending';
+ALTER TABLE students ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'Pending';
+
+ALTER TABLE teachers ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE teachers ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE teachers ADD COLUMN IF NOT EXISTS subject TEXT;
+ALTER TABLE teachers ADD COLUMN IF NOT EXISTS salary NUMERIC DEFAULT 0;
+ALTER TABLE teachers ADD COLUMN IF NOT EXISTS "tokenId" TEXT;
+ALTER TABLE teachers ADD COLUMN IF NOT EXISTS token_id TEXT;
+ALTER TABLE teachers ADD COLUMN IF NOT EXISTS "paymentStatus" TEXT DEFAULT 'Unpaid';
+ALTER TABLE teachers ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'Unpaid';
+ALTER TABLE teachers ADD COLUMN IF NOT EXISTS "lastPaymentDate" TEXT;
+ALTER TABLE teachers ADD COLUMN IF NOT EXISTS last_payment_date TEXT;
+
+ALTER TABLE pointage_logs ADD COLUMN IF NOT EXISTS "personId" TEXT;
+ALTER TABLE pointage_logs ADD COLUMN IF NOT EXISTS person_id TEXT;
+ALTER TABLE pointage_logs ADD COLUMN IF NOT EXISTS "personType" TEXT;
+ALTER TABLE pointage_logs ADD COLUMN IF NOT EXISTS person_type TEXT;
+ALTER TABLE pointage_logs ADD COLUMN IF NOT EXISTS "personName" TEXT;
+ALTER TABLE pointage_logs ADD COLUMN IF NOT EXISTS person_name TEXT;
+ALTER TABLE pointage_logs ADD COLUMN IF NOT EXISTS "tokenId" TEXT;
+ALTER TABLE pointage_logs ADD COLUMN IF NOT EXISTS token_id TEXT;
+ALTER TABLE pointage_logs ADD COLUMN IF NOT EXISTS timestamp TEXT;
+ALTER TABLE pointage_logs ADD COLUMN IF NOT EXISTS details TEXT;
+
+
 -- ==========================================
 -- 3. AUTOMATED DB SYNCHRONIZATION TRIGGERS
 -- ==========================================
@@ -308,24 +351,40 @@ ALTER TABLE teachers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pointage_logs ENABLE ROW LEVEL SECURITY;
 
 -- Dynamic policies allowing unrestricted operations for the Director / Admin Dashboard
+DROP POLICY IF EXISTS "Allow public select on classes" ON classes;
 CREATE POLICY "Allow public select on classes" ON classes FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public insert on classes" ON classes;
 CREATE POLICY "Allow public insert on classes" ON classes FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow public update on classes" ON classes;
 CREATE POLICY "Allow public update on classes" ON classes FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Allow public delete on classes" ON classes;
 CREATE POLICY "Allow public delete on classes" ON classes FOR DELETE USING (true);
 
+DROP POLICY IF EXISTS "Allow public select on students" ON students;
 CREATE POLICY "Allow public select on students" ON students FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public insert on students" ON students;
 CREATE POLICY "Allow public insert on students" ON students FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow public update on students" ON students;
 CREATE POLICY "Allow public update on students" ON students FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Allow public delete on students" ON students;
 CREATE POLICY "Allow public delete on students" ON students FOR DELETE USING (true);
 
+DROP POLICY IF EXISTS "Allow public select on teachers" ON teachers;
 CREATE POLICY "Allow public select on teachers" ON teachers FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public insert on teachers" ON teachers;
 CREATE POLICY "Allow public insert on teachers" ON teachers FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow public update on teachers" ON teachers;
 CREATE POLICY "Allow public update on teachers" ON teachers FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Allow public delete on teachers" ON teachers;
 CREATE POLICY "Allow public delete on teachers" ON teachers FOR DELETE USING (true);
 
+DROP POLICY IF EXISTS "Allow public select on pointage_logs" ON pointage_logs;
 CREATE POLICY "Allow public select on pointage_logs" ON pointage_logs FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public insert on pointage_logs" ON pointage_logs;
 CREATE POLICY "Allow public insert on pointage_logs" ON pointage_logs FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow public update on pointage_logs" ON pointage_logs;
 CREATE POLICY "Allow public update on pointage_logs" ON pointage_logs FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Allow public delete on pointage_logs" ON pointage_logs;
 CREATE POLICY "Allow public delete on pointage_logs" ON pointage_logs FOR DELETE USING (true);
 
 
