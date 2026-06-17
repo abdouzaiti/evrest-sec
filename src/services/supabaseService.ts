@@ -173,6 +173,31 @@ export const classesService = {
       const filtered = local.filter(c => c.id !== id);
       saveLocalData('school_classes', filtered);
     }
+  },
+  async update(id: string, schoolClass: Omit<SchoolClass, 'id'>): Promise<SchoolClass> {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase
+          .from('classes')
+          .update(schoolClass)
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) throw error;
+        return mapToClass(data);
+      } catch (err: any) {
+        throw new Error(err.message || 'Error updating school class on Supabase');
+      }
+    } else {
+      const local = getLocalData<SchoolClass>('school_classes', defaultClasses);
+      const index = local.findIndex(c => c.id === id);
+      if (index !== -1) {
+        local[index] = { ...schoolClass, id };
+        saveLocalData('school_classes', local);
+        return local[index];
+      }
+      throw new Error('Class not found');
+    }
   }
 };
 
@@ -309,6 +334,47 @@ export const studentsService = {
       const filtered = local.filter(s => s.id !== id);
       saveLocalData('school_students', filtered);
     }
+  },
+  async update(id: string, student: Omit<Student, 'id'>): Promise<Student> {
+    if (isSupabaseConfigured()) {
+      try {
+        const payload = makeStudentPayload(student);
+        const { data, error } = await supabase
+          .from('students')
+          .update(payload)
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) {
+          console.warn('Dual-property student update failed. Retrying with camelCase structure only...');
+          const { data: retryData, error: retryError } = await supabase
+            .from('students')
+            .update({
+              name: student.name,
+              parentPhone: student.parentPhone,
+              paymentStatus: student.paymentStatus,
+              classId: student.classId
+            })
+            .eq('id', id)
+            .select()
+            .single();
+          if (retryError) throw retryError;
+          return mapToStudent(retryData);
+        }
+        return mapToStudent(data);
+      } catch (err: any) {
+        throw new Error(err.message || 'Error updating student on Supabase');
+      }
+    } else {
+      const local = getLocalData<Student>('school_students', defaultStudents);
+      const index = local.findIndex(s => s.id === id);
+      if (index !== -1) {
+        local[index] = { ...student, id };
+        saveLocalData('school_students', local);
+        return local[index];
+      }
+      throw new Error('Student not found');
+    }
   }
 };
 
@@ -430,6 +496,49 @@ export const teachersService = {
       const local = getLocalData<Teacher>('school_teachers', defaultTeachers);
       const filtered = local.filter(t => t.id !== id);
       saveLocalData('school_teachers', filtered);
+    }
+  },
+  async update(id: string, teacher: Omit<Teacher, 'id'>): Promise<Teacher> {
+    if (isSupabaseConfigured()) {
+      try {
+        const payload = makeTeacherPayload(teacher);
+        const { data, error } = await supabase
+          .from('teachers')
+          .update(payload)
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) {
+          console.warn('Dual-property teacher update failed. Retrying with camelCase structure only...');
+          const { data: retryData, error: retryError } = await supabase
+            .from('teachers')
+            .update({
+              name: teacher.name,
+              email: teacher.email,
+              subject: teacher.subject,
+              salary: Number(teacher.salary),
+              paymentStatus: teacher.paymentStatus,
+              lastPaymentDate: teacher.lastPaymentDate
+            })
+            .eq('id', id)
+            .select()
+            .single();
+          if (retryError) throw retryError;
+          return mapToTeacher(retryData);
+        }
+        return mapToTeacher(data);
+      } catch (err: any) {
+        throw new Error(err.message || 'Error updating teacher on Supabase');
+      }
+    } else {
+      const local = getLocalData<Teacher>('school_teachers', defaultTeachers);
+      const index = local.findIndex(t => t.id === id);
+      if (index !== -1) {
+        local[index] = { ...teacher, id };
+        saveLocalData('school_teachers', local);
+        return local[index];
+      }
+      throw new Error('Teacher not found');
     }
   }
 };

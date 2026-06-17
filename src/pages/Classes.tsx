@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Phone, CheckCircle2, XCircle, Clock, BookOpen, Users, Loader2, Trash2, AlertCircle } from 'lucide-react';
+import { Search, Plus, Phone, CheckCircle2, XCircle, Clock, BookOpen, Users, Loader2, Trash2, AlertCircle, Pencil } from 'lucide-react';
 import { Student, SchoolClass } from '../types';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
@@ -19,10 +19,18 @@ export function Classes() {
   // Modal states
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
+  const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false);
+  const [isEditStudentModalOpen, setIsEditStudentModalOpen] = useState(false);
 
   // Form states
   const [newClass, setNewClass] = useState<Omit<SchoolClass, 'id'>>({ name: '', price: 0, description: '' });
   const [newStudent, setNewStudent] = useState<Omit<Student, 'id'>>({ name: '', parentPhone: '', paymentStatus: 'Pending', classId: '' });
+
+  const [editingClassId, setEditingClassId] = useState<string>('');
+  const [editClass, setEditClass] = useState<Omit<SchoolClass, 'id'>>({ name: '', price: 0, description: '' });
+
+  const [editingStudentId, setEditingStudentId] = useState<string>('');
+  const [editStudent, setEditStudent] = useState<Omit<Student, 'id'>>({ name: '', parentPhone: '', paymentStatus: 'Pending', classId: '' });
 
   useEffect(() => {
     fetchData();
@@ -109,6 +117,28 @@ export function Classes() {
     }
   };
 
+  const handleUpdateClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const updated = await classesService.update(editingClassId, editClass);
+      setClasses(prev => prev.map(c => c.id === editingClassId ? updated : c));
+      setIsEditClassModalOpen(false);
+    } catch (error) {
+      console.error('Error updating class:', error);
+    }
+  };
+
+  const handleUpdateStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const updated = await studentsService.update(editingStudentId, editStudent);
+      setStudents(prev => prev.map(s => s.id === editingStudentId ? updated : s));
+      setIsEditStudentModalOpen(false);
+    } catch (error) {
+      console.error('Error updating student:', error);
+    }
+  };
+
   const selectedClass = classes.find(c => c.id === selectedClassId);
   const classStudents = students.filter(s => 
     s.classId === selectedClassId && 
@@ -158,11 +188,11 @@ export function Classes() {
                 <button
                   onClick={() => setSelectedClassId(c.id)}
                   className={cn(
-                    "w-full text-left p-5 rounded-2xl transition-all relative overflow-hidden pr-12",
+                    "w-full text-left p-5 rounded-2xl transition-all relative overflow-hidden pr-20",
                     selectedClassId === c.id 
                       ? "bg-primary text-white shadow-xl shadow-primary/20" 
                       : "bg-white text-slate-600 hover:bg-slate-50",
-                    isRTL && "text-right pl-12 pr-5"
+                    isRTL && "text-right pl-20 pr-5"
                   )}
                 >
                   <div className="relative z-10">
@@ -176,16 +206,36 @@ export function Classes() {
                   </div>
                 </button>
                 {activeRole === 'director' && (
-                  <button
-                    onClick={(e) => handleDeleteClass(c.id, e)}
-                    className={cn(
-                      "absolute top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all z-20",
-                      isRTL ? "left-2" : "right-2",
-                      selectedClassId === c.id && "text-white/40 hover:text-white"
-                    )}
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className={cn(
+                    "absolute top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all z-20",
+                    isRTL ? "left-2" : "right-1"
+                  )}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingClassId(c.id);
+                        setEditClass({ name: c.name, price: c.price, description: c.description || '' });
+                        setIsEditClassModalOpen(true);
+                      }}
+                      className={cn(
+                        "p-2 text-slate-400 hover:text-accent transition-all",
+                        selectedClassId === c.id && "text-white/40 hover:text-white"
+                      )}
+                      title={isRTL ? "تعديل" : "Edit"}
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteClass(c.id, e)}
+                      className={cn(
+                        "p-2 text-slate-400 hover:text-rose-500 transition-all",
+                        selectedClassId === c.id && "text-white/40 hover:text-white"
+                      )}
+                      title={isRTL ? "حذف" : "Delete"}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
@@ -203,7 +253,22 @@ export function Classes() {
                         <BookOpen size={24} className="md:w-8 md:h-8" />
                      </div>
                      <div className={cn(isRTL && "text-right")}>
-                        <h2 className="text-2xl md:text-4xl font-black text-primary tracking-tighter">{selectedClass?.name}</h2>
+                        <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                           <h2 className="text-2xl md:text-4xl font-black text-primary tracking-tighter">{selectedClass?.name}</h2>
+                           {activeRole === 'director' && (
+                             <button
+                               onClick={() => {
+                                 setEditingClassId(selectedClass.id);
+                                 setEditClass({ name: selectedClass.name, price: selectedClass.price, description: selectedClass.description || '' });
+                                 setIsEditClassModalOpen(true);
+                               }}
+                               className="text-slate-400 hover:text-accent p-1.5 rounded-lg hover:bg-slate-50 transition-all"
+                               title={isRTL ? "تعديل المادة" : "Edit Class"}
+                             >
+                               <Pencil size={18} />
+                             </button>
+                           )}
+                        </div>
                         <p className="text-[10px] md:text-sm text-slate-500 font-bold uppercase tracking-[0.2em] mt-1">
                           {t('monthly_price')}: <span className="text-accent">{selectedClass?.price} {t('currency')}</span>
                         </p>
@@ -268,19 +333,32 @@ export function Classes() {
                               {s.paymentStatus === 'Paid' ? t('paid') : s.paymentStatus === 'Unpaid' ? t('unpaid') : t('pending')}
                             </button>
                           </td>
-                          <td className={cn("px-8 py-6", isRTL ? "text-left" : "text-right")}>
-                            <div className={cn("flex items-center gap-4 justify-end", isRTL && "justify-start")}>
-                              <button className="text-[10px] font-black text-primary hover:text-accent transition-colors underline-offset-4 hover:underline uppercase tracking-widest whitespace-nowrap">
-                                {t('print_receipt')}
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteStudent(s.id)}
-                                className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </td>
+                           <td className={cn("px-8 py-6", isRTL ? "text-left" : "text-right")}>
+                             <div className={cn("flex items-center gap-4 justify-end", isRTL && "justify-start")}>
+                               <button className="text-[10px] font-black text-primary hover:text-accent transition-colors underline-offset-4 hover:underline uppercase tracking-widest whitespace-nowrap">
+                                 {t('print_receipt')}
+                               </button>
+                               {activeRole === 'director' && (
+                                 <button
+                                   onClick={() => {
+                                     setEditingStudentId(s.id);
+                                     setEditStudent({ name: s.name, parentPhone: s.parentPhone, paymentStatus: s.paymentStatus, classId: s.classId });
+                                     setIsEditStudentModalOpen(true);
+                                   }}
+                                   className="p-2 text-slate-300 hover:text-accent transition-colors"
+                                   title={isRTL ? "تعديل الطالب" : "Edit Student"}
+                                 >
+                                   <Pencil size={15} />
+                                 </button>
+                               )}
+                               <button 
+                                 onClick={() => handleDeleteStudent(s.id)}
+                                 className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
+                               >
+                                 <Trash2 size={16} />
+                               </button>
+                             </div>
+                           </td>
                         </tr>
                       ))}
                     </tbody>
@@ -397,6 +475,105 @@ export function Classes() {
           </div>
           <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
             {t('add_student')}
+          </button>
+        </form>
+      </Modal>
+
+      {/* Edit Class Modal */}
+      <Modal 
+        isOpen={isEditClassModalOpen} 
+        onClose={() => setIsEditClassModalOpen(false)} 
+        title={isRTL ? "تعديل الصف الدراسي" : "Edit Class"}
+      >
+        <form onSubmit={handleUpdateClass} className="space-y-4">
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('class_name')}</label>
+            <input
+              required
+              type="text"
+              value={editClass.name}
+              onChange={e => setEditClass({ ...editClass, name: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('monthly_price')}</label>
+            <input
+              required
+              type="number"
+              value={editClass.price}
+              onChange={e => setEditClass({ ...editClass, price: Number(e.target.value) })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('description')}</label>
+            <textarea
+              required
+              value={editClass.description}
+              onChange={e => setEditClass({ ...editClass, description: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold h-32"
+            />
+          </div>
+          <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+            {isRTL ? "تعديل الصف" : "Update Class"}
+          </button>
+        </form>
+      </Modal>
+
+      {/* Edit Student Modal */}
+      <Modal 
+        isOpen={isEditStudentModalOpen} 
+        onClose={() => setIsEditStudentModalOpen(false)} 
+        title={isRTL ? "تعديل بيانات الطالب" : "Edit Student Details"}
+      >
+        <form onSubmit={handleUpdateStudent} className="space-y-4">
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('student_name')}</label>
+            <input
+              required
+              type="text"
+              value={editStudent.name}
+              onChange={e => setEditStudent({ ...editStudent, name: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('parent_phone')}</label>
+            <input
+              required
+              type="tel"
+              value={editStudent.parentPhone}
+              onChange={e => setEditStudent({ ...editStudent, parentPhone: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{isRTL ? "الفوج / الصف الدراسي" : "Class Assignment"}</label>
+            <select
+              value={editStudent.classId}
+              onChange={e => setEditStudent({ ...editStudent, classId: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold cursor-pointer"
+            >
+              {classes.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('status')}</label>
+            <select
+              value={editStudent.paymentStatus}
+              onChange={e => setEditStudent({ ...editStudent, paymentStatus: e.target.value as any })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold cursor-pointer"
+            >
+              <option value="Paid">{t('paid')}</option>
+              <option value="Unpaid">{t('unpaid')}</option>
+              <option value="Pending">{t('pending')}</option>
+            </select>
+          </div>
+          <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+            {isRTL ? "حفظ التعديلات" : "Update Student"}
           </button>
         </form>
       </Modal>

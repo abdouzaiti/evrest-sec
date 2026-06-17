@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Calendar, DollarSign, Briefcase, Banknote, Loader2, Trash2, AlertCircle, Shield } from 'lucide-react';
+import { Search, Plus, Calendar, DollarSign, Briefcase, Banknote, Loader2, Trash2, AlertCircle, Shield, Pencil } from 'lucide-react';
 import { Teacher } from '../types';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
@@ -13,7 +13,17 @@ export function Teachers() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [newTeacher, setNewTeacher] = useState<Omit<Teacher, 'id'>>({
+    name: '',
+    email: '',
+    subject: '',
+    salary: 0,
+    paymentStatus: 'Unpaid'
+  });
+
+  const [editingTeacherId, setEditingTeacherId] = useState<string>('');
+  const [editTeacher, setEditTeacher] = useState<Omit<Teacher, 'id'>>({
     name: '',
     email: '',
     subject: '',
@@ -71,6 +81,17 @@ export function Teachers() {
       setTeachers(prev => prev.filter(t => t.id !== id));
     } catch (error) {
       console.error('Error deleting teacher:', error);
+    }
+  };
+
+  const handleUpdateTeacher = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const updated = await teachersService.update(editingTeacherId, editTeacher);
+      setTeachers(prev => prev.map(t => t.id === editingTeacherId ? updated : t));
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Error updating teacher:', error);
     }
   };
 
@@ -160,22 +181,39 @@ export function Teachers() {
                     </td>
                     <td className={cn("px-8 py-6", isRTL ? "text-left" : "text-right")}>
                       <div className={cn("flex items-center gap-3 justify-end", isRTL && "justify-start")}>
-                        {activeRole === 'director' ? (
-                          <>
-                            <button 
-                              onClick={() => handlePaySalary(teacher.id)}
-                              className="bg-slate-50 hover:bg-slate-100 text-slate-600 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-30 active:scale-95" 
-                              disabled={teacher.paymentStatus === 'Paid'}
-                            >
-                              {t('pay_salary')}
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteTeacher(teacher.id)}
-                              className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </>
+                         {activeRole === 'director' ? (
+                           <>
+                             <button 
+                               onClick={() => handlePaySalary(teacher.id)}
+                               className="bg-slate-50 hover:bg-slate-100 text-slate-600 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-30 active:scale-95" 
+                               disabled={teacher.paymentStatus === 'Paid'}
+                             >
+                               {t('pay_salary')}
+                             </button>
+                             <button
+                               onClick={() => {
+                                 setEditingTeacherId(teacher.id);
+                                 setEditTeacher({
+                                   name: teacher.name,
+                                   email: teacher.email,
+                                   subject: teacher.subject,
+                                   salary: teacher.salary,
+                                   paymentStatus: teacher.paymentStatus
+                                 });
+                                 setIsEditModalOpen(true);
+                               }}
+                               className="p-2 text-slate-300 hover:text-accent transition-colors"
+                               title={isRTL ? "تعديل المعلم" : "Edit Teacher"}
+                             >
+                               <Pencil size={15} />
+                             </button>
+                             <button 
+                               onClick={() => handleDeleteTeacher(teacher.id)}
+                               className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
+                             >
+                               <Trash2 size={16} />
+                             </button>
+                           </>
                         ) : (
                           <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-slate-400 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-xl">
                             <Shield size={12} className="text-amber-500" />
@@ -290,6 +328,70 @@ export function Teachers() {
           </div>
           <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
             {isRTL ? "إضافة" : "Add Teacher"}
+          </button>
+        </form>
+      </Modal>
+
+      {/* Edit Teacher Modal */}
+      <Modal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        title={isRTL ? "تعديل بيانات المعلم" : "Edit Teacher Details"}
+      >
+        <form onSubmit={handleUpdateTeacher} className="space-y-4">
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{isRTL ? "اسم المعلم" : "Teacher Name"}</label>
+            <input
+              required
+              type="text"
+              value={editTeacher.name}
+              onChange={e => setEditTeacher({ ...editTeacher, name: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Email</label>
+            <input
+              required
+              type="email"
+              value={editTeacher.email}
+              onChange={e => setEditTeacher({ ...editTeacher, email: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('subject')}</label>
+            <input
+              required
+              type="text"
+              value={editTeacher.subject}
+              onChange={e => setEditTeacher({ ...editTeacher, subject: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('salary')}</label>
+            <input
+              required
+              type="number"
+              value={editTeacher.salary}
+              onChange={e => setEditTeacher({ ...editTeacher, salary: Number(e.target.value) })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+            />
+          </div>
+          <div className="space-y-1 flex flex-col">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400 mb-1">{t('status')}</label>
+            <select
+              value={editTeacher.paymentStatus}
+              onChange={e => setEditTeacher({ ...editTeacher, paymentStatus: e.target.value as any })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold cursor-pointer"
+            >
+              <option value="Paid">{t('paid')}</option>
+              <option value="Unpaid">{t('unpaid')}</option>
+            </select>
+          </div>
+          <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+            {isRTL ? "حفظ التعديلات" : "Update Teacher"}
           </button>
         </form>
       </Modal>
