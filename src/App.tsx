@@ -7,6 +7,7 @@ import { Login } from './components/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Classes } from './pages/Classes';
 import { Teachers } from './pages/Teachers';
+import { Students } from './pages/Students';
 import { Payments } from './pages/Payments';
 import { Notifications } from './pages/Notifications';
 import PointageTerminal from './pages/PointageTerminal';
@@ -58,6 +59,7 @@ export default function App() {
             }>
               <Route index element={<Dashboard />} />
               <Route path="classes" element={<Classes />} />
+              <Route path="students" element={<Students />} />
               <Route path="teachers" element={<Teachers />} />
               <Route path="payments" element={<Payments />} /> 
               <Route path="notifications" element={<Notifications />} />

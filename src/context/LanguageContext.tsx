@@ -12,6 +12,8 @@ export const translations: Translations = {
   // Sidebar & Navigation
   dashboard: { fr: 'Tableau de bord', ar: 'لوحة التحكم', en: 'Dashboard' },
   classes: { fr: 'Classes', ar: 'الأقسام', en: 'Classes' },
+  students: { fr: 'Étudiants', ar: 'الطلاب', en: 'Students' },
+  sessions: { fr: 'Séances', ar: 'الحصص', en: 'Sessions' },
   teachers: { fr: 'Enseignants', ar: 'الأساتذة', en: 'Teachers' },
   payments: { fr: 'Paiements', ar: 'المدفوعات', en: 'Payments' },
   notifications: { fr: 'Notifications', ar: 'الإشعارات', en: 'Notifications' },
@@ -22,6 +24,8 @@ export const translations: Translations = {
   welcome_back: { fr: 'Bienvenue sur le portail Everest Secretory.', ar: 'مرحبًا بكم في بوابة إيفرست سيكريتوري.', en: "Welcome back to Everest Secretory portal." },
   total_students: { fr: 'Total Étudiants', ar: 'إجمالي الطلاب', en: 'Total Students' },
   total_teachers: { fr: 'Total Enseignants', ar: 'إجمالي الأساتذة', en: 'Total Teachers' },
+  current_month_sessions: { fr: 'Suivi des 4 séances (Mois)', ar: 'متابعة 4 حصص (شهرية)', en: '4 Sessions Tracking (Monthly)' },
+  manage_students: { fr: 'Gérez les inscriptions et suivis.', ar: 'إدارة التسجيلات والمتابعة.', en: 'Manage student enrollments and tracking.' },
   monthly_revenue: { fr: 'Recettes Mensuelles', ar: 'المداخيل الشهرية', en: 'Monthly Revenue' },
   pending_payments: { fr: 'Paiements en Attente', ar: 'دفعات معلقة', en: 'Pending Payments' },
   revenue_growth: { fr: 'Croissance des Recettes', ar: 'نمو المداخيل', en: 'Revenue Growth' },

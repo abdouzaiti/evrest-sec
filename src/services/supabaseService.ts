@@ -609,6 +609,36 @@ export const pointageService = {
     }
   },
 
+  async getByPerson(personId: string): Promise<PointageLog[]> {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase
+          .from('pointage_logs')
+          .select('*')
+          .eq('personId', personId)
+          .order('timestamp', { ascending: false });
+        if (error) {
+          // Retry with snake_case
+          const { data: retryData, error: retryError } = await supabase
+            .from('pointage_logs')
+            .select('*')
+            .eq('person_id', personId)
+            .order('timestamp', { ascending: false });
+          if (retryError) throw retryError;
+          return (retryData || []).map(mapToPointageLog);
+        }
+        return (data || []).map(mapToPointageLog);
+      } catch (err) {
+        console.warn('Failed to fetch pointage logs by person from Supabase, falling back to LocalStorage', err);
+        const local = getLocalData<PointageLog>('pointage_logs', defaultPointageLogs);
+        return local.filter(l => l.personId === personId).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      }
+    } else {
+      const local = getLocalData<PointageLog>('pointage_logs', defaultPointageLogs);
+      return local.filter(l => l.personId === personId).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    }
+  },
+
   async log(logItem: Omit<PointageLog, 'id' | 'timestamp'>): Promise<PointageLog> {
     const timestamp = new Date().toISOString();
     if (isSupabaseConfigured()) {

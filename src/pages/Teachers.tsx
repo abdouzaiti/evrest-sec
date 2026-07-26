@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Calendar, DollarSign, Briefcase, Banknote, Loader2, Trash2, AlertCircle, Shield, Pencil } from 'lucide-react';
-import { Teacher } from '../types';
+import { Search, Plus, Calendar, DollarSign, Briefcase, Banknote, Loader2, Trash2, AlertCircle, Shield, Pencil, FileText, Clock } from 'lucide-react';
+import { Teacher, PointageLog } from '../types';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { teachersService } from '../services/supabaseService';
+import { teachersService, pointageService } from '../services/supabaseService';
 import { Modal } from '../components/Modal';
 
 export function Teachers() {
@@ -14,6 +14,11 @@ export function Teachers() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
+  const [teacherLogs, setTeacherLogs] = useState<PointageLog[]>([]);
+
   const [newTeacher, setNewTeacher] = useState<Omit<Teacher, 'id'>>({
     name: '',
     email: '',
@@ -95,6 +100,20 @@ export function Teachers() {
       setIsEditModalOpen(false);
     } catch (error) {
       console.error('Error updating teacher:', error);
+    }
+  };
+
+  const handleViewLogs = async (teacher: Teacher) => {
+    try {
+      setSelectedTeacher(teacher);
+      setLoadingLogs(true);
+      setIsLogsModalOpen(true);
+      const logs = await pointageService.getByPerson(teacher.id);
+      setTeacherLogs(logs);
+    } catch (error) {
+      console.error('Error fetching teacher logs:', error);
+    } finally {
+      setLoadingLogs(false);
     }
   };
 
@@ -198,6 +217,13 @@ export function Teachers() {
                     </td>
                     <td className={cn("px-8 py-6", isRTL ? "text-left" : "text-right")}>
                       <div className={cn("flex items-center gap-3 justify-end", isRTL && "justify-start")}>
+                         <button
+                           onClick={() => handleViewLogs(teacher)}
+                           className="p-2 text-slate-300 hover:text-primary transition-colors"
+                           title={isRTL ? "سجل الحضور" : "Attendance Logs"}
+                         >
+                           <FileText size={18} />
+                         </button>
                          {activeRole === 'director' ? (
                            <>
                              <button 
@@ -432,6 +458,89 @@ export function Teachers() {
             {isRTL ? "حفظ التعديلات" : "Update Teacher"}
           </button>
         </form>
+      </Modal>
+
+      {/* Teacher Attendance Logs Modal */}
+      <Modal
+        isOpen={isLogsModalOpen}
+        onClose={() => setIsLogsModalOpen(false)}
+        title={isRTL ? `سجل حضور: ${selectedTeacher?.name}` : `Attendance Log: ${selectedTeacher?.name}`}
+      >
+        <div className="space-y-6">
+          <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div className="flex items-center gap-3">
+              <Clock className="text-primary" size={20} />
+              <span className="text-sm font-bold text-slate-600">
+                {isRTL ? "سجل الشهر الحالي" : "Current Month Log"}
+              </span>
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-100">
+              {new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+            </span>
+          </div>
+
+          <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+            {loadingLogs ? (
+              <div className="py-20 flex flex-col items-center justify-center gap-4">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+                  {isRTL ? "جاري التحميل..." : "Loading logs..."}
+                </p>
+              </div>
+            ) : teacherLogs.length === 0 ? (
+              <div className="py-20 text-center space-y-4 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
+                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mx-auto text-slate-200 border border-slate-100">
+                  <FileText size={24} />
+                </div>
+                <p className="text-sm font-bold text-slate-400">
+                  {isRTL ? "لا يوجد سجلات لهذا الشهر" : "No pointage records found for this teacher"}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {teacherLogs.map((log) => (
+                  <div key={log.id} className="group flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center group-hover:bg-primary/5 group-hover:text-primary transition-colors">
+                        <Calendar size={18} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-primary">
+                          {new Date(log.timestamp).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', { 
+                            weekday: 'long', 
+                            day: 'numeric', 
+                            month: 'short' 
+                          })}
+                        </p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                          <Clock size={10} />
+                          {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                       <span className="inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase bg-primary/5 text-primary border border-primary/10">
+                         {log.details || "Clock-In"}
+                       </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              Total: {teacherLogs.length} {isRTL ? "حضورا" : "sessions"}
+            </div>
+            <button 
+              onClick={() => setIsLogsModalOpen(false)}
+              className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95"
+            >
+              {isRTL ? "إغلاق" : "Close"}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

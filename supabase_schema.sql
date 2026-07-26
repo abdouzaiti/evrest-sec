@@ -141,10 +141,12 @@ CREATE OR REPLACE FUNCTION sync_students_keys()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Sync parent phone
-  IF NEW.parent_phone IS DISTINCT FROM OLD.parent_phone THEN
-    NEW."parentPhone" := NEW.parent_phone;
-  ELSIF NEW."parentPhone" IS DISTINCT FROM OLD."parentPhone" THEN
-    NEW.parent_phone := NEW."parentPhone";
+  IF TG_OP = 'UPDATE' THEN
+    IF NEW.parent_phone IS DISTINCT FROM OLD.parent_phone THEN
+      NEW."parentPhone" := NEW.parent_phone;
+    ELSIF NEW."parentPhone" IS DISTINCT FROM OLD."parentPhone" THEN
+      NEW.parent_phone := NEW."parentPhone";
+    END IF;
   END IF;
 
   -- Default fallback if one is provided but not another on insert
@@ -157,10 +159,12 @@ BEGIN
   END IF;
 
   -- Sync payment status
-  IF NEW.payment_status IS DISTINCT FROM OLD.payment_status THEN
-    NEW."paymentStatus" := NEW.payment_status;
-  ELSIF NEW."paymentStatus" IS DISTINCT FROM OLD."paymentStatus" THEN
-    NEW.payment_status := NEW."paymentStatus";
+  IF TG_OP = 'UPDATE' THEN
+    IF NEW.payment_status IS DISTINCT FROM OLD.payment_status THEN
+      NEW."paymentStatus" := NEW.payment_status;
+    ELSIF NEW."paymentStatus" IS DISTINCT FROM OLD."paymentStatus" THEN
+      NEW.payment_status := NEW."paymentStatus";
+    END IF;
   END IF;
 
   IF TG_OP = 'INSERT' THEN
@@ -172,10 +176,12 @@ BEGIN
   END IF;
 
   -- Sync class id
-  IF NEW.class_id IS DISTINCT FROM OLD.class_id THEN
-    NEW."classId" := NEW.class_id;
-  ELSIF NEW."classId" IS DISTINCT FROM OLD."classId" THEN
-    NEW.class_id := NEW."classId";
+  IF TG_OP = 'UPDATE' THEN
+    IF NEW.class_id IS DISTINCT FROM OLD.class_id THEN
+      NEW."classId" := NEW.class_id;
+    ELSIF NEW."classId" IS DISTINCT FROM OLD."classId" THEN
+      NEW.class_id := NEW."classId";
+    END IF;
   END IF;
 
   IF TG_OP = 'INSERT' THEN
@@ -187,10 +193,12 @@ BEGIN
   END IF;
 
   -- Sync token id
-  IF NEW.token_id IS DISTINCT FROM OLD.token_id THEN
-    NEW."tokenId" := NEW.token_id;
-  ELSIF NEW."tokenId" IS DISTINCT FROM OLD."tokenId" THEN
-    NEW.token_id := NEW."tokenId";
+  IF TG_OP = 'UPDATE' THEN
+    IF NEW.token_id IS DISTINCT FROM OLD.token_id THEN
+      NEW."tokenId" := NEW.token_id;
+    ELSIF NEW."tokenId" IS DISTINCT FROM OLD."tokenId" THEN
+      NEW.token_id := NEW."tokenId";
+    END IF;
   END IF;
 
   IF TG_OP = 'INSERT' THEN
@@ -216,10 +224,12 @@ CREATE OR REPLACE FUNCTION sync_teachers_keys()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Sync payment status
-  IF NEW.payment_status IS DISTINCT FROM OLD.payment_status THEN
-    NEW."paymentStatus" := NEW.payment_status;
-  ELSIF NEW."paymentStatus" IS DISTINCT FROM OLD."paymentStatus" THEN
-    NEW.payment_status := NEW."paymentStatus";
+  IF TG_OP = 'UPDATE' THEN
+    IF NEW.payment_status IS DISTINCT FROM OLD.payment_status THEN
+      NEW."paymentStatus" := NEW.payment_status;
+    ELSIF NEW."paymentStatus" IS DISTINCT FROM OLD."paymentStatus" THEN
+      NEW.payment_status := NEW."paymentStatus";
+    END IF;
   END IF;
 
   IF TG_OP = 'INSERT' THEN
@@ -231,10 +241,12 @@ BEGIN
   END IF;
 
   -- Sync last payment date
-  IF NEW.last_payment_date IS DISTINCT FROM OLD.last_payment_date THEN
-    NEW."lastPaymentDate" := NEW.last_payment_date;
-  ELSIF NEW."lastPaymentDate" IS DISTINCT FROM OLD."lastPaymentDate" THEN
-    NEW.last_payment_date := NEW."lastPaymentDate";
+  IF TG_OP = 'UPDATE' THEN
+    IF NEW.last_payment_date IS DISTINCT FROM OLD.last_payment_date THEN
+      NEW."lastPaymentDate" := NEW.last_payment_date;
+    ELSIF NEW."lastPaymentDate" IS DISTINCT FROM OLD."lastPaymentDate" THEN
+      NEW.last_payment_date := NEW."lastPaymentDate";
+    END IF;
   END IF;
 
   IF TG_OP = 'INSERT' THEN
@@ -246,10 +258,12 @@ BEGIN
   END IF;
 
   -- Sync token id
-  IF NEW.token_id IS DISTINCT FROM OLD.token_id THEN
-    NEW."tokenId" := NEW.token_id;
-  ELSIF NEW."tokenId" IS DISTINCT FROM OLD."tokenId" THEN
-    NEW.token_id := NEW."tokenId";
+  IF TG_OP = 'UPDATE' THEN
+    IF NEW.token_id IS DISTINCT FROM OLD.token_id THEN
+      NEW."tokenId" := NEW.token_id;
+    ELSIF NEW."tokenId" IS DISTINCT FROM OLD."tokenId" THEN
+      NEW.token_id := NEW."tokenId";
+    END IF;
   END IF;
 
   IF TG_OP = 'INSERT' THEN
@@ -275,10 +289,12 @@ CREATE OR REPLACE FUNCTION sync_pointage_logs_keys()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Person ID
-  IF NEW.person_id IS DISTINCT FROM OLD.person_id THEN
-    NEW."personId" := NEW.person_id;
-  ELSIF NEW."personId" IS DISTINCT FROM OLD."personId" THEN
-    NEW.person_id := NEW."personId";
+  IF TG_OP = 'UPDATE' THEN
+    IF NEW.person_id IS DISTINCT FROM OLD.person_id THEN
+      NEW."personId" := NEW.person_id;
+    ELSIF NEW."personId" IS DISTINCT FROM OLD."personId" THEN
+      NEW.person_id := NEW."personId";
+    END IF;
   END IF;
   IF TG_OP = 'INSERT' THEN
     IF NEW.person_id IS NOT NULL AND NEW."personId" IS NULL THEN
@@ -289,10 +305,12 @@ BEGIN
   END IF;
 
   -- Person Type
-  IF NEW.person_type IS DISTINCT FROM OLD.person_type THEN
-    NEW."personType" := NEW.person_type;
-  ELSIF NEW."personType" IS DISTINCT FROM OLD."personType" THEN
-    NEW.person_type := NEW."personType";
+  IF TG_OP = 'UPDATE' THEN
+    IF NEW.person_type IS DISTINCT FROM OLD.person_type THEN
+      NEW."personType" := NEW.person_type;
+    ELSIF NEW."personType" IS DISTINCT FROM OLD."personType" THEN
+      NEW.person_type := NEW."personType";
+    END IF;
   END IF;
   IF TG_OP = 'INSERT' THEN
     IF NEW.person_type IS NOT NULL AND NEW."personType" IS NULL THEN
@@ -303,10 +321,12 @@ BEGIN
   END IF;
 
   -- Person Name
-  IF NEW.person_name IS DISTINCT FROM OLD.person_name THEN
-    NEW."personName" := NEW.person_name;
-  ELSIF NEW."personName" IS DISTINCT FROM OLD."personName" THEN
-    NEW.person_name := NEW."personName";
+  IF TG_OP = 'UPDATE' THEN
+    IF NEW.person_name IS DISTINCT FROM OLD.person_name THEN
+      NEW."personName" := NEW.person_name;
+    ELSIF NEW."personName" IS DISTINCT FROM OLD."personName" THEN
+      NEW.person_name := NEW."personName";
+    END IF;
   END IF;
   IF TG_OP = 'INSERT' THEN
     IF NEW.person_name IS NOT NULL AND NEW."personName" IS NULL THEN
@@ -317,10 +337,12 @@ BEGIN
   END IF;
 
   -- Token ID
-  IF NEW.token_id IS DISTINCT FROM OLD.token_id THEN
-    NEW."tokenId" := NEW.token_id;
-  ELSIF NEW."tokenId" IS DISTINCT FROM OLD."tokenId" THEN
-    NEW.token_id := NEW."tokenId";
+  IF TG_OP = 'UPDATE' THEN
+    IF NEW.token_id IS DISTINCT FROM OLD.token_id THEN
+      NEW."tokenId" := NEW.token_id;
+    ELSIF NEW."tokenId" IS DISTINCT FROM OLD."tokenId" THEN
+      NEW.token_id := NEW."tokenId";
+    END IF;
   END IF;
   IF TG_OP = 'INSERT' THEN
     IF NEW.token_id IS NOT NULL AND NEW."tokenId" IS NULL THEN

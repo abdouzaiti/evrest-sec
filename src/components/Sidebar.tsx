@@ -8,7 +8,8 @@ import {
   Bell, 
   LogOut,
   X,
-  Scan
+  Scan,
+  GraduationCap
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +27,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navItems = [
     { icon: LayoutDashboard, label: t('dashboard'), href: '/' },
     { icon: Users, label: t('classes'), href: '/classes' },
+    { icon: GraduationCap, label: t('students'), href: '/students' },
     { icon: UserSquare2, label: t('teachers'), href: '/teachers' },
     { icon: CreditCard, label: t('payments'), href: '/payments' },
     { icon: Scan, label: t('pointage_terminal'), href: '/pointage' },
@@ -33,7 +35,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   return (
     <aside className={cn(
-      "w-64 h-screen bg-white flex flex-col fixed top-0 z-40 transition-all duration-300 shadow-sm lg:translate-x-0",
+      "w-64 h-screen bg-white flex flex-col fixed top-0 z-40 transition-all duration-300 shadow-xl border-r border-slate-100",
       isRTL ? "right-0" : "left-0",
       !isOpen && (isRTL ? "translate-x-64" : "-translate-x-64")
     )}>

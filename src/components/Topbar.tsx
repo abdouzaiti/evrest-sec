@@ -15,11 +15,11 @@ export function Topbar({ onMenuClick }: TopbarProps) {
   const navigate = useNavigate();
 
   return (
-    <header className="h-16 bg-white/80 backdrop-blur-md sticky top-0 z-10 px-4 md:px-8 flex items-center justify-between">
+    <header className="h-16 bg-white/80 backdrop-blur-md sticky top-0 z-20 px-4 md:px-6 flex items-center justify-between border-b border-slate-100">
       <div className={cn("flex items-center gap-4 flex-1", isRTL && "flex-row-reverse")}>
         <button 
           onClick={onMenuClick}
-          className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg lg:hidden"
+          className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all active:scale-95"
         >
           <Menu size={24} />
         </button>
