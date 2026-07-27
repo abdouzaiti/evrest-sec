@@ -182,22 +182,42 @@ export default function PointageTerminal() {
     const matchedTeacher = teachers.find(t => t.tokenId?.toUpperCase() === rawVal.toUpperCase());
 
     if (matchedStudent) {
-      const isPaid = matchedStudent.paymentStatus === 'Paid';
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      const sessionsThisMonth = logs.filter(log => {
+        const logDate = new Date(log.timestamp);
+        return log.personId === matchedStudent.id && 
+               logDate.getMonth() === currentMonth && 
+               logDate.getFullYear() === currentYear;
+      }).length;
+
+      const newSessionCount = sessionsThisMonth + 1;
       const studentClassName = classes.find(c => c.id === matchedStudent.classId)?.name || '';
       
-      const detailsMsg = isPaid 
-        ? `${t('student_scan_outcome_paid')} (${studentClassName})`
-        : `${t('student_scan_outcome_unpaid')} (${studentClassName})`;
+      let detailsMsg = '';
+      let isSuccess = true;
+      let logStatus = '';
+
+      if (newSessionCount <= 4) {
+        detailsMsg = `${isRTL ? 'حضور مسجل - الحصة' : 'Presence recorded - Session'} ${newSessionCount}/4 (${studentClassName})`;
+        logStatus = `Session ${newSessionCount}/4`;
+      } else {
+        detailsMsg = `${isRTL ? 'تنبيه: تجاوز 4 حصص في الشهر' : 'Warning: Exceeded 4 sessions this month'} (${newSessionCount}/4)`;
+        isSuccess = false;
+        logStatus = `Session ${newSessionCount}/4 (Over limit)`;
+      }
         
-      playBeep(isPaid ? 'success' : 'failure');
+      playBeep(isSuccess ? 'success' : 'failure');
       
       setRecentScanResult({
-        success: isPaid,
+        success: isSuccess,
         type: 'student',
         name: matchedStudent.name,
         details: detailsMsg,
         tokenId: rawVal,
-        isPaid
+        isPaid: isSuccess
       });
 
       // Write code Pointage Log in Supabase
@@ -207,7 +227,7 @@ export default function PointageTerminal() {
           personType: 'student',
           personName: matchedStudent.name,
           tokenId: rawVal,
-          details: isPaid ? 'Status: Paid' : 'Status: NOT PAID / BLOCKED'
+          details: logStatus
         });
         setLogs(prev => [logged, ...prev]);
       } catch (err) {
@@ -472,11 +492,11 @@ export default function PointageTerminal() {
 
                     {recentScanResult.type === 'student' && (
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        recentScanResult.isPaid 
+                        recentScanResult.success 
                           ? 'bg-emerald-100 text-emerald-800' 
                           : 'bg-rose-100 text-rose-800'
                       }`}>
-                        {recentScanResult.isPaid ? t('paid') : t('unpaid')}
+                        {recentScanResult.success ? (isRTL ? 'مقبول' : 'OK') : (isRTL ? 'مرفوض' : 'Declined')}
                       </span>
                     )}
 
@@ -514,13 +534,22 @@ export default function PointageTerminal() {
                   {language === 'ar' ? 'تلاميذ في النظام (مستحقات مدفوعة وغير مدفوعة)' : 'Élèves avec Jetons'}
                 </span>
                 <div className="flex flex-wrap gap-2">
-                  {students.filter(s => s.tokenId).map(s => (
+                  {students.filter(s => s.tokenId).map(s => {
+                    const sessionsDone = logs.filter(log => {
+                      const logDate = new Date(log.timestamp);
+                      const now = new Date();
+                      return log.personId === s.id && 
+                             logDate.getMonth() === now.getMonth() && 
+                             logDate.getFullYear() === now.getFullYear();
+                    }).length;
+                    
+                    return (
                     <button
                       key={s.id}
                       type="button"
                       onClick={() => handleScanToken(s.tokenId || '')}
                       className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all text-left ${
-                        s.paymentStatus === 'Paid'
+                        sessionsDone < 4
                           ? 'bg-emerald-50 border-emerald-150 text-emerald-700 hover:bg-emerald-100'
                           : 'bg-rose-50 border-rose-150 text-rose-700 hover:bg-rose-100'
                       }`}
@@ -529,7 +558,7 @@ export default function PointageTerminal() {
                       <span className="max-w-[120px] truncate">{s.name}</span>
                       <span className="font-mono text-[9px] px-1 bg-white/60 border rounded">{s.tokenId}</span>
                     </button>
-                  ))}
+                  )})}
                   {students.filter(s => s.tokenId).length === 0 && (
                     <span className="text-xs text-slate-400 italic">No student token registers</span>
                   )}
@@ -604,14 +633,13 @@ export default function PointageTerminal() {
               ) : (
                 logs.map((log) => {
                   const detailsText = log.details || '';
-                  const isPaid = detailsText.toLowerCase().includes('paid');
-                  const isBlocked = detailsText.toLowerCase().includes('not paid') || detailsText.toLowerCase().includes('blocked');
+                  const isOverLimit = detailsText.toLowerCase().includes('over limit');
                   
                   let badgeColor = "bg-slate-100 text-slate-700 border-slate-200";
                   if (log.personType === 'student') {
-                    badgeColor = isPaid 
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-150" 
-                      : (isBlocked ? "bg-rose-50 text-rose-700 border-rose-150" : "bg-amber-50 text-amber-700 border-amber-150");
+                    badgeColor = isOverLimit 
+                      ? "bg-rose-50 text-rose-700 border-rose-150" 
+                      : "bg-emerald-50 text-emerald-700 border-emerald-150";
                   } else {
                     badgeColor = "bg-indigo-50 text-indigo-700 border-indigo-150";
                   }
@@ -636,10 +664,7 @@ export default function PointageTerminal() {
                         </div>
 
                         <p className="mt-1 font-medium text-[11px] opacity-90 leading-tight">
-                          {language === 'ar' && log.personType === 'student' && isPaid ? 'اشتراك مدفوع - تم الدخول' : ''}
-                          {language === 'ar' && log.personType === 'student' && isBlocked ? 'اشتراك غير مدفوع - تجميد الدخول' : ''}
-                          {language === 'ar' && log.personType === 'teacher' ? 'تسجيل حضور الأستاذ' : ''}
-                          {(!isRTL || (log.details && !log.details.includes('Status'))) ? log.details : ''}
+                          {log.details}
                         </p>
 
                         <div className="mt-1.5 flex items-center justify-between text-[9px] opacity-60">
