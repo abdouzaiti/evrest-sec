@@ -53,14 +53,40 @@ const saveLocalData = <T>(key: string, items: T[]) => {
  * whereas our front-end relies on camelCase (e.g. `parentPhone`).
  * These mappers abstract database column layouts.
  */
+const getTeacherMapping = (): Record<string, string> => {
+  const raw = localStorage.getItem('class_teacher_mapping');
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    return {};
+  }
+};
+
+const saveTeacherMapping = (classId: string, teacherId?: string) => {
+  if (!classId) return;
+  const current = getTeacherMapping();
+  if (teacherId) {
+    current[classId] = teacherId;
+  } else {
+    delete current[classId];
+  }
+  localStorage.setItem('class_teacher_mapping', JSON.stringify(current));
+};
+
 const mapToClass = (row: any): SchoolClass => {
   if (!row) return row;
+  const mapping = getTeacherMapping();
+  const teacherId = (row.teacherId !== undefined && row.teacherId !== null) 
+    ? row.teacherId 
+    : ((row.teacher_id !== undefined && row.teacher_id !== null) ? row.teacher_id : mapping[row.id]);
+
   return {
     id: row.id,
     name: row.name || '',
     price: row.price !== undefined ? Number(row.price) : 0,
     description: row.description || '',
-    teacherId: row.teacherId !== undefined ? row.teacherId : (row.teacher_id !== undefined ? row.teacher_id : undefined)
+    teacherId: teacherId || undefined
   };
 };
 
@@ -153,27 +179,63 @@ export const classesService = {
   async create(schoolClass: Omit<SchoolClass, 'id'>): Promise<SchoolClass> {
     if (isSupabaseConfigured()) {
       try {
-        const payload = makeClassPayload(schoolClass);
-        const { data, error } = await supabase
+        let insertedRow: any = null;
+
+        // Strategy 1: Attempt insert with teacher_id (standard PostgreSQL snake_case)
+        const { data: d1, error: e1 } = await supabase
           .from('classes')
-          .insert([payload])
+          .insert([{
+            name: schoolClass.name,
+            price: Number(schoolClass.price),
+            description: schoolClass.description || '',
+            teacher_id: schoolClass.teacherId || null
+          }])
           .select()
           .single();
-        if (error) {
-          console.warn('Dual-property class insert failed, retrying with standard object...');
-          const { data: retryData, error: retryError } = await supabase
+
+        if (!e1 && d1) {
+          insertedRow = d1;
+        } else {
+          // Strategy 2: Attempt insert with teacherId (camelCase)
+          const { data: d2, error: e2 } = await supabase
             .from('classes')
             .insert([{
               name: schoolClass.name,
               price: Number(schoolClass.price),
-              description: schoolClass.description || ''
+              description: schoolClass.description || '',
+              teacherId: schoolClass.teacherId || null
             }])
             .select()
             .single();
-          if (retryError) throw retryError;
-          return mapToClass(retryData);
+
+          if (!e2 && d2) {
+            insertedRow = d2;
+          } else {
+            // Strategy 3: Insert base class fields if column does not exist on Supabase DB yet
+            const { data: d3, error: e3 } = await supabase
+              .from('classes')
+              .insert([{
+                name: schoolClass.name,
+                price: Number(schoolClass.price),
+                description: schoolClass.description || ''
+              }])
+              .select()
+              .single();
+
+            if (e3) throw e3;
+            insertedRow = d3;
+          }
         }
-        return mapToClass(data);
+
+        if (insertedRow && schoolClass.teacherId) {
+          saveTeacherMapping(insertedRow.id, schoolClass.teacherId);
+        }
+
+        const mapped = mapToClass(insertedRow);
+        if (schoolClass.teacherId && !mapped.teacherId) {
+          mapped.teacherId = schoolClass.teacherId;
+        }
+        return mapped;
       } catch (err: any) {
         throw new Error(err.message || 'Error inserting school class to Supabase');
       }
@@ -183,12 +245,16 @@ export const classesService = {
         ...schoolClass,
         id: 'class-' + Date.now() + Math.random().toString(36).substring(2, 6)
       };
+      if (schoolClass.teacherId) {
+        saveTeacherMapping(newClass.id, schoolClass.teacherId);
+      }
       local.push(newClass);
       saveLocalData('school_classes', local);
       return newClass;
     }
   },
   async delete(id: string): Promise<void> {
+    saveTeacherMapping(id, undefined);
     if (isSupabaseConfigured()) {
       try {
         const { error } = await supabase
@@ -206,31 +272,70 @@ export const classesService = {
     }
   },
   async update(id: string, schoolClass: Omit<SchoolClass, 'id'>): Promise<SchoolClass> {
+    if (schoolClass.teacherId) {
+      saveTeacherMapping(id, schoolClass.teacherId);
+    } else {
+      saveTeacherMapping(id, undefined);
+    }
+
     if (isSupabaseConfigured()) {
       try {
-        const payload = makeClassPayload(schoolClass);
-        const { data, error } = await supabase
+        let updatedRow: any = null;
+
+        // Strategy 1: Attempt update with teacher_id (snake_case)
+        const { data: d1, error: e1 } = await supabase
           .from('classes')
-          .update(payload)
+          .update({
+            name: schoolClass.name,
+            price: Number(schoolClass.price),
+            description: schoolClass.description || '',
+            teacher_id: schoolClass.teacherId || null
+          })
           .eq('id', id)
           .select()
           .single();
-        if (error) {
-          console.warn('Dual-property class update failed, retrying with standard object...');
-          const { data: retryData, error: retryError } = await supabase
+
+        if (!e1 && d1) {
+          updatedRow = d1;
+        } else {
+          // Strategy 2: Attempt update with teacherId (camelCase)
+          const { data: d2, error: e2 } = await supabase
             .from('classes')
             .update({
               name: schoolClass.name,
               price: Number(schoolClass.price),
-              description: schoolClass.description || ''
+              description: schoolClass.description || '',
+              teacherId: schoolClass.teacherId || null
             })
             .eq('id', id)
             .select()
             .single();
-          if (retryError) throw retryError;
-          return mapToClass(retryData);
+
+          if (!e2 && d2) {
+            updatedRow = d2;
+          } else {
+            // Strategy 3: Update base class fields if column does not exist on Supabase DB yet
+            const { data: d3, error: e3 } = await supabase
+              .from('classes')
+              .update({
+                name: schoolClass.name,
+                price: Number(schoolClass.price),
+                description: schoolClass.description || ''
+              })
+              .eq('id', id)
+              .select()
+              .single();
+
+            if (e3) throw e3;
+            updatedRow = d3;
+          }
         }
-        return mapToClass(data);
+
+        const mapped = mapToClass(updatedRow);
+        if (schoolClass.teacherId && !mapped.teacherId) {
+          mapped.teacherId = schoolClass.teacherId;
+        }
+        return mapped;
       } catch (err: any) {
         throw new Error(err.message || 'Error updating school class on Supabase');
       }
