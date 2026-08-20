@@ -469,7 +469,11 @@ export const studentsService = {
             .update({
               name: student.name,
               parentPhone: student.parentPhone,
-              classId: student.classId
+              classId: student.classId,
+              tokenId: student.tokenId,
+              currentMonth: student.currentMonth,
+              sessionsCompleted: student.sessionsCompleted,
+              paymentStatus: student.paymentStatus
             })
             .eq('id', id)
             .select()
