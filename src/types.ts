@@ -6,7 +6,9 @@ export interface Student {
   parentPhone: string;
   classId: string;
   tokenId?: string;
-  paymentStatus?: PaymentStatus;
+  currentMonth: number;
+  sessionsCompleted: number;
+  paymentStatus: PaymentStatus;
 }
 
 export interface SchoolClass {
@@ -52,4 +54,16 @@ export interface User {
   email: string;
   displayName: string;
   role: 'director' | 'secretary';
+}
+
+export interface PaymentRecord {
+  id: string;
+  studentId: string;
+  studentName: string;
+  classId: string;
+  month: number;
+  amountPaid: number;
+  sarf: number; // Change
+  sessionDates: string[]; // Timestamps of sessions
+  timestamp: string;
 }

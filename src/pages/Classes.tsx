@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Phone, CheckCircle2, XCircle, Clock, BookOpen, Users, Loader2, Trash2, AlertCircle, Pencil, UserCheck, GraduationCap } from 'lucide-react';
+import { Search, Plus, Phone, CheckCircle2, XCircle, Clock, BookOpen, Users, Loader2, Trash2, AlertCircle, Pencil, UserCheck, GraduationCap, UserPlus, Check } from 'lucide-react';
 import { Student, SchoolClass, Teacher } from '../types';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
@@ -23,6 +23,12 @@ export function Classes() {
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
   const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false);
   const [isEditStudentModalOpen, setIsEditStudentModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedStudentForPayment, setSelectedStudentForPayment] = useState<Student | null>(null);
+
+  // Student choice / enrollment mode state
+  const [studentAddMode, setStudentAddMode] = useState<'choose' | 'new'>('choose');
+  const [existingStudentSearch, setExistingStudentSearch] = useState('');
 
   // Form states
   const [newClass, setNewClass] = useState<Omit<SchoolClass, 'id'>>({ name: '', price: 0, description: '', teacherId: '' });
@@ -61,68 +67,49 @@ export function Classes() {
     }
   };
 
-  const getSessionCount = (studentId: string) => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    return allLogs.filter(log => {
-      const logDate = new Date(log.timestamp);
-      return log.personId === studentId && 
-             logDate.getMonth() === currentMonth && 
-             logDate.getFullYear() === currentYear;
-    }).length;
-  };
-
-  const handleToggleSessionTrigger = async (student: Student, targetSession: number) => {
+  const handleIncrementSession = async (student: Student) => {
     try {
-      const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-
-      const studentMonthLogs = allLogs.filter(log => {
-        const logDate = new Date(log.timestamp);
-        return log.personId === student.id && 
-               logDate.getMonth() === currentMonth && 
-               logDate.getFullYear() === currentYear;
-      }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
-      const currentCount = studentMonthLogs.length;
-
-      if (targetSession <= currentCount) {
-        const logsToRemoveCount = currentCount - (targetSession - 1);
-        for (let i = 0; i < logsToRemoveCount; i++) {
-          if (studentMonthLogs[i]) {
-            await pointageService.deleteLog(studentMonthLogs[i].id);
-          }
-        }
-      } else {
-        const logsToAddCount = targetSession - currentCount;
-        for (let i = 0; i < logsToAddCount; i++) {
-          const sessionNum = currentCount + i + 1;
-          await pointageService.log({
-            personId: student.id,
-            personType: 'student',
-            personName: student.name,
-            tokenId: student.tokenId || 'S-MANUAL',
-            details: `Manual session trigger #${sessionNum}`
-          });
-        }
+      let { sessionsCompleted, currentMonth, paymentStatus } = student;
+      
+      sessionsCompleted++;
+      
+      if (sessionsCompleted >= 4) {
+        paymentStatus = 'Unpaid';
       }
-      fetchData();
+      
+      const updated = await studentsService.update(student.id, {
+        ...student,
+        sessionsCompleted,
+        paymentStatus
+      });
+      setStudents(prev => prev.map(s => s.id === student.id ? updated : s));
     } catch (err) {
-      console.error('Error updating session trigger:', err);
+      console.error('Error incrementing session:', err);
     }
   };
 
   const handleTogglePaymentStatus = async (student: Student) => {
     try {
-      const nextStatus = student.paymentStatus === 'Paid' ? 'Unpaid' : 'Paid';
-      await studentsService.update(student.id, {
+      let { paymentStatus, currentMonth, sessionsCompleted } = student;
+      
+      if (paymentStatus !== 'Paid') {
+        paymentStatus = 'Paid';
+        if (sessionsCompleted >= 4) {
+            currentMonth++;
+            sessionsCompleted = 0;
+            paymentStatus = 'Unpaid';
+        }
+      } else {
+        paymentStatus = 'Unpaid';
+      }
+      
+      const updated = await studentsService.update(student.id, {
         ...student,
-        paymentStatus: nextStatus
+        paymentStatus,
+        currentMonth,
+        sessionsCompleted
       });
-      setStudents(prev => prev.map(s => s.id === student.id ? { ...s, paymentStatus: nextStatus } : s));
+      setStudents(prev => prev.map(s => s.id === student.id ? updated : s));
     } catch (err) {
       console.error('Error updating payment status:', err);
     }
@@ -164,6 +151,20 @@ export function Classes() {
       setNewStudent({ name: '', parentPhone: '', classId: '', tokenId: '' });
     } catch (error) {
       console.error('Error creating student:', error);
+    }
+  };
+
+  const handleAssignExistingStudent = async (studentId: string) => {
+    const targetStudent = students.find(s => s.id === studentId);
+    if (!targetStudent) return;
+    try {
+      const updated = await studentsService.update(targetStudent.id, {
+        ...targetStudent,
+        classId: selectedClassId
+      });
+      setStudents(prev => prev.map(s => s.id === studentId ? updated : s));
+    } catch (error) {
+      console.error('Error assigning student:', error);
     }
   };
 
@@ -273,38 +274,36 @@ export function Classes() {
                     )}
                   </div>
                 </button>
-                {activeRole === 'director' && (
-                  <div className={cn(
-                    "absolute top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all z-20",
-                    isRTL ? "left-2" : "right-1"
-                  )}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingClassId(c.id);
-                        setEditClass({ name: c.name, price: c.price, description: c.description || '', teacherId: c.teacherId || '' });
-                        setIsEditClassModalOpen(true);
-                      }}
-                      className={cn(
-                        "p-2 text-slate-400 hover:text-accent transition-all",
-                        selectedClassId === c.id && "text-white/40 hover:text-white"
-                      )}
-                      title={isRTL ? "تعديل" : "Edit"}
-                    >
-                      <Pencil size={15} />
-                    </button>
-                    <button
-                      onClick={(e) => handleDeleteClass(c.id, e)}
-                      className={cn(
-                        "p-2 text-slate-400 hover:text-rose-500 transition-all",
-                        selectedClassId === c.id && "text-white/40 hover:text-white"
-                      )}
-                      title={isRTL ? "حذف" : "Delete"}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                )}
+                <div className={cn(
+                  "absolute top-1/2 -translate-y-1/2 flex items-center gap-1 z-20",
+                  isRTL ? "left-2" : "right-1"
+                )}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingClassId(c.id);
+                      setEditClass({ name: c.name, price: c.price, description: c.description || '', teacherId: c.teacherId || '' });
+                      setIsEditClassModalOpen(true);
+                    }}
+                    className={cn(
+                      "p-2 text-slate-400 hover:text-accent transition-all rounded-lg hover:bg-slate-100/50",
+                      selectedClassId === c.id && "text-white/80 hover:text-white hover:bg-white/10"
+                    )}
+                    title={isRTL ? "تعديل" : "Edit"}
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <button
+                    onClick={(e) => handleDeleteClass(c.id, e)}
+                    className={cn(
+                      "p-2 text-slate-400 hover:text-rose-500 transition-all rounded-lg hover:bg-rose-50",
+                      selectedClassId === c.id && "text-rose-300 hover:text-rose-100 hover:bg-white/10"
+                    )}
+                    title={isRTL ? "حذف الصف" : "Supprimer la classe"}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             );
             })}
@@ -322,12 +321,12 @@ export function Classes() {
                 <div className={cn("pb-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6", isRTL && "md:flex-row-reverse")}>
                   <div className={cn("flex items-center gap-6", isRTL && "flex-row-reverse")}>
                      <div className="w-12 h-12 md:w-16 md:h-16 bg-accent/10 text-accent rounded-2xl md:rounded-3xl flex items-center justify-center shrink-0">
-                        <BookOpen size={24} className="md:w-8 md:h-8" />
+                        <BookOpen size={24} className="md:w-8 md:h-8 shrink-0" />
                      </div>
                      <div className={cn(isRTL && "text-right")}>
                         <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
                            <h2 className="text-2xl md:text-4xl font-black text-primary tracking-tighter">{selectedClass?.name}</h2>
-                           {activeRole === 'director' && (
+                           <div className="flex items-center gap-1">
                              <button
                                onClick={() => {
                                  setEditingClassId(selectedClass.id);
@@ -339,7 +338,14 @@ export function Classes() {
                              >
                                <Pencil size={18} />
                              </button>
-                           )}
+                             <button
+                               onClick={(e) => handleDeleteClass(selectedClass.id, e)}
+                               className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-all"
+                               title={isRTL ? "حذف المادة" : "Delete Class"}
+                             >
+                               <Trash2 size={18} />
+                             </button>
+                           </div>
                         </div>
                         <div className={cn("flex flex-wrap items-center gap-3 mt-1.5", isRTL && "flex-row-reverse")}>
                           <p className="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-[0.2em]">
@@ -380,7 +386,8 @@ export function Classes() {
                         <th className="px-8 py-5">{t('student_name')}</th>
                         <th className="px-8 py-5">{t('parent_phone')}</th>
                         <th className="px-8 py-5">{t('token_id')}</th>
-                        <th className="px-8 py-5">{isRTL ? "الحصص (4/شهر)" : "Sessions (4/m)"}</th>
+                        <th className="px-8 py-5">{isRTL ? "الشهر" : "Mois"}</th>
+                        <th className="px-8 py-5">{isRTL ? "الحصص" : "Sessions"}</th>
                         <th className="px-8 py-5">{isRTL ? "الدفع" : "Payment"}</th>
                         <th className={cn("px-8 py-5", isRTL ? "text-left" : "text-right")}>{isRTL ? "الإجراءات" : "Actions"}</th>
                       </tr>
@@ -393,8 +400,6 @@ export function Classes() {
                           </td>
                         </tr>
                       ) : classStudents.map((s) => {
-                        const sessionsDone = getSessionCount(s.id);
-                        const isPaid = s.paymentStatus === 'Paid';
                         return (
                         <tr key={s.id} className="hover:bg-slate-50/20 transition-colors group">
                           <td className="px-8 py-6">
@@ -420,26 +425,16 @@ export function Classes() {
                             </div>
                           </td>
                           <td className="px-8 py-6">
-                            <div className="flex items-center gap-1.5">
-                              {[1, 2, 3, 4].map((i) => (
-                                <button
-                                  key={i}
-                                  type="button"
-                                  onClick={() => handleToggleSessionTrigger(s, i)}
-                                  className="focus:outline-none hover:scale-110 transition-transform p-0.5 rounded-full"
-                                  title={isRTL ? `تبديل الجلسة ${i}` : `Toggle session ${i}`}
-                                >
-                                  {i <= sessionsDone ? (
-                                    <CheckCircle2 size={18} className="text-emerald-500 fill-emerald-50" />
-                                  ) : (
-                                    <div className="w-[18px] h-[18px] rounded-full border-2 border-slate-200 hover:border-slate-400" />
-                                  )}
-                                </button>
-                              ))}
-                              <span className="ml-2 text-[10px] font-black text-slate-400">
-                                {sessionsDone}/4
-                              </span>
-                            </div>
+                             <span className="font-black text-sm text-slate-600">{s.currentMonth}</span>
+                          </td>
+                          <td className="px-8 py-6">
+                            <button
+                              type="button"
+                              onClick={() => handleIncrementSession(s)}
+                              className="flex items-center gap-2 font-black text-sm text-primary hover:text-accent"
+                            >
+                                {s.sessionsCompleted}/4
+                            </button>
                           </td>
                           <td className="px-8 py-6">
                             <button
@@ -447,13 +442,13 @@ export function Classes() {
                               onClick={() => handleTogglePaymentStatus(s)}
                               className={cn(
                                 "px-3 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all shadow-sm flex items-center gap-1.5",
-                                isPaid 
+                                s.paymentStatus === 'Paid'
                                   ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100" 
                                   : "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
                               )}
                             >
-                              {isPaid ? <CheckCircle2 size={13} className="text-emerald-500" /> : <XCircle size={13} className="text-amber-500" />}
-                              <span>{isPaid ? (isRTL ? 'مخلص / خالف' : 'Paid') : (isRTL ? 'غير مخلص' : 'Unpaid')}</span>
+                              {s.paymentStatus === 'Paid' ? <CheckCircle2 size={13} className="text-emerald-500" /> : <XCircle size={13} className="text-amber-500" />}
+                              <span>{s.paymentStatus === 'Paid' ? (isRTL ? 'مخلص' : 'Paid') : (isRTL ? 'غير مخلص' : 'Unpaid')}</span>
                             </button>
                           </td>
                            <td className={cn("px-8 py-6", isRTL ? "text-left" : "text-right")}>
@@ -461,19 +456,17 @@ export function Classes() {
                                <button className="text-[10px] font-black text-primary hover:text-accent transition-colors underline-offset-4 hover:underline uppercase tracking-widest whitespace-nowrap">
                                  {t('print_receipt')}
                                </button>
-                               {activeRole === 'director' && (
-                                 <button
-                                   onClick={() => {
-                                     setEditingStudentId(s.id);
-                                     setEditStudent({ name: s.name, parentPhone: s.parentPhone, classId: s.classId, tokenId: s.tokenId || '' });
-                                     setIsEditStudentModalOpen(true);
-                                   }}
-                                   className="p-2 text-slate-300 hover:text-accent transition-colors"
-                                   title={isRTL ? "تعديل الطالب" : "Edit Student"}
-                                 >
-                                   <Pencil size={15} />
-                                 </button>
-                               )}
+                               <button
+                                 onClick={() => {
+                                   setEditingStudentId(s.id);
+                                   setEditStudent({ name: s.name, parentPhone: s.parentPhone, classId: s.classId, tokenId: s.tokenId || '' });
+                                   setIsEditStudentModalOpen(true);
+                                 }}
+                                 className="p-2 text-slate-300 hover:text-accent transition-colors"
+                                 title={isRTL ? "تعديل الطالب" : "Edit Student"}
+                               >
+                                 <Pencil size={15} />
+                               </button>
                                <button 
                                  onClick={() => handleDeleteStudent(s.id)}
                                  className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
@@ -573,49 +566,161 @@ export function Classes() {
         </form>
       </Modal>
 
-      {/* Student Creation Modal */}
+      {/* Student Creation / Selection Modal */}
       <Modal 
         isOpen={isStudentModalOpen} 
         onClose={() => setIsStudentModalOpen(false)} 
-        title={t('add_student')}
+        title={isRTL ? "إضافة طالب إلى هذا الصف" : "Inscrire un élève dans cette classe"}
       >
-        <form onSubmit={handleCreateStudent} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('student_name')}</label>
-            <input
-              required
-              type="text"
-              value={newStudent.name}
-              onChange={e => setNewStudent({ ...newStudent, name: e.target.value })}
-              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
-              placeholder="Full Name"
-            />
+        <div className="space-y-5">
+          {/* Tabs */}
+          <div className="flex bg-slate-100 p-1.5 rounded-2xl gap-1">
+            <button
+              type="button"
+              onClick={() => setStudentAddMode('choose')}
+              className={cn(
+                "flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2",
+                studentAddMode === 'choose' ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-800"
+              )}
+            >
+              <UserCheck size={16} />
+              <span>{isRTL ? "اختيار طالب مسجل" : "Choisir un élève existant"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setStudentAddMode('new')}
+              className={cn(
+                "flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2",
+                studentAddMode === 'new' ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-800"
+              )}
+            >
+              <UserPlus size={16} />
+              <span>{isRTL ? "إنشاء طالب جديد" : "Créer un nouvel élève"}</span>
+            </button>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('parent_phone')}</label>
-            <input
-              required
-              type="tel"
-              value={newStudent.parentPhone}
-              onChange={e => setNewStudent({ ...newStudent, parentPhone: e.target.value })}
-              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
-              placeholder="0550..."
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} ({language === 'ar' ? 'اختياري' : 'Optionnel'})</label>
-            <input
-              type="text"
-              value={newStudent.tokenId || ''}
-              onChange={e => setNewStudent({ ...newStudent, tokenId: e.target.value })}
-              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold placeholder:font-medium font-mono uppercase"
-              placeholder="Ex: S101"
-            />
-          </div>
-          <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
-            {t('add_student')}
-          </button>
-        </form>
+
+          {studentAddMode === 'choose' ? (
+            <div className="space-y-4">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className={cn("absolute top-1/2 -translate-y-1/2 text-slate-400", isRTL ? "right-3.5" : "left-3.5")} size={18} />
+                <input
+                  type="text"
+                  value={existingStudentSearch}
+                  onChange={e => setExistingStudentSearch(e.target.value)}
+                  placeholder={isRTL ? "البحث عن طالب بالاسم أو الهاتف..." : "Rechercher par nom ou téléphone..."}
+                  className={cn("w-full py-3 bg-slate-50 rounded-2xl text-sm font-bold border border-slate-200 outline-none focus:ring-2 focus:ring-primary/10", isRTL ? "pr-10 pl-4" : "pl-10 pr-4")}
+                />
+              </div>
+
+              {/* List of candidates */}
+              <div className="max-h-[320px] overflow-y-auto space-y-2 pr-1">
+                {(() => {
+                  const availableStudents = students.filter(s => {
+                    const matchesSearch = !existingStudentSearch || 
+                      s.name.toLowerCase().includes(existingStudentSearch.toLowerCase()) || 
+                      s.parentPhone.includes(existingStudentSearch);
+                    return matchesSearch;
+                  });
+
+                  if (availableStudents.length === 0) {
+                    return (
+                      <div className="p-8 text-center text-slate-400 text-xs font-bold">
+                        {isRTL ? "لم يتم العثور على أي طالب" : "Aucun élève trouvé"}
+                      </div>
+                    );
+                  }
+
+                  return availableStudents.map(st => {
+                    const isAlreadyInThisClass = st.classId === selectedClassId;
+                    const stClass = classes.find(c => c.id === st.classId);
+
+                    return (
+                      <div 
+                        key={st.id} 
+                        className={cn(
+                          "p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3",
+                          isAlreadyInThisClass 
+                            ? "bg-emerald-50/60 border-emerald-200" 
+                            : "bg-white border-slate-100 hover:border-slate-200 shadow-sm"
+                        )}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-sm text-slate-800 truncate">{st.name}</p>
+                          <div className="flex items-center gap-2 text-xs text-slate-400 font-medium mt-0.5">
+                            <span>📞 {st.parentPhone}</span>
+                            {stClass && (
+                              <span className={cn(
+                                "px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider",
+                                isAlreadyInThisClass ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
+                              )}>
+                                {stClass.name}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {isAlreadyInThisClass ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-black text-emerald-600 px-3 py-1.5 bg-emerald-100/80 rounded-xl">
+                            <Check size={14} />
+                            <span>{isRTL ? "مسجل هنا" : "Inscrit"}</span>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleAssignExistingStudent(st.id)}
+                            className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 flex items-center gap-1.5 shrink-0"
+                          >
+                            <Plus size={14} />
+                            <span>{isRTL ? "إضافة للصف" : "Inscrire"}</span>
+                          </button>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleCreateStudent} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('student_name')}</label>
+                <input
+                  required
+                  type="text"
+                  value={newStudent.name}
+                  onChange={e => setNewStudent({ ...newStudent, name: e.target.value })}
+                  className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+                  placeholder="Full Name"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('parent_phone')}</label>
+                <input
+                  required
+                  type="tel"
+                  value={newStudent.parentPhone}
+                  onChange={e => setNewStudent({ ...newStudent, parentPhone: e.target.value })}
+                  className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+                  placeholder="0550..."
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} ({language === 'ar' ? 'اختياري' : 'Optionnel'})</label>
+                <input
+                  type="text"
+                  value={newStudent.tokenId || ''}
+                  onChange={e => setNewStudent({ ...newStudent, tokenId: e.target.value })}
+                  className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold placeholder:font-medium font-mono uppercase"
+                  placeholder="Ex: S101"
+                />
+              </div>
+              <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                {t('add_student')}
+              </button>
+            </form>
+          )}
+        </div>
       </Modal>
 
       {/* Edit Class Modal */}

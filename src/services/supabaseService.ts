@@ -11,15 +11,15 @@ const defaultClasses: SchoolClass[] = [
 ];
 
 const defaultStudents: Student[] = [
-  { id: 'student-1', name: 'Abderrahmane Zaiti', parentPhone: '0661245892', classId: 'class-1', tokenId: 'S101' },
-  { id: 'student-2', name: 'Leila Kaddour', parentPhone: '0555321456', classId: 'class-1', tokenId: 'S102' },
-  { id: 'student-3', name: 'Yanis Amrani', parentPhone: '0772183495', classId: 'class-2', tokenId: 'S103' },
-  { id: 'student-4', name: 'Fatma-Zohra Mansouri', parentPhone: '0561234567', classId: 'class-3', tokenId: 'S104' },
-  { id: 'student-5', name: 'Mohamed Amine Bouzidi', parentPhone: '0662895412', classId: 'class-4', tokenId: 'S105' },
-  { id: 'student-6', name: 'Meriem Ouchene', parentPhone: '0770987654', classId: 'class-5', tokenId: 'S106' },
-  { id: 'student-7', name: 'Anis Belkacem', parentPhone: '0551743621', classId: 'class-2', tokenId: 'S107' },
-  { id: 'student-8', name: 'Khadidja Haddad', parentPhone: '0663152436', classId: 'class-3', tokenId: 'S108' },
-  { id: 'student-9', name: 'Oussama Sifi', parentPhone: '0792345678', classId: 'class-5', tokenId: 'S109' }
+  { id: 'student-1', name: 'Abderrahmane Zaiti', parentPhone: '0661245892', classId: 'class-1', tokenId: 'S101', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid' },
+  { id: 'student-2', name: 'Leila Kaddour', parentPhone: '0555321456', classId: 'class-1', tokenId: 'S102', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid' },
+  { id: 'student-3', name: 'Yanis Amrani', parentPhone: '0772183495', classId: 'class-2', tokenId: 'S103', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid' },
+  { id: 'student-4', name: 'Fatma-Zohra Mansouri', parentPhone: '0561234567', classId: 'class-3', tokenId: 'S104', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid' },
+  { id: 'student-5', name: 'Mohamed Amine Bouzidi', parentPhone: '0662895412', classId: 'class-4', tokenId: 'S105', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid' },
+  { id: 'student-6', name: 'Meriem Ouchene', parentPhone: '0770987654', classId: 'class-5', tokenId: 'S106', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid' },
+  { id: 'student-7', name: 'Anis Belkacem', parentPhone: '0551743621', classId: 'class-2', tokenId: 'S107', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid' },
+  { id: 'student-8', name: 'Khadidja Haddad', parentPhone: '0663152436', classId: 'class-3', tokenId: 'S108', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid' },
+  { id: 'student-9', name: 'Oussama Sifi', parentPhone: '0792345678', classId: 'class-5', tokenId: 'S109', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid' }
 ];
 
 const defaultTeachers: Teacher[] = [
@@ -98,6 +98,8 @@ const mapToStudent = (row: any): Student => {
     parentPhone: row.parentPhone !== undefined ? row.parentPhone : (row.parent_phone !== undefined ? row.parent_phone : ''),
     classId: row.classId !== undefined ? row.classId : (row.class_id !== undefined ? row.class_id : ''),
     tokenId: row.tokenId !== undefined ? row.tokenId : (row.token_id !== undefined ? row.token_id : undefined),
+    currentMonth: row.currentMonth !== undefined ? row.currentMonth : (row.current_month !== undefined ? row.current_month : 1),
+    sessionsCompleted: row.sessionsCompleted !== undefined ? row.sessionsCompleted : (row.sessions_completed !== undefined ? row.sessions_completed : 0),
     paymentStatus: row.paymentStatus !== undefined ? row.paymentStatus : (row.payment_status !== undefined ? row.payment_status : 'Paid')
   };
 };
@@ -129,6 +131,10 @@ const makeStudentPayload = (s: Omit<Student, 'id'>) => {
     class_id: s.classId,
     tokenId: s.tokenId || null,
     token_id: s.tokenId || null,
+    currentMonth: s.currentMonth,
+    current_month: s.currentMonth,
+    sessionsCompleted: s.sessionsCompleted,
+    sessions_completed: s.sessionsCompleted,
     paymentStatus: s.paymentStatus || 'Paid',
     payment_status: s.paymentStatus || 'Paid'
   };

@@ -181,7 +181,10 @@ export function Dashboard() {
       const newStudent = await studentsService.create({
         name: regName,
         parentPhone: regPhone,
-        classId: regClassId
+        classId: regClassId,
+        sessionsCompleted: 0,
+        currentMonth: 1,
+        paymentStatus: 'Unpaid'
       });
 
       // Insert state natively
