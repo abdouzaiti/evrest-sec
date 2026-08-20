@@ -4,13 +4,15 @@ import { Teacher, PointageLog } from '../types';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { teachersService, pointageService } from '../services/supabaseService';
+import { classesService, studentsService, pointageService, teachersService } from '../services/supabaseService';
 import { Modal } from '../components/Modal';
 
 export function Teachers() {
   const { t, isRTL } = useLanguage();
   const { activeRole } = useAuth();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [classes, setClasses] = useState<SchoolClass[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -39,19 +41,37 @@ export function Teachers() {
   });
 
   useEffect(() => {
-    fetchTeachers();
+    fetchData();
   }, []);
 
-  const fetchTeachers = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const data = await teachersService.getAll();
-      setTeachers(data);
+      const [tData, cData, sData] = await Promise.all([
+        teachersService.getAll(),
+        classesService.getAll(),
+        studentsService.getAll()
+      ]);
+      setTeachers(tData);
+      setClasses(cData);
+      setStudents(sData);
     } catch (error: any) {
-      console.error('Error fetching teachers:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper to calculate salary
+  const calculateSalary = (teacherId: string) => {
+    const teacherClasses = classes.filter(c => c.teacherId === teacherId);
+    let totalPayment = 0;
+    teacherClasses.forEach(c => {
+        const studentsInClass = students.filter(s => s.classId === c.id);
+        // Assuming each student pays the full class price
+        totalPayment += studentsInClass.length * c.price;
+    });
+    return totalPayment * 0.5;
   };
 
   const handleCreateTeacher = async (e: React.FormEvent) => {
@@ -165,7 +185,7 @@ export function Teachers() {
               <tbody className="divide-y divide-slate-50">
                 {teachers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-medium">
+                    <td colSpan={6} className="px-8 py-20 text-center text-slate-400 font-medium">
                       {isRTL ? "Aucun enseignant trouvé" : "No teachers found or registered"}
                     </td>
                   </tr>
@@ -200,7 +220,7 @@ export function Teachers() {
                     </td>
                     <td className="px-8 py-6 text-center text-base text-primary font-black tracking-tight">
                       {activeRole === 'director' ? (
-                        `${teacher.salary.toLocaleString()} ${t('currency')}`
+                        `${calculateSalary(teacher.id).toLocaleString()} ${t('currency')}`
                       ) : (
                         <span className="text-slate-400 select-none text-[11px] font-black tracking-widest bg-slate-50 border border-slate-100/50 px-2 py-1 rounded-md" title="Confidentiel Directeur">•••••• DA</span>
                       )}
@@ -313,17 +333,6 @@ export function Teachers() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('salary')}</label>
-            <input
-              required
-              type="number"
-              value={newTeacher.salary}
-              onChange={e => setNewTeacher({ ...newTeacher, salary: Number(e.target.value) })}
-              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
-              placeholder="120000"
-            />
-          </div>
-          <div className="space-y-1">
             <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} (Optionnel)</label>
             <input
               type="text"
@@ -373,16 +382,6 @@ export function Teachers() {
               type="text"
               value={editTeacher.subject}
               onChange={e => setEditTeacher({ ...editTeacher, subject: e.target.value })}
-              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('salary')}</label>
-            <input
-              required
-              type="number"
-              value={editTeacher.salary}
-              onChange={e => setEditTeacher({ ...editTeacher, salary: Number(e.target.value) })}
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
             />
           </div>
