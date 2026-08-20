@@ -25,6 +25,7 @@ export function Classes() {
   const [isEditStudentModalOpen, setIsEditStudentModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedStudentForPayment, setSelectedStudentForPayment] = useState<Student | null>(null);
+  const [scanToken, setScanToken] = useState('');
 
   // Student choice / enrollment mode state
   const [studentAddMode, setStudentAddMode] = useState<'choose' | 'new'>('choose');
@@ -480,6 +481,44 @@ export function Classes() {
                       })}
                     </tbody>
                   </table>
+                  
+                  {/* Classe Pointage Section */}
+                  <div className="mt-10 p-6 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                    <h3 className="text-lg font-black text-primary mb-6">{isRTL ? "Classe Pointage" : "Pointage de la classe"}</h3>
+                    
+                    <div className="mb-6">
+                      <input 
+                        type="text"
+                        placeholder={isRTL ? "امسح الرمز هنا..." : "Scan token here..."}
+                        value={scanToken}
+                        onChange={(e) => {
+                          const token = e.target.value;
+                          setScanToken(token);
+                          const student = classStudents.find(s => s.tokenId === token);
+                          if (student) {
+                            handleIncrementSession(student);
+                            setScanToken('');
+                          }
+                        }}
+                        className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary focus:border-transparent"
+                        autoFocus
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {classStudents.map(s => (
+                        <div key={s.id} className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
+                          <span className="font-bold text-sm text-slate-700">{s.name}</span>
+                          <button
+                            onClick={() => handleIncrementSession(s)}
+                            className="bg-primary text-white px-4 py-2 rounded-lg text-xs font-black hover:bg-primary/90 transition-all active:scale-95"
+                          >
+                            {isRTL ? "إثبات الحضور" : "Pointer"}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 <div className={cn("py-12 flex flex-col md:flex-row justify-between items-center gap-8 mt-auto", isRTL && "md:flex-row-reverse")}>
