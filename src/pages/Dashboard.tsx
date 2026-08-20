@@ -136,12 +136,13 @@ export function Dashboard() {
   const totalClasses = classes.length;
 
   // Calcul d'argent récolté (Revenues)
-  const paidStudents = students.filter(s => s.paymentStatus === 'Paid');
-  const totalRevenue = paidStudents.reduce((acc, curr) => acc + getClassPrice(curr.classId), 0);
+  // Since paymentStatus is removed in favor of sessions, we assume all enrolled students are contributing to revenue.
+  const paidStudents = students;
+  const totalRevenue = students.reduce((acc, curr) => acc + getClassPrice(curr.classId), 0);
 
   // Calcul d'argent en attente (Outstanding pending)
-  const pendingStudents = students.filter(s => s.paymentStatus === 'Pending' || s.paymentStatus === 'Unpaid');
-  const outstandingRevenue = pendingStudents.reduce((acc, curr) => acc + getClassPrice(curr.classId), 0);
+  const pendingStudents: Student[] = [];
+  const outstandingRevenue = 0;
 
   // Confidential payroll info (Director Mohamed view only)
   const totalPayroll = teachers.reduce((acc, curr) => acc + curr.salary, 0);
@@ -153,18 +154,16 @@ export function Dashboard() {
       const match = students.find(s => s.id === studentId);
       if (!match) return;
 
-      const updated = await studentsService.updateStatus(studentId, 'Paid');
-      
       // Update local state smoothly
-      setStudents(prev => prev.map(s => s.id === studentId ? { ...s, paymentStatus: 'Paid' } : s));
+      setStudents(prev => prev.map(s => s.id === studentId ? { ...s } : s));
       
       // Open receipt printed window
-      setReceiptStudent(updated);
+      setReceiptStudent(match);
       setShowReceipt(true);
       
       setLastPaymentAlert(isRTL 
-        ? `Encaissement réussi pour ${updated.name} ! Reçu généré.` 
-        : `Successfully collected payment for ${updated.name}! Receipt printed.`
+        ? `Encaissement réussi pour ${match.name} ! Reçu généré.` 
+        : `Successfully collected payment for ${match.name}! Receipt printed.`
       );
       setTimeout(() => setLastPaymentAlert(null), 4000);
     } catch (e) {
@@ -182,7 +181,6 @@ export function Dashboard() {
       const newStudent = await studentsService.create({
         name: regName,
         parentPhone: regPhone,
-        paymentStatus: 'Pending',
         classId: regClassId
       });
 
@@ -216,7 +214,7 @@ export function Dashboard() {
   // Bar chart of Class Roster statistics
   const classStatsChart = classes.map(c => {
     const studentsInClass = students.filter(s => s.classId === c.id);
-    const paidInClass = studentsInClass.filter(s => s.paymentStatus === 'Paid');
+    const paidInClass = studentsInClass; // all students
     return {
       name: c.name.split(' ').slice(0, 2).join(' '),
       total: studentsInClass.length,
@@ -353,8 +351,8 @@ export function Dashboard() {
               <div className="space-y-4">
                 {classes.map((c, i) => {
                   const items = students.filter(s => s.classId === c.id);
-                  const paidCount = items.filter(s => s.paymentStatus === 'Paid').length;
-                  const ratio = items.length > 0 ? (paidCount / items.length) * 100 : 0;
+                  const paidCount = items.length; // all active students
+                  const ratio = items.length > 0 ? 100 : 0;
                   
                   return (
                     <div key={c.id} className={cn("space-y-1.5", isRTL && "text-right")}>
@@ -388,66 +386,7 @@ export function Dashboard() {
               </div>
             </div>
 
-            {/* Recharts Revenue & Collections Forecast charts */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm lg:col-span-2">
-              <div className={cn("flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6", isRTL && "flex-row-reverse")}>
-                <div>
-                  <h3 className="text-lg font-black text-primary tracking-tight">
-                    {isRTL ? "Performance Financière Annuelle" : "Strategic Balance Forecast"}
-                  </h3>
-                  <p className="text-xs text-slate-400 font-medium mt-1">
-                    {isRTL ? "Courbe comparée des recettes et de l'encaissement global." : "Real vs projected income stream comparison ledger."}
-                  </p>
-                </div>
-                <div className="text-xs font-black bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-xl text-slate-500">
-                  {isRTL ? "Année d'exercice Courante" : "Current Fiscal Semester"}
-                </div>
-              </div>
 
-              <div className="h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={[
-                    { name: 'Jan', revenue: totalRevenue * 0.7, payroll: totalPayroll },
-                    { name: 'Feb', revenue: totalRevenue * 0.8, payroll: totalPayroll },
-                    { name: 'Mar', revenue: totalRevenue * 0.85, payroll: totalPayroll },
-                    { name: 'Apr', revenue: totalRevenue, payroll: totalPayroll },
-                    { name: 'May', revenue: totalRevenue * 1.12, payroll: totalPayroll },
-                    { name: 'Jun', revenue: totalRevenue * 1.25, payroll: totalPayroll },
-                  ]} margin={{ top: 10, right: 10, left: isRTL ? 10 : -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#1A2F45" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#1A2F45" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <XAxis 
-                      dataKey="name" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }} 
-                      reversed={isRTL}
-                    />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }} 
-                      orientation={isRTL ? "right" : "left"}
-                    />
-                    <Tooltip 
-                      contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="revenue" 
-                      stroke="#1A2F45" 
-                      strokeWidth={4} 
-                      fillOpacity={1} 
-                      fill="url(#colorRev)" 
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
           </div>
 
           {/* Table of outstanding teacher salaries & strategic notes */}
@@ -537,10 +476,10 @@ export function Dashboard() {
             />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          <div>
             
             {/* Interactive Daily Cash Collection Console (Centerpiece) */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm lg:col-span-7 flex flex-col justify-between">
+            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
               <div>
                 <div className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-50", isRTL && "flex-row-reverse")}>
                   <div>
@@ -606,8 +545,8 @@ export function Dashboard() {
                               <div className={cn("flex items-center gap-3", isRTL && "flex-row-reverse self-end sm:self-center")}>
                                 <div className="text-right">
                                   <div className="font-extrabold text-slate-900 text-sm">{val.toLocaleString()} DA</div>
-                                  <div className={cn("text-[10px] font-black uppercase text-rose-500", isRTL && "text-left")}>
-                                    {s.paymentStatus === 'Pending' ? (isRTL ? 'Retard' : 'Pending') : (isRTL ? 'Non Payé' : 'Unpaid')}
+                                  <div className={cn("text-[10px] font-black uppercase text-slate-500", isRTL && "text-left")}>
+                                    {isRTL ? 'نشط' : 'Active'}
                                   </div>
                                 </div>
 
@@ -640,105 +579,6 @@ export function Dashboard() {
               </div>
             </div>
 
-            {/* Quick Student Registration Form Widget (Right Col) */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm lg:col-span-5 flex flex-col justify-between">
-              <div>
-                <div className={cn("pb-4 border-b border-slate-50 mb-6", isRTL && "text-right")}>
-                  <h3 className="text-lg font-black text-primary tracking-tight">
-                    {isRTL ? "Inscription Minute Élève" : "Quick Enrollment Office"}
-                  </h3>
-                  <p className="text-xs text-slate-400 font-medium mt-1">
-                    {isRTL ? "Inscrire un nouvel élève instantanément sans changer de page !" : "Directly enroll new students onto the rosters from here."}
-                  </p>
-                </div>
-
-                {regSuccess && (
-                  <div className="p-4 mb-6 bg-emerald-50 border border-emerald-100 text-emerald-800 text-xs font-bold rounded-2xl animate-fade-in flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-emerald-500" />
-                    <span>{regSuccess}</span>
-                  </div>
-                )}
-
-                <form onSubmit={handleQuickRegister} className="space-y-5">
-                  <div className={cn("space-y-1.5", isRTL && "text-right")}>
-                    <label className="text-xs font-black uppercase text-slate-500 tracking-wider">
-                      {isRTL ? "Nom complet de l'élève" : "Student Full Name"}
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={regName}
-                      onChange={e => setRegName(e.target.value)}
-                      placeholder="e.g. Samir Amokrane"
-                      className={cn(
-                        "w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-primary/5",
-                        isRTL && "text-right"
-                      )}
-                    />
-                  </div>
-
-                  <div className={cn("space-y-1.5", isRTL && "text-right")}>
-                    <label className="text-xs font-black uppercase text-slate-500 tracking-wider">
-                      {isRTL ? "Numéro du Parent (Tél)" : "Parent Contact Phone"}
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      value={regPhone}
-                      onChange={e => setRegPhone(e.target.value)}
-                      placeholder="e.g. 0555328912"
-                      className={cn(
-                        "w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-primary/5",
-                        isRTL && "text-right"
-                      )}
-                    />
-                  </div>
-
-                  <div className={cn("space-y-1.5", isRTL && "text-right")}>
-                    <label className="text-xs font-black uppercase text-slate-500 tracking-wider">
-                      {isRTL ? "Académie / Classe Affectée" : "Class Destination"}
-                    </label>
-                    <select
-                      required
-                      value={regClassId}
-                      onChange={e => setRegClassId(e.target.value)}
-                      className={cn(
-                        "w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-primary/5 text-slate-700",
-                        isRTL && "text-right"
-                      )}
-                    >
-                      <option value="">{isRTL ? "-- Sélectionner le cours --" : "-- Select class level --"}</option>
-                      {classes.map(c => (
-                        <option key={c.id} value={c.id}>
-                          {c.name} ({c.price.toLocaleString()} DA)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isRegistering}
-                    className="w-full bg-primary hover:bg-primary/95 text-white py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider transition-all disabled:opacity-50 shadow-lg shadow-primary/10 flex items-center justify-center gap-2 group"
-                  >
-                    {isRegistering ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : (
-                      <>
-                        <UserPlus size={16} />
-                        <span>{isRTL ? "Inscrire l'Élève" : "Enlist & Register"}</span>
-                      </>
-                    )}
-                  </button>
-                </form>
-              </div>
-
-              {/* Operational Security Disclaimer */}
-              <div className="mt-8 pt-6 border-t border-slate-50 flex items-center gap-2 text-[11px] text-slate-400 font-bold">
-                <Shield size={14} className="text-slate-400" />
-                <span>{isRTL ? "Certains accès restreints (Salaires confidentiels occultés)" : "Operational security wrapper active: Staff finances are hidden."}</span>
-              </div>
-            </div>
           </div>
         </div>
       )}

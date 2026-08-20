@@ -389,10 +389,10 @@ export default function PointageTerminal() {
       </div>
 
       {/* Main Terminal Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="max-w-3xl mx-auto">
         
-        {/* LEFT COLUMN: Interaction Terminal UI */}
-        <div className="lg:col-span-7 space-y-6">
+        {/* Interaction Terminal UI */}
+        <div className="space-y-6">
           
           {/* Active Reader Target / Scanner Core Graphic */}
           <div 
@@ -520,175 +520,11 @@ export default function PointageTerminal() {
           )}
 
 
-          {/* QUICK SIMULATOR DECK: Click to scan codes */}
-          <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
-            <h4 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-              <GraduationCap size={16} className="text-primary" />
-              {language === 'ar' ? 'مفاتيح المحاكاة السريعة (اضغط للتجريب)' : 'Raccourcis de simulation de badges'}
-            </h4>
 
-            {/* Students short simulation list */}
-            <div className="space-y-4">
-              <div>
-                <span className="text-[11px] font-bold text-slate-400 uppercase block mb-2">
-                  {language === 'ar' ? 'تلاميذ في النظام (مستحقات مدفوعة وغير مدفوعة)' : 'Élèves avec Jetons'}
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {students.filter(s => s.tokenId).map(s => {
-                    const sessionsDone = logs.filter(log => {
-                      const logDate = new Date(log.timestamp);
-                      const now = new Date();
-                      return log.personId === s.id && 
-                             logDate.getMonth() === now.getMonth() && 
-                             logDate.getFullYear() === now.getFullYear();
-                    }).length;
-                    
-                    return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => handleScanToken(s.tokenId || '')}
-                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all text-left ${
-                        sessionsDone < 4
-                          ? 'bg-emerald-50 border-emerald-150 text-emerald-700 hover:bg-emerald-100'
-                          : 'bg-rose-50 border-rose-150 text-rose-700 hover:bg-rose-100'
-                      }`}
-                    >
-                      <User size={12} />
-                      <span className="max-w-[120px] truncate">{s.name}</span>
-                      <span className="font-mono text-[9px] px-1 bg-white/60 border rounded">{s.tokenId}</span>
-                    </button>
-                  )})}
-                  {students.filter(s => s.tokenId).length === 0 && (
-                    <span className="text-xs text-slate-400 italic">No student token registers</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Teachers simulation register */}
-              <div>
-                <span className="text-[11px] font-bold text-slate-400 uppercase block mb-2">
-                  {language === 'ar' ? 'أساتذة في النظام (لتسجيل الحضور المباشر)' : 'Enseignants avec Jetons (Pointage)'}
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {teachers.filter(t => t.tokenId).map(teacher => (
-                    <button
-                      key={teacher.id}
-                      type="button"
-                      onClick={() => handleScanToken(teacher.tokenId || '')}
-                      className="px-3 py-1.5 rounded-lg border border-indigo-150 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold flex items-center gap-1.5 transition-all"
-                    >
-                      <UserCheck size={12} />
-                      <span className="max-w-[120px] truncate">{teacher.name}</span>
-                      <span className="font-mono text-[9px] px-1 bg-white/60 border rounded">{teacher.tokenId}</span>
-                    </button>
-                  ))}
-                  {teachers.filter(t => t.tokenId).length === 0 && (
-                    <span className="text-xs text-slate-400 italic">No teacher token registers</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-
-        {/* RIGHT COLUMN: Logs & Activity */}
-        <div className="lg:col-span-5 space-y-6">
-
-          {/* Activity Logs List */}
-          <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden flex flex-col h-full min-h-[500px]">
-            <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileSpreadsheet size={16} className="text-primary" />
-                <h3 className="text-sm font-bold text-slate-700">{t('pointage_logs')}</h3>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={loadData}
-                  className="p-1.5 text-slate-500 hover:text-primary transition-colors rounded hover:bg-slate-100"
-                  title="Reload Logs List"
-                >
-                  <RefreshCw size={14} />
-                </button>
-                
-                <button
-                  onClick={clearAllLogs}
-                  className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors rounded hover:bg-rose-50"
-                  title={t('clear_logs')}
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </div>
-
-            {/* Scrollable list content */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[520px]">
-              {logs.length === 0 ? (
-                <div className="text-center py-12 text-slate-400 text-xs">
-                  {language === 'ar' ? 'لا توجد سجلات بعد.' : 'Aucun pointage enregistré aujourd\'hui.'}
-                </div>
-              ) : (
-                logs.map((log) => {
-                  const detailsText = log.details || '';
-                  const isOverLimit = detailsText.toLowerCase().includes('over limit');
-                  
-                  let badgeColor = "bg-slate-100 text-slate-700 border-slate-200";
-                  if (log.personType === 'student') {
-                    badgeColor = isOverLimit 
-                      ? "bg-rose-50 text-rose-700 border-rose-150" 
-                      : "bg-emerald-50 text-emerald-700 border-emerald-150";
-                  } else {
-                    badgeColor = "bg-indigo-50 text-indigo-700 border-indigo-150";
-                  }
-
-                  return (
-                    <div 
-                      key={log.id}
-                      className={`p-3 rounded-xl border text-xs transition-colors flex items-start gap-2.5 ${badgeColor}`}
-                    >
-                      <div className="mt-0.5">
-                        {log.personType === 'student' ? (
-                          <GraduationCap size={14} className="opacity-80" />
-                        ) : (
-                          <UserCheck size={14} className="opacity-80" />
-                        )}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1.5">
-                          <span className="font-bold truncate">{log.personName}</span>
-                          <span className="text-[9px] opacity-70 font-mono">{log.tokenId}</span>
-                        </div>
-
-                        <p className="mt-1 font-medium text-[11px] opacity-90 leading-tight">
-                          {log.details}
-                        </p>
-
-                        <div className="mt-1.5 flex items-center justify-between text-[9px] opacity-60">
-                          <span>{log.personType === 'student' ? (language === 'ar' ? 'تلميذ' : 'Élève') : (language === 'ar' ? 'أستاذ' : 'Enseignant')}</span>
-                          <span>{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            <div className="p-3 bg-slate-50 border-t border-slate-100 text-center text-[10px] text-slate-400">
-              {language === 'ar' 
-                ? 'الحسابات وسجلات الأساتذة والطلاب مرتبطة ومحفوظة تلقائياً.' 
-                : 'Les registres des élèves et des enseignants sont synchronisés localement ou sur Supabase.'}
-            </div>
-          </div>
 
         </div>
 
       </div>
-
 
       {/* TOKEN QUICK ASSOCIATION FLOW MODAL */}
       {isAssigning && (

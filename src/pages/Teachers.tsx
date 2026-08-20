@@ -117,8 +117,6 @@ export function Teachers() {
     }
   };
 
-  const totalPayroll = teachers.reduce((acc, curr) => acc + curr.salary, 0);
-
   if (loading) {
     return (
       <div className="h-[60vh] flex items-center justify-center">
@@ -150,8 +148,8 @@ export function Teachers() {
         )}
       </header>
 
-      <div className={cn("grid grid-cols-1 lg:grid-cols-12 gap-16 pt-10 border-t border-slate-100", isRTL && "lg:flex lg:flex-row-reverse")}>
-        <div className="lg:col-span-8 space-y-10 focus-within:ring-2 ring-primary/5 transition-all">
+      <div className={cn("grid grid-cols-1 pt-10 border-t border-slate-100", isRTL && "lg:flex lg:flex-row-reverse")}>
+        <div className="space-y-10 focus-within:ring-2 ring-primary/5 transition-all">
           <div className="overflow-x-auto">
             <table className={cn("w-full text-left", isRTL && "text-right")}>
               <thead>
@@ -270,51 +268,6 @@ export function Teachers() {
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-
-        <div className="space-y-12 lg:col-span-4">
-          {activeRole === 'director' ? (
-            <div className="bg-primary rounded-3xl p-10 text-white shadow-2xl shadow-primary/30 relative overflow-hidden group">
-              <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl transition-transform group-hover:scale-150 duration-700"></div>
-              <h3 className="text-sm font-black uppercase tracking-[0.3em] mb-6 relative z-10 text-primary-100">{t('total_payroll')}</h3>
-              <div className="flex items-center gap-6 relative z-10">
-                <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-xl">
-                  <Banknote size={32} />
-                </div>
-                <div>
-                  <p className="text-4xl md:text-5xl font-black tracking-tighter">
-                    {totalPayroll.toLocaleString()}
-                  </p>
-                  <p className="text-xs font-bold text-primary-200 mt-2 tracking-widest uppercase">{t('currency')} • Cash only payments</p>
-                </div>
-              </div>
-              <button className="w-full mt-10 bg-accent text-white font-black py-5 rounded-2xl hover:bg-accent/90 transition-all shadow-xl shadow-accent/20 relative z-10 active:scale-95 uppercase tracking-[0.2em] text-sm">
-                {t('batch_pay')}
-              </button>
-            </div>
-          ) : (
-            <div className="bg-white border border-slate-100 rounded-3xl p-8 text-center text-slate-400 font-bold shadow-sm">
-              <div className="w-12 h-12 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center mx-auto mb-4 text-amber-500 shadow-sm shadow-amber-500/5">
-                <AlertCircle size={24} />
-              </div>
-              <h4 className="text-sm font-black text-primary uppercase tracking-wider mb-2">{isRTL ? "Masse Salariale Masquée" : "Payroll Summary Hidden"}</h4>
-              <p className="text-xs text-slate-400 font-medium leading-relaxed">
-                {isRTL 
-                  ? "L'accès à la comptabilité et à la masse salariale globale est strictement réservé au Directeur Mohamed." 
-                  : "Access to school budget totals and master salary accounting is limited to Directeur Mohamed."}
-              </p>
-            </div>
-          )}
-
-          <div className="space-y-8">
-            <h3 className={cn("text-xl font-black text-primary flex items-center gap-3 tracking-tighter", isRTL && "flex-row-reverse")}>
-              <Calendar size={24} className="text-accent" />
-              {t('upcoming_exams')}
-            </h3>
-            <div className="space-y-6">
-              <p className="text-sm text-slate-400 font-medium italic">{isRTL ? "Aucun examen prévu" : "No upcoming exams scheduled"}</p>
-            </div>
           </div>
         </div>
       </div>

@@ -3,23 +3,23 @@ import { SchoolClass, Student, Teacher } from '../types';
 
 // Mock/Local Storage fallback default databases (Algerian/Academy Focused)
 const defaultClasses: SchoolClass[] = [
-  { id: 'class-1', name: 'Terminale - Mathématiques', price: 2500, description: 'Préparation intensive au Baccalauréat, analyse, algèbre et probabilités.' },
-  { id: 'class-2', name: 'Terminale - Physique & Chimie', price: 2500, description: 'Programme officiel du Bac, mécanique, électricité et réactions chimiques.' },
-  { id: 'class-3', name: 'BEM - Mathématiques', price: 1800, description: 'Préparation complète à l\'épreuve de maths du Brevet BEM.' },
-  { id: 'class-4', name: 'Lycée - Anglais Général', price: 1500, description: 'Amélioration de l\'anglais écrit, parlé et grammaire de niveau secondaire.' },
-  { id: 'class-5', name: 'Français - Soutien Moyen', price: 1600, description: 'Vocabulaire, conjugaison et productions d\'écrits pour le collège.' }
+  { id: 'class-1', name: 'Terminale - Mathématiques', price: 2500, description: 'Préparation intensive au Baccalauréat, analyse, algèbre et probabilités.', teacherId: 'teacher-1' },
+  { id: 'class-2', name: 'Terminale - Physique & Chimie', price: 2500, description: 'Programme officiel du Bac, mécanique, électricité et réactions chimiques.', teacherId: 'teacher-2' },
+  { id: 'class-3', name: 'BEM - Mathématiques', price: 1800, description: 'Préparation complète à l\'épreuve de maths du Brevet BEM.', teacherId: 'teacher-1' },
+  { id: 'class-4', name: 'Lycée - Anglais Général', price: 1500, description: 'Amélioration de l\'anglais écrit, parlé et grammaire de niveau secondaire.', teacherId: 'teacher-4' },
+  { id: 'class-5', name: 'Français - Soutien Moyen', price: 1600, description: 'Vocabulaire, conjugaison et productions d\'écrits pour le collège.', teacherId: 'teacher-3' }
 ];
 
 const defaultStudents: Student[] = [
-  { id: 'student-1', name: 'Abderrahmane Zaiti', parentPhone: '0661245892', paymentStatus: 'Paid', classId: 'class-1', tokenId: 'S101' },
-  { id: 'student-2', name: 'Leila Kaddour', parentPhone: '0555321456', paymentStatus: 'Pending', classId: 'class-1', tokenId: 'S102' },
-  { id: 'student-3', name: 'Yanis Amrani', parentPhone: '0772183495', paymentStatus: 'Unpaid', classId: 'class-2', tokenId: 'S103' },
-  { id: 'student-4', name: 'Fatma-Zohra Mansouri', parentPhone: '0561234567', paymentStatus: 'Paid', classId: 'class-3', tokenId: 'S104' },
-  { id: 'student-5', name: 'Mohamed Amine Bouzidi', parentPhone: '0662895412', paymentStatus: 'Pending', classId: 'class-4', tokenId: 'S105' },
-  { id: 'student-6', name: 'Meriem Ouchene', parentPhone: '0770987654', paymentStatus: 'Paid', classId: 'class-5', tokenId: 'S106' },
-  { id: 'student-7', name: 'Anis Belkacem', parentPhone: '0551743621', paymentStatus: 'Unpaid', classId: 'class-2', tokenId: 'S107' },
-  { id: 'student-8', name: 'Khadidja Haddad', parentPhone: '0663152436', paymentStatus: 'Paid', classId: 'class-3', tokenId: 'S108' },
-  { id: 'student-9', name: 'Oussama Sifi', parentPhone: '0792345678', paymentStatus: 'Unpaid', classId: 'class-5', tokenId: 'S109' }
+  { id: 'student-1', name: 'Abderrahmane Zaiti', parentPhone: '0661245892', classId: 'class-1', tokenId: 'S101' },
+  { id: 'student-2', name: 'Leila Kaddour', parentPhone: '0555321456', classId: 'class-1', tokenId: 'S102' },
+  { id: 'student-3', name: 'Yanis Amrani', parentPhone: '0772183495', classId: 'class-2', tokenId: 'S103' },
+  { id: 'student-4', name: 'Fatma-Zohra Mansouri', parentPhone: '0561234567', classId: 'class-3', tokenId: 'S104' },
+  { id: 'student-5', name: 'Mohamed Amine Bouzidi', parentPhone: '0662895412', classId: 'class-4', tokenId: 'S105' },
+  { id: 'student-6', name: 'Meriem Ouchene', parentPhone: '0770987654', classId: 'class-5', tokenId: 'S106' },
+  { id: 'student-7', name: 'Anis Belkacem', parentPhone: '0551743621', classId: 'class-2', tokenId: 'S107' },
+  { id: 'student-8', name: 'Khadidja Haddad', parentPhone: '0663152436', classId: 'class-3', tokenId: 'S108' },
+  { id: 'student-9', name: 'Oussama Sifi', parentPhone: '0792345678', classId: 'class-5', tokenId: 'S109' }
 ];
 
 const defaultTeachers: Teacher[] = [
@@ -59,7 +59,8 @@ const mapToClass = (row: any): SchoolClass => {
     id: row.id,
     name: row.name || '',
     price: row.price !== undefined ? Number(row.price) : 0,
-    description: row.description || ''
+    description: row.description || '',
+    teacherId: row.teacherId !== undefined ? row.teacherId : (row.teacher_id !== undefined ? row.teacher_id : undefined)
   };
 };
 
@@ -69,9 +70,9 @@ const mapToStudent = (row: any): Student => {
     id: row.id,
     name: row.name || '',
     parentPhone: row.parentPhone !== undefined ? row.parentPhone : (row.parent_phone !== undefined ? row.parent_phone : ''),
-    paymentStatus: row.paymentStatus !== undefined ? row.paymentStatus : (row.payment_status !== undefined ? row.payment_status : 'Pending'),
     classId: row.classId !== undefined ? row.classId : (row.class_id !== undefined ? row.class_id : ''),
-    tokenId: row.tokenId !== undefined ? row.tokenId : (row.token_id !== undefined ? row.token_id : undefined)
+    tokenId: row.tokenId !== undefined ? row.tokenId : (row.token_id !== undefined ? row.token_id : undefined),
+    paymentStatus: row.paymentStatus !== undefined ? row.paymentStatus : (row.payment_status !== undefined ? row.payment_status : 'Paid')
   };
 };
 
@@ -98,12 +99,12 @@ const makeStudentPayload = (s: Omit<Student, 'id'>) => {
     name: s.name,
     parentPhone: s.parentPhone,
     parent_phone: s.parentPhone,
-    paymentStatus: s.paymentStatus,
-    payment_status: s.paymentStatus,
     classId: s.classId,
     class_id: s.classId,
     tokenId: s.tokenId || null,
-    token_id: s.tokenId || null
+    token_id: s.tokenId || null,
+    paymentStatus: s.paymentStatus || 'Paid',
+    payment_status: s.paymentStatus || 'Paid'
   };
 };
 
@@ -119,6 +120,16 @@ const makeTeacherPayload = (t: Omit<Teacher, 'id'>) => {
     last_payment_date: t.lastPaymentDate || null,
     tokenId: t.tokenId || null,
     token_id: t.tokenId || null
+  };
+};
+
+const makeClassPayload = (c: Omit<SchoolClass, 'id'>) => {
+  return {
+    name: c.name,
+    price: Number(c.price),
+    description: c.description || '',
+    teacherId: c.teacherId || null,
+    teacher_id: c.teacherId || null
   };
 };
 
@@ -142,12 +153,26 @@ export const classesService = {
   async create(schoolClass: Omit<SchoolClass, 'id'>): Promise<SchoolClass> {
     if (isSupabaseConfigured()) {
       try {
+        const payload = makeClassPayload(schoolClass);
         const { data, error } = await supabase
           .from('classes')
-          .insert([schoolClass])
+          .insert([payload])
           .select()
           .single();
-        if (error) throw error;
+        if (error) {
+          console.warn('Dual-property class insert failed, retrying with standard object...');
+          const { data: retryData, error: retryError } = await supabase
+            .from('classes')
+            .insert([{
+              name: schoolClass.name,
+              price: Number(schoolClass.price),
+              description: schoolClass.description || ''
+            }])
+            .select()
+            .single();
+          if (retryError) throw retryError;
+          return mapToClass(retryData);
+        }
         return mapToClass(data);
       } catch (err: any) {
         throw new Error(err.message || 'Error inserting school class to Supabase');
@@ -183,13 +208,28 @@ export const classesService = {
   async update(id: string, schoolClass: Omit<SchoolClass, 'id'>): Promise<SchoolClass> {
     if (isSupabaseConfigured()) {
       try {
+        const payload = makeClassPayload(schoolClass);
         const { data, error } = await supabase
           .from('classes')
-          .update(schoolClass)
+          .update(payload)
           .eq('id', id)
           .select()
           .single();
-        if (error) throw error;
+        if (error) {
+          console.warn('Dual-property class update failed, retrying with standard object...');
+          const { data: retryData, error: retryError } = await supabase
+            .from('classes')
+            .update({
+              name: schoolClass.name,
+              price: Number(schoolClass.price),
+              description: schoolClass.description || ''
+            })
+            .eq('id', id)
+            .select()
+            .single();
+          if (retryError) throw retryError;
+          return mapToClass(retryData);
+        }
         return mapToClass(data);
       } catch (err: any) {
         throw new Error(err.message || 'Error updating school class on Supabase');
@@ -262,7 +302,6 @@ export const studentsService = {
             .insert([{
               name: student.name,
               parentPhone: student.parentPhone,
-              paymentStatus: student.paymentStatus,
               classId: student.classId
             }])
             .select()
@@ -283,45 +322,6 @@ export const studentsService = {
       local.push(newStudent);
       saveLocalData('school_students', local);
       return newStudent;
-    }
-  },
-  async updateStatus(id: string, paymentStatus: Student['paymentStatus']): Promise<Student> {
-    if (isSupabaseConfigured()) {
-      try {
-        // Try both mapping formats for update payload
-        const { data, error } = await supabase
-          .from('students')
-          .update({
-            paymentStatus,
-            payment_status: paymentStatus
-          })
-          .eq('id', id)
-          .select()
-          .single();
-        if (error) {
-          console.warn('Dual-property update failed. Retrying with nested camelCase...');
-          const { data: retryData, error: retryError } = await supabase
-            .from('students')
-            .update({ paymentStatus })
-            .eq('id', id)
-            .select()
-            .single();
-          if (retryError) throw retryError;
-          return mapToStudent(retryData);
-        }
-        return mapToStudent(data);
-      } catch (err: any) {
-        throw new Error(err.message || 'Error updating student status on Supabase');
-      }
-    } else {
-      const local = getLocalData<Student>('school_students', defaultStudents);
-      const studentIndex = local.findIndex(s => s.id === id);
-      if (studentIndex !== -1) {
-        local[studentIndex].paymentStatus = paymentStatus;
-        saveLocalData('school_students', local);
-        return local[studentIndex];
-      }
-      throw new Error('Student not found');
     }
   },
   async delete(id: string): Promise<void> {
@@ -358,7 +358,6 @@ export const studentsService = {
             .update({
               name: student.name,
               parentPhone: student.parentPhone,
-              paymentStatus: student.paymentStatus,
               classId: student.classId
             })
             .eq('id', id)
@@ -718,6 +717,27 @@ export const pointageService = {
       }
     } else {
       saveLocalData('pointage_logs', []);
+    }
+  },
+
+  async deleteLog(id: string): Promise<void> {
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase
+          .from('pointage_logs')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+      } catch (err) {
+        console.warn('Error deleting log from Supabase, falling back to LocalStorage', err);
+        const local = getLocalData<PointageLog>('pointage_logs', defaultPointageLogs);
+        const filtered = local.filter(l => l.id !== id);
+        saveLocalData('pointage_logs', filtered);
+      }
+    } else {
+      const local = getLocalData<PointageLog>('pointage_logs', defaultPointageLogs);
+      const filtered = local.filter(l => l.id !== id);
+      saveLocalData('pointage_logs', filtered);
     }
   }
 };

@@ -4,9 +4,9 @@ export interface Student {
   id: string;
   name: string;
   parentPhone: string;
-  paymentStatus: PaymentStatus;
   classId: string;
   tokenId?: string;
+  paymentStatus?: PaymentStatus;
 }
 
 export interface SchoolClass {
@@ -14,6 +14,7 @@ export interface SchoolClass {
   name: string;
   price: number;
   description: string;
+  teacherId?: string;
 }
 
 export interface Teacher {

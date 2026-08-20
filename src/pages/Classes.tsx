@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Phone, CheckCircle2, XCircle, Clock, BookOpen, Users, Loader2, Trash2, AlertCircle, Pencil } from 'lucide-react';
-import { Student, SchoolClass } from '../types';
+import { Search, Plus, Phone, CheckCircle2, XCircle, Clock, BookOpen, Users, Loader2, Trash2, AlertCircle, Pencil, UserCheck, GraduationCap } from 'lucide-react';
+import { Student, SchoolClass, Teacher } from '../types';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { classesService, studentsService } from '../services/supabaseService';
+import { classesService, studentsService, pointageService, teachersService } from '../services/supabaseService';
 import { Modal } from '../components/Modal';
 
 export function Classes() {
@@ -12,6 +12,8 @@ export function Classes() {
   const { activeRole } = useAuth();
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [allLogs, setAllLogs] = useState<any[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -23,14 +25,14 @@ export function Classes() {
   const [isEditStudentModalOpen, setIsEditStudentModalOpen] = useState(false);
 
   // Form states
-  const [newClass, setNewClass] = useState<Omit<SchoolClass, 'id'>>({ name: '', price: 0, description: '' });
-  const [newStudent, setNewStudent] = useState<Omit<Student, 'id'>>({ name: '', parentPhone: '', paymentStatus: 'Pending', classId: '', tokenId: '' });
+  const [newClass, setNewClass] = useState<Omit<SchoolClass, 'id'>>({ name: '', price: 0, description: '', teacherId: '' });
+  const [newStudent, setNewStudent] = useState<Omit<Student, 'id'>>({ name: '', parentPhone: '', classId: '', tokenId: '' });
 
   const [editingClassId, setEditingClassId] = useState<string>('');
-  const [editClass, setEditClass] = useState<Omit<SchoolClass, 'id'>>({ name: '', price: 0, description: '' });
+  const [editClass, setEditClass] = useState<Omit<SchoolClass, 'id'>>({ name: '', price: 0, description: '', teacherId: '' });
 
   const [editingStudentId, setEditingStudentId] = useState<string>('');
-  const [editStudent, setEditStudent] = useState<Omit<Student, 'id'>>({ name: '', parentPhone: '', paymentStatus: 'Pending', classId: '', tokenId: '' });
+  const [editStudent, setEditStudent] = useState<Omit<Student, 'id'>>({ name: '', parentPhone: '', classId: '', tokenId: '' });
 
   useEffect(() => {
     fetchData();
@@ -39,12 +41,16 @@ export function Classes() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [classesData, studentsData] = await Promise.all([
+      const [classesData, studentsData, logsData, teachersData] = await Promise.all([
         classesService.getAll(),
-        studentsService.getAll()
+        studentsService.getAll(),
+        pointageService.getAll(),
+        teachersService.getAll()
       ]);
       setClasses(classesData);
       setStudents(studentsData);
+      setAllLogs(logsData);
+      setTeachers(teachersData);
       if (classesData.length > 0 && !selectedClassId) {
         setSelectedClassId(classesData[0].id);
       }
@@ -55,6 +61,73 @@ export function Classes() {
     }
   };
 
+  const getSessionCount = (studentId: string) => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    return allLogs.filter(log => {
+      const logDate = new Date(log.timestamp);
+      return log.personId === studentId && 
+             logDate.getMonth() === currentMonth && 
+             logDate.getFullYear() === currentYear;
+    }).length;
+  };
+
+  const handleToggleSessionTrigger = async (student: Student, targetSession: number) => {
+    try {
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      const studentMonthLogs = allLogs.filter(log => {
+        const logDate = new Date(log.timestamp);
+        return log.personId === student.id && 
+               logDate.getMonth() === currentMonth && 
+               logDate.getFullYear() === currentYear;
+      }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+      const currentCount = studentMonthLogs.length;
+
+      if (targetSession <= currentCount) {
+        const logsToRemoveCount = currentCount - (targetSession - 1);
+        for (let i = 0; i < logsToRemoveCount; i++) {
+          if (studentMonthLogs[i]) {
+            await pointageService.deleteLog(studentMonthLogs[i].id);
+          }
+        }
+      } else {
+        const logsToAddCount = targetSession - currentCount;
+        for (let i = 0; i < logsToAddCount; i++) {
+          const sessionNum = currentCount + i + 1;
+          await pointageService.log({
+            personId: student.id,
+            personType: 'student',
+            personName: student.name,
+            tokenId: student.tokenId || 'S-MANUAL',
+            details: `Manual session trigger #${sessionNum}`
+          });
+        }
+      }
+      fetchData();
+    } catch (err) {
+      console.error('Error updating session trigger:', err);
+    }
+  };
+
+  const handleTogglePaymentStatus = async (student: Student) => {
+    try {
+      const nextStatus = student.paymentStatus === 'Paid' ? 'Unpaid' : 'Paid';
+      await studentsService.update(student.id, {
+        ...student,
+        paymentStatus: nextStatus
+      });
+      setStudents(prev => prev.map(s => s.id === student.id ? { ...s, paymentStatus: nextStatus } : s));
+    } catch (err) {
+      console.error('Error updating payment status:', err);
+    }
+  };
+
   const handleCreateClass = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -62,7 +135,7 @@ export function Classes() {
       setClasses(prev => [...prev, created]);
       setSelectedClassId(created.id);
       setIsClassModalOpen(false);
-      setNewClass({ name: '', price: 0, description: '' });
+      setNewClass({ name: '', price: 0, description: '', teacherId: '' });
     } catch (error) {
       console.error('Error creating class:', error);
     }
@@ -88,22 +161,9 @@ export function Classes() {
       const created = await studentsService.create({ ...newStudent, classId: selectedClassId });
       setStudents(prev => [...prev, created]);
       setIsStudentModalOpen(false);
-      setNewStudent({ name: '', parentPhone: '', paymentStatus: 'Pending', classId: '', tokenId: '' });
+      setNewStudent({ name: '', parentPhone: '', classId: '', tokenId: '' });
     } catch (error) {
       console.error('Error creating student:', error);
-    }
-  };
-
-  const toggleStudentStatus = async (student: Student) => {
-    const statuses: Student['paymentStatus'][] = ['Paid', 'Unpaid', 'Pending'];
-    const currentIndex = statuses.indexOf(student.paymentStatus);
-    const nextStatus = statuses[(currentIndex + 1) % statuses.length];
-    
-    try {
-      const updated = await studentsService.updateStatus(student.id, nextStatus);
-      setStudents(prev => prev.map(s => s.id === student.id ? updated : s));
-    } catch (error) {
-      console.error('Error updating status:', error);
     }
   };
 
@@ -183,7 +243,9 @@ export function Classes() {
           <div className="space-y-2">
             {classes.length === 0 ? (
               <p className="p-5 text-sm text-slate-400 italic font-medium">{isRTL ? "Aucune classe trouvée" : "No classes found"}</p>
-            ) : classes.map((c) => (
+            ) : classes.map((c) => {
+              const assignedTeacher = teachers.find(t => t.id === c.teacherId);
+              return (
               <div key={c.id} className="group relative">
                 <button
                   onClick={() => setSelectedClassId(c.id)}
@@ -197,12 +259,18 @@ export function Classes() {
                 >
                   <div className="relative z-10">
                     <p className={cn(
-                      "text-[10px] font-black uppercase tracking-[0.2em] mb-2",
+                      "text-[10px] font-black uppercase tracking-[0.2em] mb-1",
                       selectedClassId === c.id ? "text-accent" : "text-slate-400"
                     )}>
                       {t('subscription')}: {c.price} {t('currency')}
                     </p>
                     <h4 className="font-black text-lg leading-tight tracking-tight">{c.name}</h4>
+                    {assignedTeacher && (
+                      <p className={cn("text-xs font-semibold mt-1.5 flex items-center gap-1.5", selectedClassId === c.id ? "text-white/80" : "text-slate-500", isRTL && "flex-row-reverse")}>
+                        <GraduationCap size={14} className="shrink-0" />
+                        <span>{assignedTeacher.name}</span>
+                      </p>
+                    )}
                   </div>
                 </button>
                 {activeRole === 'director' && (
@@ -214,7 +282,7 @@ export function Classes() {
                       onClick={(e) => {
                         e.stopPropagation();
                         setEditingClassId(c.id);
-                        setEditClass({ name: c.name, price: c.price, description: c.description || '' });
+                        setEditClass({ name: c.name, price: c.price, description: c.description || '', teacherId: c.teacherId || '' });
                         setIsEditClassModalOpen(true);
                       }}
                       className={cn(
@@ -238,7 +306,8 @@ export function Classes() {
                   </div>
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
 
@@ -246,7 +315,10 @@ export function Classes() {
         <div className="lg:col-span-9 space-y-8">
           <div className="min-h-[500px] flex flex-col">
             {selectedClass ? (
-              <>
+              (() => {
+                const currentTeacher = teachers.find(t => t.id === selectedClass.teacherId);
+                return (
+                <>
                 <div className={cn("pb-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6", isRTL && "md:flex-row-reverse")}>
                   <div className={cn("flex items-center gap-6", isRTL && "flex-row-reverse")}>
                      <div className="w-12 h-12 md:w-16 md:h-16 bg-accent/10 text-accent rounded-2xl md:rounded-3xl flex items-center justify-center shrink-0">
@@ -259,7 +331,7 @@ export function Classes() {
                              <button
                                onClick={() => {
                                  setEditingClassId(selectedClass.id);
-                                 setEditClass({ name: selectedClass.name, price: selectedClass.price, description: selectedClass.description || '' });
+                                 setEditClass({ name: selectedClass.name, price: selectedClass.price, description: selectedClass.description || '', teacherId: selectedClass.teacherId || '' });
                                  setIsEditClassModalOpen(true);
                                }}
                                className="text-slate-400 hover:text-accent p-1.5 rounded-lg hover:bg-slate-50 transition-all"
@@ -269,9 +341,20 @@ export function Classes() {
                              </button>
                            )}
                         </div>
-                        <p className="text-[10px] md:text-sm text-slate-500 font-bold uppercase tracking-[0.2em] mt-1">
-                          {t('monthly_price')}: <span className="text-accent">{selectedClass?.price} {t('currency')}</span>
-                        </p>
+                        <div className={cn("flex flex-wrap items-center gap-3 mt-1.5", isRTL && "flex-row-reverse")}>
+                          <p className="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-[0.2em]">
+                            {t('monthly_price')}: <span className="text-accent">{selectedClass?.price} {t('currency')}</span>
+                          </p>
+                          <span className="text-slate-300">•</span>
+                          <div className="inline-flex items-center gap-1.5 bg-primary/5 border border-primary/10 px-3 py-1 rounded-xl text-xs font-bold text-primary">
+                            <GraduationCap size={15} className="text-accent" />
+                            <span>
+                              {currentTeacher 
+                                ? `${isRTL ? 'الأستاذ' : 'Prof'}: ${currentTeacher.name}` 
+                                : (isRTL ? 'لم يتم تعيين أستاذ' : 'No teacher assigned')}
+                            </span>
+                          </div>
+                        </div>
                      </div>
                   </div>
                   
@@ -297,18 +380,22 @@ export function Classes() {
                         <th className="px-8 py-5">{t('student_name')}</th>
                         <th className="px-8 py-5">{t('parent_phone')}</th>
                         <th className="px-8 py-5">{t('token_id')}</th>
-                        <th className="px-8 py-5">{t('status')}</th>
+                        <th className="px-8 py-5">{isRTL ? "الحصص (4/شهر)" : "Sessions (4/m)"}</th>
+                        <th className="px-8 py-5">{isRTL ? "الدفع" : "Payment"}</th>
                         <th className={cn("px-8 py-5", isRTL ? "text-left" : "text-right")}>{isRTL ? "الإجراءات" : "Actions"}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {classStudents.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="px-8 py-20 text-center text-slate-400 font-medium">
+                          <td colSpan={6} className="px-8 py-20 text-center text-slate-400 font-medium">
                             {isRTL ? "Aucun étudiant enregistré dans cette classe" : "No students registered in this class"}
                           </td>
                         </tr>
-                      ) : classStudents.map((s) => (
+                      ) : classStudents.map((s) => {
+                        const sessionsDone = getSessionCount(s.id);
+                        const isPaid = s.paymentStatus === 'Paid';
+                        return (
                         <tr key={s.id} className="hover:bg-slate-50/20 transition-colors group">
                           <td className="px-8 py-6">
                              <p className="text-base font-black text-primary group-hover:text-accent transition-colors">{s.name}</p>
@@ -333,18 +420,40 @@ export function Classes() {
                             </div>
                           </td>
                           <td className="px-8 py-6">
-                            <button 
-                              onClick={() => toggleStudentStatus(s)}
+                            <div className="flex items-center gap-1.5">
+                              {[1, 2, 3, 4].map((i) => (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => handleToggleSessionTrigger(s, i)}
+                                  className="focus:outline-none hover:scale-110 transition-transform p-0.5 rounded-full"
+                                  title={isRTL ? `تبديل الجلسة ${i}` : `Toggle session ${i}`}
+                                >
+                                  {i <= sessionsDone ? (
+                                    <CheckCircle2 size={18} className="text-emerald-500 fill-emerald-50" />
+                                  ) : (
+                                    <div className="w-[18px] h-[18px] rounded-full border-2 border-slate-200 hover:border-slate-400" />
+                                  )}
+                                </button>
+                              ))}
+                              <span className="ml-2 text-[10px] font-black text-slate-400">
+                                {sessionsDone}/4
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-8 py-6">
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePaymentStatus(s)}
                               className={cn(
-                                "inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black ring-2 ring-inset transition-all cursor-pointer hover:opacity-80 active:scale-95",
-                                s.paymentStatus === 'Paid' ? "bg-emerald-50 text-emerald-700 ring-emerald-100" :
-                                s.paymentStatus === 'Unpaid' ? "bg-rose-50 text-rose-700 ring-rose-100" :
-                                "bg-amber-50 text-amber-700 ring-amber-100"
+                                "px-3 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all shadow-sm flex items-center gap-1.5",
+                                isPaid 
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100" 
+                                  : "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
                               )}
                             >
-                              {s.paymentStatus === 'Paid' ? <CheckCircle2 size={14} /> :
-                               s.paymentStatus === 'Unpaid' ? <XCircle size={14} /> : <Clock size={14} />}
-                              {s.paymentStatus === 'Paid' ? t('paid') : s.paymentStatus === 'Unpaid' ? t('unpaid') : t('pending')}
+                              {isPaid ? <CheckCircle2 size={13} className="text-emerald-500" /> : <XCircle size={13} className="text-amber-500" />}
+                              <span>{isPaid ? (isRTL ? 'مخلص / خالف' : 'Paid') : (isRTL ? 'غير مخلص' : 'Unpaid')}</span>
                             </button>
                           </td>
                            <td className={cn("px-8 py-6", isRTL ? "text-left" : "text-right")}>
@@ -356,7 +465,7 @@ export function Classes() {
                                  <button
                                    onClick={() => {
                                      setEditingStudentId(s.id);
-                                     setEditStudent({ name: s.name, parentPhone: s.parentPhone, paymentStatus: s.paymentStatus, classId: s.classId, tokenId: s.tokenId || '' });
+                                     setEditStudent({ name: s.name, parentPhone: s.parentPhone, classId: s.classId, tokenId: s.tokenId || '' });
                                      setIsEditStudentModalOpen(true);
                                    }}
                                    className="p-2 text-slate-300 hover:text-accent transition-colors"
@@ -374,7 +483,8 @@ export function Classes() {
                              </div>
                            </td>
                         </tr>
-                      ))}
+                      );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -391,6 +501,8 @@ export function Classes() {
                    </button>
                 </div>
               </>
+              );
+            })()
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-4">
                 <Users size={64} className="opacity-20" />
@@ -429,6 +541,21 @@ export function Classes() {
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
               placeholder="4500"
             />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">
+              {isRTL ? 'الأستاذ المسؤول (اختياري)' : 'Enseignant / Teacher (Optionnel)'}
+            </label>
+            <select
+              value={newClass.teacherId || ''}
+              onChange={e => setNewClass({ ...newClass, teacherId: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold cursor-pointer"
+            >
+              <option value="">{isRTL ? '-- اختر الأستاذ --' : '-- Choisir l\'enseignant --'}</option>
+              {teachers.map(teach => (
+                <option key={teach.id} value={teach.id}>{teach.name} ({teach.subject})</option>
+              ))}
+            </select>
           </div>
           <div className="space-y-1">
             <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('description')}</label>
@@ -485,18 +612,6 @@ export function Classes() {
               placeholder="Ex: S101"
             />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('status')}</label>
-            <select
-              value={newStudent.paymentStatus}
-              onChange={e => setNewStudent({ ...newStudent, paymentStatus: e.target.value as any })}
-              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold appearance-none cursor-pointer"
-            >
-              <option value="Paid">{t('paid')}</option>
-              <option value="Unpaid">{t('unpaid')}</option>
-              <option value="Pending">{t('pending')}</option>
-            </select>
-          </div>
           <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
             {t('add_student')}
           </button>
@@ -529,6 +644,21 @@ export function Classes() {
               onChange={e => setEditClass({ ...editClass, price: Number(e.target.value) })}
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
             />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">
+              {isRTL ? 'الأستاذ المسؤول' : 'Enseignant / Teacher'}
+            </label>
+            <select
+              value={editClass.teacherId || ''}
+              onChange={e => setEditClass({ ...editClass, teacherId: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold cursor-pointer"
+            >
+              <option value="">{isRTL ? '-- اختر الأستاذ --' : '-- Choisir l\'enseignant --'}</option>
+              {teachers.map(teach => (
+                <option key={teach.id} value={teach.id}>{teach.name} ({teach.subject})</option>
+              ))}
+            </select>
           </div>
           <div className="space-y-1">
             <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('description')}</label>
@@ -592,18 +722,6 @@ export function Classes() {
               {classes.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
-            </select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('status')}</label>
-            <select
-              value={editStudent.paymentStatus}
-              onChange={e => setEditStudent({ ...editStudent, paymentStatus: e.target.value as any })}
-              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold cursor-pointer"
-            >
-              <option value="Paid">{t('paid')}</option>
-              <option value="Unpaid">{t('unpaid')}</option>
-              <option value="Pending">{t('pending')}</option>
             </select>
           </div>
           <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">

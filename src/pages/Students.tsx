@@ -129,6 +129,49 @@ export function Students() {
     }).length;
   };
 
+  const handleToggleSessionTrigger = async (student: Student, targetSession: number) => {
+    try {
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      const studentMonthLogs = allLogs.filter(log => {
+        const logDate = new Date(log.timestamp);
+        return log.personId === student.id && 
+               logDate.getMonth() === currentMonth && 
+               logDate.getFullYear() === currentYear;
+      }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+      const currentCount = studentMonthLogs.length;
+
+      if (targetSession <= currentCount) {
+        // Uncheck or reduce sessions down to targetSession - 1
+        const logsToRemoveCount = currentCount - (targetSession - 1);
+        for (let i = 0; i < logsToRemoveCount; i++) {
+          if (studentMonthLogs[i]) {
+            await pointageService.deleteLog(studentMonthLogs[i].id);
+          }
+        }
+      } else {
+        // Add sessions up to targetSession
+        const logsToAddCount = targetSession - currentCount;
+        for (let i = 0; i < logsToAddCount; i++) {
+          const sessionNum = currentCount + i + 1;
+          await pointageService.log({
+            personId: student.id,
+            personType: 'student',
+            personName: student.name,
+            tokenId: student.tokenId || 'S-MANUAL',
+            details: `Manual session trigger #${sessionNum}`
+          });
+        }
+      }
+      loadData();
+    } catch (err) {
+      console.error('Error updating session trigger:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
@@ -264,13 +307,19 @@ export function Students() {
                       <td className="px-8 py-6">
                         <div className="flex items-center gap-1.5">
                           {[1, 2, 3, 4].map((i) => (
-                            <div key={i}>
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => handleToggleSessionTrigger(student, i)}
+                              className="focus:outline-none hover:scale-110 transition-transform p-0.5 rounded-full"
+                              title={isRTL ? `تبديل الجلسة ${i}` : `Toggle session ${i}`}
+                            >
                               {i <= sessionsDone ? (
                                 <CheckCircle2 size={18} className="text-emerald-500 fill-emerald-50" />
                               ) : (
-                                <Circle size={18} className="text-slate-200" />
+                                <Circle size={18} className="text-slate-200 hover:text-slate-400" />
                               )}
-                            </div>
+                            </button>
                           ))}
                           <span className="ml-2 text-[10px] font-black text-slate-400">
                             {sessionsDone}/4
