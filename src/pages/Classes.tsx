@@ -4,7 +4,7 @@ import { Student, SchoolClass, Teacher } from '../types';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { classesService, studentsService, pointageService, teachersService } from '../services/supabaseService';
+import { classesService, studentsService, pointageService, teachersService, paymentsService } from '../services/supabaseService';
 import { Modal } from '../components/Modal';
 
 export function Classes() {
@@ -95,6 +95,21 @@ export function Classes() {
       
       if (paymentStatus !== 'Paid') {
         paymentStatus = 'Paid';
+        
+        const schoolClass = classes.find(c => c.id === student.classId);
+        if (schoolClass) {
+          await paymentsService.create({
+              studentId: student.id,
+              studentName: student.name,
+              classId: student.classId,
+              month: currentMonth,
+              amountPaid: schoolClass.price,
+              sarf: schoolClass.price * 0.5,
+              sessionDates: [],
+              timestamp: new Date().toISOString()
+          });
+        }
+
         if (sessionsCompleted >= 4) {
             currentMonth++;
             sessionsCompleted = 0;

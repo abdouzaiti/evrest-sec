@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { SchoolClass, Student, Teacher } from '../types';
+import { SchoolClass, Student, Teacher, PaymentRecord } from '../types';
 
 // Mock/Local Storage fallback default databases (Algerian/Academy Focused)
 const defaultClasses: SchoolClass[] = [
@@ -850,5 +850,21 @@ export const pointageService = {
       const filtered = local.filter(l => l.id !== id);
       saveLocalData('pointage_logs', filtered);
     }
+  }
+};
+
+export const paymentsService = {
+  async create(record: Omit<PaymentRecord, 'id'>): Promise<PaymentRecord> {
+    const local = getLocalData<PaymentRecord>('payments', []);
+    const newRecord: PaymentRecord = {
+      ...record,
+      id: 'pay-' + Date.now()
+    };
+    local.push(newRecord);
+    saveLocalData('payments', local);
+    return newRecord;
+  },
+  async getAll(): Promise<PaymentRecord[]> {
+      return getLocalData<PaymentRecord>('payments', []);
   }
 };
