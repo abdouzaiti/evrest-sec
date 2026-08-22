@@ -106,6 +106,15 @@ const mapToStudent = (row: any): Student => {
 
 const mapToTeacher = (row: any): Teacher => {
   if (!row) return row;
+  let parsedPaidMonths: number[] = [];
+  if (Array.isArray(row.paidMonths)) parsedPaidMonths = row.paidMonths;
+  else if (Array.isArray(row.paid_months)) parsedPaidMonths = row.paid_months;
+  else if (typeof row.paidMonths === 'string') {
+    try { parsedPaidMonths = JSON.parse(row.paidMonths); } catch {}
+  } else if (typeof row.paid_months === 'string') {
+    try { parsedPaidMonths = JSON.parse(row.paid_months); } catch {}
+  }
+
   return {
     id: row.id,
     name: row.name || '',
@@ -115,7 +124,8 @@ const mapToTeacher = (row: any): Teacher => {
     paymentStatus: row.paymentStatus !== undefined ? row.paymentStatus : (row.payment_status !== undefined ? row.payment_status : 'Unpaid'),
     lastPaymentDate: row.lastPaymentDate !== undefined ? row.lastPaymentDate : (row.last_payment_date !== undefined ? row.last_payment_date : undefined),
     tokenId: row.tokenId !== undefined ? row.tokenId : (row.token_id !== undefined ? row.token_id : undefined),
-    currentMonth: row.currentMonth !== undefined ? Number(row.currentMonth) : (row.current_month !== undefined ? Number(row.current_month) : 1)
+    currentMonth: row.currentMonth !== undefined ? Number(row.currentMonth) : (row.current_month !== undefined ? Number(row.current_month) : 1),
+    paidMonths: parsedPaidMonths
   };
 };
 
@@ -512,10 +522,9 @@ export const teachersService = {
         const fetched = (data || []).map(mapToTeacher);
         return fetched.map(t => {
           const loc = localMap.get(t.id);
-          if (loc && loc.currentMonth && (!t.currentMonth || t.currentMonth === 1)) {
-            return { ...t, currentMonth: loc.currentMonth };
-          }
-          return t;
+          const currentMonth = loc?.currentMonth || t.currentMonth || 1;
+          const paidMonths = (loc?.paidMonths && loc.paidMonths.length > 0) ? loc.paidMonths : (t.paidMonths || []);
+          return { ...t, currentMonth, paidMonths };
         });
       } catch (err) {
         console.warn('Failed to fetch from Supabase teachers table, falling back to LocalStorage', err);

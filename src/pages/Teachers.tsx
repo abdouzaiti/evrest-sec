@@ -21,6 +21,7 @@ export function Teachers() {
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [teacherLogs, setTeacherLogs] = useState<PointageLog[]>([]);
   const [openMonthDropdownId, setOpenMonthDropdownId] = useState<string | null>(null);
+  const [openStatusDropdownId, setOpenStatusDropdownId] = useState<string | null>(null);
 
   const [newTeacher, setNewTeacher] = useState<Omit<Teacher, 'id'>>({
     name: '',
@@ -94,13 +95,37 @@ export function Teachers() {
     }
   };
 
-  const handlePaySalary = async (id: string) => {
-    try {
-      const updated = await teachersService.updatePayment(id, 'Paid');
-      setTeachers(prev => prev.map(t => t.id === id ? updated : t));
-    } catch (error) {
-      console.error('Error paying salary:', error);
+  const handleUpdateTeacherMonthStatus = async (teacher: Teacher, newStatus: PaymentStatus) => {
+    const activeMonth = teacher.currentMonth || 1;
+    let newPaidMonths = teacher.paidMonths || [];
+
+    if (newStatus === 'Paid') {
+      if (!newPaidMonths.includes(activeMonth)) {
+        newPaidMonths = [...newPaidMonths, activeMonth];
+      }
+    } else {
+      newPaidMonths = newPaidMonths.filter(m => m !== activeMonth);
     }
+
+    const updatedTeacher: Teacher = {
+      ...teacher,
+      paymentStatus: newStatus,
+      paidMonths: newPaidMonths,
+      lastPaymentDate: newStatus === 'Paid' ? new Date().toISOString().split('T')[0] : teacher.lastPaymentDate
+    };
+
+    setTeachers(prev => prev.map(t => t.id === teacher.id ? updatedTeacher : t));
+
+    try {
+      await teachersService.update(teacher.id, updatedTeacher);
+      await teachersService.updatePayment(teacher.id, newStatus);
+    } catch (error) {
+      console.error('Error updating teacher month status:', error);
+    }
+  };
+
+  const handlePaySalary = async (teacher: Teacher) => {
+    await handleUpdateTeacherMonthStatus(teacher, 'Paid');
   };
 
   const handleSelectTeacherMonth = async (teacher: Teacher, monthNum: number) => {
@@ -289,12 +314,79 @@ export function Teachers() {
                       </div>
                     </td>
                     <td className="px-8 py-6 text-center">
-                      <span className={cn(
-                        "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest ring-2 ring-inset uppercase transition-all",
-                        teacher.paymentStatus === 'Paid' ? "bg-emerald-50 text-emerald-700 ring-emerald-100" : "bg-rose-50 text-rose-700 ring-rose-100"
-                      )}>
-                        {teacher.paymentStatus === 'Paid' ? t('paid') : t('pending')}
-                      </span>
+                      {(() => {
+                        const activeMonth = teacher.currentMonth || 1;
+                        const isPaid = (teacher.paidMonths || []).includes(activeMonth) || (teacher.paymentStatus === 'Paid' && (!teacher.paidMonths || teacher.paidMonths.length === 0));
+                        const monthStatus: PaymentStatus = isPaid ? 'Paid' : 'Unpaid';
+
+                        return (
+                          <div className="relative inline-block text-left">
+                            <button
+                              type="button"
+                              onClick={() => setOpenStatusDropdownId(openStatusDropdownId === teacher.id ? null : teacher.id)}
+                              className={cn(
+                                "inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-black tracking-widest ring-2 ring-inset uppercase transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-2xs group",
+                                monthStatus === 'Paid'
+                                  ? "bg-emerald-50 text-emerald-700 ring-emerald-200 hover:bg-emerald-100"
+                                  : "bg-rose-50 text-rose-700 ring-rose-200 hover:bg-rose-100"
+                              )}
+                              title={isRTL ? `حالة الشهر ${activeMonth}` : `Statut pour Mois ${activeMonth}`}
+                            >
+                              <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", monthStatus === 'Paid' ? "bg-emerald-500" : "bg-rose-500")} />
+                              <span>{monthStatus === 'Paid' ? t('paid') : t('pending')}</span>
+                              <ChevronDown size={11} className={cn("transition-transform duration-200 opacity-60 group-hover:opacity-100", openStatusDropdownId === teacher.id && "rotate-180")} />
+                            </button>
+
+                            {openStatusDropdownId === teacher.id && (
+                              <>
+                                <div 
+                                  className="fixed inset-0 z-20" 
+                                  onClick={() => setOpenStatusDropdownId(null)} 
+                                />
+                                <div className={cn(
+                                  "absolute z-30 mt-1.5 w-36 py-1.5 bg-white border border-slate-200 rounded-xl shadow-xl animate-in fade-in zoom-in-95 duration-100",
+                                  isRTL ? "left-0 text-right" : "right-0 text-left"
+                                )}>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleUpdateTeacherMonthStatus(teacher, 'Paid');
+                                      setOpenStatusDropdownId(null);
+                                    }}
+                                    className={cn(
+                                      "w-full px-3.5 py-2 text-xs font-semibold flex items-center justify-between hover:bg-emerald-50 text-emerald-700 transition-colors cursor-pointer",
+                                      monthStatus === 'Paid' && "bg-emerald-50/80 font-bold"
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                                      <span>{t('paid')}</span>
+                                    </div>
+                                    {monthStatus === 'Paid' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleUpdateTeacherMonthStatus(teacher, 'Unpaid');
+                                      setOpenStatusDropdownId(null);
+                                    }}
+                                    className={cn(
+                                      "w-full px-3.5 py-2 text-xs font-semibold flex items-center justify-between hover:bg-rose-50 text-rose-700 transition-colors cursor-pointer",
+                                      monthStatus === 'Unpaid' && "bg-rose-50/80 font-bold"
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-2 h-2 rounded-full bg-rose-500" />
+                                      <span>{t('pending')}</span>
+                                    </div>
+                                    {monthStatus === 'Unpaid' && <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />}
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className={cn("px-8 py-6", isRTL ? "text-left" : "text-right")}>
                       <div className={cn("flex items-center gap-3 justify-end", isRTL && "justify-start")}>
@@ -308,9 +400,9 @@ export function Teachers() {
                          {activeRole === 'director' ? (
                            <>
                              <button 
-                               onClick={() => handlePaySalary(teacher.id)}
+                               onClick={() => handlePaySalary(teacher)}
                                className="bg-slate-50 hover:bg-slate-100 text-slate-600 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-30 active:scale-95" 
-                               disabled={teacher.paymentStatus === 'Paid'}
+                               disabled={(teacher.paidMonths || []).includes(teacher.currentMonth || 1) || (teacher.paymentStatus === 'Paid' && (!teacher.paidMonths || teacher.paidMonths.length === 0))}
                              >
                                {t('pay_salary')}
                              </button>
