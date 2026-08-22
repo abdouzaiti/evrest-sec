@@ -158,9 +158,15 @@ const makeTeacherPayload = (t: Omit<Teacher, 'id'>) => {
     subject: t.subject,
     salary: Number(t.salary),
     payment_status: t.paymentStatus,
+    paymentStatus: t.paymentStatus,
     last_payment_date: t.lastPaymentDate || null,
+    lastPaymentDate: t.lastPaymentDate || null,
     token_id: t.tokenId || null,
-    current_month: t.currentMonth || 1
+    tokenId: t.tokenId || null,
+    current_month: t.currentMonth || 1,
+    currentMonth: t.currentMonth || 1,
+    paid_months: t.paidMonths || [],
+    paidMonths: t.paidMonths || []
   };
 };
 
@@ -665,13 +671,21 @@ export const teachersService = {
           return mapToTeacher(data);
         }
 
-        // Retry without current_month if column is missing from Supabase schema
-        const payloadNoMonth = { ...payload };
-        delete (payloadNoMonth as any).current_month;
+        // Retry with clean snake_case payload
+        const snakePayload = {
+          name: teacher.name,
+          email: teacher.email,
+          subject: teacher.subject,
+          salary: Number(teacher.salary),
+          payment_status: teacher.paymentStatus,
+          last_payment_date: teacher.lastPaymentDate || null,
+          token_id: teacher.tokenId || null,
+          current_month: teacher.currentMonth || 1
+        };
 
         const { data: retryData, error: retryError } = await supabase
           .from('teachers')
-          .update(payloadNoMonth)
+          .update(snakePayload)
           .eq('id', id)
           .select()
           .single();
@@ -679,6 +693,7 @@ export const teachersService = {
         if (!retryError && retryData) {
           const res = mapToTeacher(retryData);
           res.currentMonth = teacher.currentMonth || 1;
+          res.paidMonths = teacher.paidMonths || [];
           return res;
         }
 
