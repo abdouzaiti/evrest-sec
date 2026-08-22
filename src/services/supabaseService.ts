@@ -114,7 +114,8 @@ const mapToTeacher = (row: any): Teacher => {
     salary: row.salary !== undefined ? Number(row.salary) : 0,
     paymentStatus: row.paymentStatus !== undefined ? row.paymentStatus : (row.payment_status !== undefined ? row.payment_status : 'Unpaid'),
     lastPaymentDate: row.lastPaymentDate !== undefined ? row.lastPaymentDate : (row.last_payment_date !== undefined ? row.last_payment_date : undefined),
-    tokenId: row.tokenId !== undefined ? row.tokenId : (row.token_id !== undefined ? row.token_id : undefined)
+    tokenId: row.tokenId !== undefined ? row.tokenId : (row.token_id !== undefined ? row.token_id : undefined),
+    currentMonth: row.currentMonth !== undefined ? Number(row.currentMonth) : (row.current_month !== undefined ? Number(row.current_month) : 1)
   };
 };
 
@@ -146,12 +147,10 @@ const makeTeacherPayload = (t: Omit<Teacher, 'id'>) => {
     email: t.email,
     subject: t.subject,
     salary: Number(t.salary),
-    paymentStatus: t.paymentStatus,
     payment_status: t.paymentStatus,
-    lastPaymentDate: t.lastPaymentDate || null,
     last_payment_date: t.lastPaymentDate || null,
-    tokenId: t.tokenId || null,
-    token_id: t.tokenId || null
+    token_id: t.tokenId || null,
+    current_month: t.currentMonth || 1
   };
 };
 
@@ -468,12 +467,12 @@ export const studentsService = {
             .from('students')
             .update({
               name: student.name,
-              parentPhone: student.parentPhone,
-              classId: student.classId,
-              tokenId: student.tokenId,
-              currentMonth: student.currentMonth,
-              sessionsCompleted: student.sessionsCompleted,
-              paymentStatus: student.paymentStatus
+              parent_phone: student.parentPhone,
+              class_id: student.classId,
+              token_id: student.tokenId,
+              current_month: student.currentMonth,
+              sessions_completed: student.sessionsCompleted,
+              payment_status: student.paymentStatus
             })
             .eq('id', id)
             .select()
@@ -500,19 +499,30 @@ export const studentsService = {
 
 export const teachersService = {
   async getAll(): Promise<Teacher[]> {
+    const local = getLocalData<Teacher>('school_teachers', defaultTeachers);
+    const localMap = new Map(local.map(t => [t.id, t]));
+
     if (isSupabaseConfigured()) {
       try {
         const { data, error } = await supabase
           .from('teachers')
           .select('*');
         if (error) throw error;
-        return (data || []).map(mapToTeacher);
+        
+        const fetched = (data || []).map(mapToTeacher);
+        return fetched.map(t => {
+          const loc = localMap.get(t.id);
+          if (loc && loc.currentMonth && (!t.currentMonth || t.currentMonth === 1)) {
+            return { ...t, currentMonth: loc.currentMonth };
+          }
+          return t;
+        });
       } catch (err) {
         console.warn('Failed to fetch from Supabase teachers table, falling back to LocalStorage', err);
-        return getLocalData<Teacher>('school_teachers', defaultTeachers);
+        return local;
       }
     } else {
-      return getLocalData<Teacher>('school_teachers', defaultTeachers);
+      return local;
     }
   },
   async create(teacher: Omit<Teacher, 'id'>): Promise<Teacher> {
@@ -619,6 +629,19 @@ export const teachersService = {
     }
   },
   async update(id: string, teacher: Omit<Teacher, 'id'>): Promise<Teacher> {
+    const updatedTeacher: Teacher = { ...teacher, id };
+
+    // Always update local cache
+    const local = getLocalData<Teacher>('school_teachers', defaultTeachers);
+    const index = local.findIndex(t => t.id === id);
+    if (index !== -1) {
+      local[index] = updatedTeacher;
+      saveLocalData('school_teachers', local);
+    } else {
+      local.push(updatedTeacher);
+      saveLocalData('school_teachers', local);
+    }
+
     if (isSupabaseConfigured()) {
       try {
         const payload = makeTeacherPayload(teacher);
@@ -628,38 +651,59 @@ export const teachersService = {
           .eq('id', id)
           .select()
           .single();
-        if (error) {
-          console.warn('Dual-property teacher update failed. Retrying with camelCase structure only...');
-          const { data: retryData, error: retryError } = await supabase
-            .from('teachers')
-            .update({
-              name: teacher.name,
-              email: teacher.email,
-              subject: teacher.subject,
-              salary: Number(teacher.salary),
-              paymentStatus: teacher.paymentStatus,
-              lastPaymentDate: teacher.lastPaymentDate,
-              tokenId: teacher.tokenId
-            })
-            .eq('id', id)
-            .select()
-            .single();
-          if (retryError) throw retryError;
-          return mapToTeacher(retryData);
+
+        if (!error && data) {
+          return mapToTeacher(data);
         }
-        return mapToTeacher(data);
+
+        // Retry without current_month if column is missing from Supabase schema
+        const payloadNoMonth = { ...payload };
+        delete (payloadNoMonth as any).current_month;
+
+        const { data: retryData, error: retryError } = await supabase
+          .from('teachers')
+          .update(payloadNoMonth)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (!retryError && retryData) {
+          const res = mapToTeacher(retryData);
+          res.currentMonth = teacher.currentMonth || 1;
+          return res;
+        }
+
+        // Retry with camelCase payload
+        const camelPayload = {
+          name: teacher.name,
+          email: teacher.email,
+          subject: teacher.subject,
+          salary: Number(teacher.salary),
+          paymentStatus: teacher.paymentStatus,
+          lastPaymentDate: teacher.lastPaymentDate || null,
+          tokenId: teacher.tokenId || null,
+          currentMonth: teacher.currentMonth || 1
+        };
+
+        const { data: camelData, error: camelError } = await supabase
+          .from('teachers')
+          .update(camelPayload)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (!camelError && camelData) {
+          return mapToTeacher(camelData);
+        }
+
+        console.warn('Teacher update on Supabase encountered error:', error || retryError || camelError);
+        return updatedTeacher;
       } catch (err: any) {
-        throw new Error(err.message || 'Error updating teacher on Supabase');
+        console.warn('Teacher update fallback:', err);
+        return updatedTeacher;
       }
     } else {
-      const local = getLocalData<Teacher>('school_teachers', defaultTeachers);
-      const index = local.findIndex(t => t.id === id);
-      if (index !== -1) {
-        local[index] = { ...teacher, id };
-        saveLocalData('school_teachers', local);
-        return local[index];
-      }
-      throw new Error('Teacher not found');
+      return updatedTeacher;
     }
   }
 };

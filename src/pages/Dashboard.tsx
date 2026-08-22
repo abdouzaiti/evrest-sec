@@ -95,8 +95,6 @@ export function Dashboard() {
   const [unpaidSearch, setUnpaidSearch] = useState('');
   
   // Receipt mock modal
-  const [receiptStudent, setReceiptStudent] = useState<Student | null>(null);
-  const [showReceipt, setShowReceipt] = useState(false);
   const [lastPaymentAlert, setLastPaymentAlert] = useState<string | null>(null);
 
   useEffect(() => {
@@ -157,13 +155,9 @@ export function Dashboard() {
       // Update local state smoothly
       setStudents(prev => prev.map(s => s.id === studentId ? { ...s } : s));
       
-      // Open receipt printed window
-      setReceiptStudent(match);
-      setShowReceipt(true);
-      
       setLastPaymentAlert(isRTL 
-        ? `Encaissement réussi pour ${match.name} ! Reçu généré.` 
-        : `Successfully collected payment for ${match.name}! Receipt printed.`
+        ? `Encaissement réussi pour ${match.name} !` 
+        : `Successfully collected payment for ${match.name}!`
       );
       setTimeout(() => setLastPaymentAlert(null), 4000);
     } catch (e) {
@@ -392,58 +386,7 @@ export function Dashboard() {
 
           </div>
 
-          {/* Table of outstanding teacher salaries & strategic notes */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-            <div className={cn("flex justify-between items-center mb-6 border-b border-slate-50 pb-4", isRTL && "flex-row-reverse")}>
-              <div>
-                <h3 className="text-lg font-black text-primary tracking-tight">
-                  {isRTL ? "Contrôle des Salaires des Enseignants" : "Staff Remuneration & Payroll Ledger"}
-                </h3>
-                <p className="text-xs text-slate-400 font-medium mt-1">
-                  {isRTL ? "État confidentiel et statut de paiement des salaires" : "Strict confidential view: status of payments to staff members"}
-                </p>
-              </div>
-              <button
-                onClick={() => navigate('/teachers')}
-                className="bg-primary/5 hover:bg-primary/10 text-primary font-bold text-xs px-4 py-2.5 rounded-xl transition-all"
-              >
-                {isRTL ? "Gérer les salaires →" : "Manage Payroll →"}
-              </button>
-            </div>
 
-            <div className="overflow-x-auto">
-              <table className={cn("w-full text-left font-sans text-sm", isRTL && "text-right")}>
-                <thead>
-                  <tr className="border-b border-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-wider">
-                    <th className="py-4 px-4">{isRTL ? "Enseignant" : "Instructor"}</th>
-                    <th className="py-4 px-4">{isRTL ? "Spécialité" : "Subject"}</th>
-                    <th className="py-4 px-4">{isRTL ? "Salaire de base" : "Base Salary"}</th>
-                    <th className="py-4 px-4">{isRTL ? "Dernier versement" : "Last Paid Date"}</th>
-                    <th className="py-4 px-4">{isRTL ? "Statut" : "Status"}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 font-medium">
-                  {teachers.map(t => (
-                    <tr key={t.id} className="hover:bg-slate-55/10">
-                      <td className="py-4 px-4 font-black text-primary">{t.name}</td>
-                      <td className="py-4 px-4 font-medium text-slate-500">{t.subject}</td>
-                      <td className="py-4 px-4 font-bold text-slate-900">{t.salary.toLocaleString()} {t.salary ? 'DA' : ''}</td>
-                      <td className="py-4 px-4 text-slate-400 text-xs">{t.lastPaymentDate || (isRTL ? "Aucun versement" : "Pending payment")}</td>
-                      <td className="py-4 px-4">
-                        <span className={cn(
-                          "px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full",
-                          t.paymentStatus === 'Paid' ? "bg-emerald-50 text-emerald-700" :
-                          t.paymentStatus === 'Pending' ? "bg-amber-50 text-amber-700" : "bg-rose-50 text-rose-700"
-                        )}>
-                          {t.paymentStatus}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
       )}
 
@@ -580,92 +523,6 @@ export function Dashboard() {
                   </p>
                 </div>
               </div>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* ----------------- GORGEOUS MOCK RECEIPT MODAL ----------------- */}
-      {showReceipt && receiptStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/45 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-md w-full border border-slate-100 relative max-h-[90vh] flex flex-col justify-between animate-in zoom-in-95 duration-200">
-            
-            {/* Header branding */}
-            <div className="bg-primary text-white p-6 relative">
-              <button 
-                onClick={() => setShowReceipt(false)}
-                className="absolute top-4 right-4 text-white/70 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all"
-              >
-                <X size={18} />
-              </button>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white p-1.5 rounded-xl">
-                  <img src="/logo.png" alt="Everest Logo" className="w-full h-full object-contain" />
-                </div>
-                <div>
-                  <h4 className="font-black text-lg tracking-tight leading-none">Everest Academy</h4>
-                  <span className="text-[9px] font-black uppercase text-accent tracking-widest mt-0.5 block">Official Payment Receipt</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Invoice invoice detail content */}
-            <div className="p-8 space-y-6 overflow-y-auto">
-              <div className="text-center">
-                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{isRTL ? "MONTANT ACQUITTÉ CASH" : "CASH PAYMENT RECEIVED"}</div>
-                <div className="text-3xl font-black text-primary">
-                  {getClassPrice(receiptStudent.classId).toLocaleString()} DA
-                </div>
-              </div>
-
-              {/* Receipt meta specs */}
-              <div className="bg-slate-50 p-4 rounded-2xl space-y-3.5 border border-slate-100 text-xs font-semibold">
-                <div className={cn("flex justify-between items-center", isRTL && "flex-row-reverse")}>
-                  <span className="text-slate-400">{isRTL ? "Élève Enregistré" : "Student Name"}</span>
-                  <span className="font-extrabold text-primary">{receiptStudent.name}</span>
-                </div>
-                <div className={cn("flex justify-between items-center", isRTL && "flex-row-reverse")}>
-                  <span className="text-slate-400">{isRTL ? "Classe de cours" : "Academic Class"}</span>
-                  <span className="font-bold text-slate-700">{getClassClassName(receiptStudent.classId)}</span>
-                </div>
-                <div className={cn("flex justify-between items-center", isRTL && "flex-row-reverse")}>
-                  <span className="text-slate-400">{isRTL ? "Téléphone Parent" : "Parent Phone"}</span>
-                  <span className="font-mono text-slate-700">{receiptStudent.parentPhone}</span>
-                </div>
-                <div className={cn("flex justify-between items-center", isRTL && "flex-row-reverse")}>
-                  <span className="text-slate-400">{isRTL ? "Statut du Versement" : "Payment Status"}</span>
-                  <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-lg">PAID / ACQUITTÉ</span>
-                </div>
-                <div className={cn("flex justify-between items-center border-t border-slate-100 pt-3 text-[10px]", isRTL && "flex-row-reverse")}>
-                  <span className="text-slate-400">Receipt No:</span>
-                  <span className="font-mono text-slate-500">EVR-{(receiptStudent.id || '0').slice(-6).toUpperCase()}-{Math.floor(Date.now() / 100000).toString().slice(-4)}</span>
-                </div>
-              </div>
-
-              {/* Fineprint disclaimer */}
-              <p className="text-[10px] text-center text-slate-400 font-medium leading-relaxed max-w-xs mx-auto">
-                {isRTL 
-                  ? "Ce document tient lieu de justificatif officiel de caisse. Le versement des frais de scolarité mensuels est non remboursable."
-                  : "This document constitutes an official cash payment confirmation. Monthly tuition fees are subject to school policies."}
-              </p>
-            </div>
-
-            {/* Action panel */}
-            <div className="bg-slate-50 p-6 border-t border-slate-150 flex gap-3">
-              <button 
-                onClick={() => setShowReceipt(false)}
-                className="flex-1 border border-slate-200 hover:border-slate-350 text-slate-700 font-bold py-3 rounded-2xl text-xs uppercase tracking-wider transition-all rounded-xl"
-              >
-                {isRTL ? "Fermer" : "Close Receipt"}
-              </button>
-              <button 
-                onClick={() => window.print()}
-                className="flex-1 bg-primary hover:bg-primary/95 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-md shadow-primary/10 rounded-xl"
-              >
-                <Printer size={14} />
-                <span>{isRTL ? "Imprimer Reçu" : "Print Receipt"}</span>
-              </button>
             </div>
 
           </div>

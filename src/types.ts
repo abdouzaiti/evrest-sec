@@ -28,6 +28,7 @@ export interface Teacher {
   paymentStatus: PaymentStatus;
   lastPaymentDate?: string;
   tokenId?: string;
+  currentMonth?: number;
 }
 
 export interface PointageLog {

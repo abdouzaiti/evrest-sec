@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Calendar, DollarSign, Briefcase, Banknote, Loader2, Trash2, AlertCircle, Shield, Pencil, FileText, Clock } from 'lucide-react';
+import { Search, Plus, Calendar, DollarSign, Briefcase, Banknote, Loader2, Trash2, AlertCircle, Shield, Pencil, FileText, Clock, ChevronDown } from 'lucide-react';
 import { Teacher, PointageLog } from '../types';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
@@ -20,6 +20,7 @@ export function Teachers() {
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [teacherLogs, setTeacherLogs] = useState<PointageLog[]>([]);
+  const [openMonthDropdownId, setOpenMonthDropdownId] = useState<string | null>(null);
 
   const [newTeacher, setNewTeacher] = useState<Omit<Teacher, 'id'>>({
     name: '',
@@ -102,6 +103,18 @@ export function Teachers() {
     }
   };
 
+  const handleSelectTeacherMonth = async (teacher: Teacher, monthNum: number) => {
+    try {
+      const updated = await teachersService.update(teacher.id, {
+        ...teacher,
+        currentMonth: monthNum
+      });
+      setTeachers(prev => prev.map(t => t.id === teacher.id ? updated : t));
+    } catch (err) {
+      console.error('Error selecting teacher month:', err);
+    }
+  };
+
   const handleDeleteTeacher = async (id: string) => {
     if (!confirm(isRTL ? 'Supprimer ce professeur ?' : 'Delete this teacher?')) return;
     try {
@@ -178,6 +191,7 @@ export function Teachers() {
                   <th className="px-8 py-5">{t('subject')}</th>
                   <th className="px-8 py-5">{t('token_id')}</th>
                   <th className="px-8 py-5 text-center">{t('salary')}</th>
+                  <th className="px-8 py-5 text-center">{t('payment_month')}</th>
                   <th className="px-8 py-5 text-center">{t('status')}</th>
                   <th className={cn("px-8 py-5", isRTL ? "text-left" : "text-right")}>{isRTL ? "الإجراءات" : "Actions"}</th>
                 </tr>
@@ -185,7 +199,7 @@ export function Teachers() {
               <tbody className="divide-y divide-slate-50">
                 {teachers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-8 py-20 text-center text-slate-400 font-medium">
+                    <td colSpan={7} className="px-8 py-20 text-center text-slate-400 font-medium">
                       {isRTL ? "Aucun enseignant trouvé" : "No teachers found or registered"}
                     </td>
                   </tr>
@@ -224,6 +238,55 @@ export function Teachers() {
                       ) : (
                         <span className="text-slate-400 select-none text-[11px] font-black tracking-widest bg-slate-50 border border-slate-100/50 px-2 py-1 rounded-md" title="Confidentiel Directeur">•••••• DA</span>
                       )}
+                    </td>
+                    <td className="px-8 py-6 text-center">
+                      <div className="relative inline-block text-left">
+                        <button
+                          type="button"
+                          onClick={() => setOpenMonthDropdownId(openMonthDropdownId === teacher.id ? null : teacher.id)}
+                          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 shadow-2xs transition-all cursor-pointer group"
+                        >
+                          <Calendar size={13} className="text-primary/70 shrink-0" />
+                          <span>
+                            {isRTL ? `الشهر ${teacher.currentMonth || 1}` : `Mois ${teacher.currentMonth || 1}`}
+                          </span>
+                          <ChevronDown size={13} className={cn("text-slate-400 transition-transform duration-200 group-hover:text-slate-600", openMonthDropdownId === teacher.id && "rotate-180 text-primary")} />
+                        </button>
+
+                        {openMonthDropdownId === teacher.id && (
+                          <>
+                            <div 
+                              className="fixed inset-0 z-20" 
+                              onClick={() => setOpenMonthDropdownId(null)} 
+                            />
+                            <div className={cn(
+                              "absolute z-30 mt-1.5 w-36 py-1.5 bg-white border border-slate-200 rounded-xl shadow-xl max-h-56 overflow-y-auto animate-in fade-in zoom-in-95 duration-100",
+                              isRTL ? "left-0 text-right" : "right-0 text-left"
+                            )}>
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => {
+                                const isSelected = (teacher.currentMonth || 1) === m;
+                                return (
+                                  <button
+                                    key={m}
+                                    type="button"
+                                    onClick={() => {
+                                      handleSelectTeacherMonth(teacher, m);
+                                      setOpenMonthDropdownId(null);
+                                    }}
+                                    className={cn(
+                                      "w-full px-3.5 py-2 text-xs font-medium flex items-center justify-between hover:bg-primary/5 transition-colors cursor-pointer",
+                                      isSelected ? "text-primary font-bold bg-primary/10" : "text-slate-700"
+                                    )}
+                                  >
+                                    <span>{isRTL ? `الشهر ${m}` : `Mois ${m}`}</span>
+                                    {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </td>
                     <td className="px-8 py-6 text-center">
                       <span className={cn(

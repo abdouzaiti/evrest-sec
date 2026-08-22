@@ -56,6 +56,7 @@ export const translations: Translations = {
   subject: { fr: 'Matière', ar: 'المادة', en: 'Subject' },
   salary: { fr: 'Salaire', ar: 'الراتب', en: 'Salary' },
   pay_salary: { fr: 'Payer Salaire', ar: 'دفع الراتب', en: 'Pay Salary' },
+  payment_month: { fr: 'Mois de paiement', ar: 'شهر التسديد', en: 'Payment Month' },
   total_payroll: { fr: 'Masse Salariale', ar: 'كتلة الرواتب', en: 'Total Payroll' },
   batch_pay: { fr: 'Tout Payer', ar: 'دفع الكل', en: 'Batch Pay All' },
   upcoming_exams: { fr: 'Examens à venir', ar: 'الامتحانات القادمة', en: 'Upcoming Exams' },
