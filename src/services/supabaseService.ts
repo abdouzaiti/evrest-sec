@@ -90,24 +90,39 @@ const mapToClass = (row: any): SchoolClass => {
   };
 };
 
+const parsePaidMonths = (val: any): number[] => {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.map(Number);
+  if (typeof val === 'string') {
+    val = val.trim();
+    if (val.startsWith('{') && val.endsWith('}')) {
+      return val.slice(1, -1).split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+    }
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed.map(Number);
+    } catch {}
+  }
+  return [];
+};
+
+const parseAttendance = (val: any): Record<number, boolean[]> => {
+  if (!val) return {};
+  if (typeof val === 'object' && !Array.isArray(val)) return val;
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      if (typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+    } catch {}
+  }
+  return {};
+};
+
 const mapToStudent = (row: any): Student => {
   if (!row) return row;
 
-  let parsedPaidMonths: number[] = [];
-  if (Array.isArray(row.paidMonths)) parsedPaidMonths = row.paidMonths;
-  else if (Array.isArray(row.paid_months)) parsedPaidMonths = row.paid_months;
-  else if (typeof row.paidMonths === 'string') {
-    try { parsedPaidMonths = JSON.parse(row.paidMonths); } catch {}
-  } else if (typeof row.paid_months === 'string') {
-    try { parsedPaidMonths = JSON.parse(row.paid_months); } catch {}
-  }
-
-  let parsedAttendance: Record<number, boolean[]> = {};
-  if (row.attendance) {
-    parsedAttendance = typeof row.attendance === 'string' ? JSON.parse(row.attendance) : row.attendance;
-  } else if (row.attendance_data) {
-    parsedAttendance = typeof row.attendance_data === 'string' ? JSON.parse(row.attendance_data) : row.attendance_data;
-  }
+  const parsedPaidMonths = parsePaidMonths(row.paid_months ?? row.paidMonths);
+  const parsedAttendance = parseAttendance(row.attendance_data ?? row.attendance);
 
   return {
     id: row.id,
@@ -115,8 +130,8 @@ const mapToStudent = (row: any): Student => {
     parentPhone: row.parentPhone !== undefined ? row.parentPhone : (row.parent_phone !== undefined ? row.parent_phone : ''),
     classId: row.classId !== undefined ? row.classId : (row.class_id !== undefined ? row.class_id : ''),
     tokenId: row.tokenId !== undefined ? row.tokenId : (row.token_id !== undefined ? row.token_id : undefined),
-    currentMonth: row.currentMonth !== undefined ? row.currentMonth : (row.current_month !== undefined ? row.current_month : 1),
-    sessionsCompleted: row.sessionsCompleted !== undefined ? row.sessionsCompleted : (row.sessions_completed !== undefined ? row.sessions_completed : 0),
+    currentMonth: row.currentMonth !== undefined ? Number(row.currentMonth) : (row.current_month !== undefined ? Number(row.current_month) : 1),
+    sessionsCompleted: row.sessionsCompleted !== undefined ? Number(row.sessionsCompleted) : (row.sessions_completed !== undefined ? Number(row.sessions_completed) : 0),
     paymentStatus: row.paymentStatus !== undefined ? row.paymentStatus : (row.payment_status !== undefined ? row.payment_status : 'Paid'),
     paidMonths: parsedPaidMonths,
     attendance: parsedAttendance
@@ -410,12 +425,16 @@ export const studentsService = {
         const fetched = (data || []).map(mapToStudent);
         return fetched.map(s => {
           const loc = localMap.get(s.id);
+          const finalPaidMonths = (s.paidMonths && s.paidMonths.length > 0) ? s.paidMonths : (loc?.paidMonths || []);
+          const finalAttendance = (s.attendance && Object.keys(s.attendance).length > 0) ? s.attendance : (loc?.attendance || {});
           return {
             ...s,
             currentMonth: loc?.currentMonth || s.currentMonth || 1,
             sessionsCompleted: loc?.sessionsCompleted !== undefined ? loc.sessionsCompleted : (s.sessionsCompleted || 0),
             paymentStatus: loc?.paymentStatus || s.paymentStatus || 'Paid',
-            tokenId: s.tokenId || loc?.tokenId || undefined
+            tokenId: s.tokenId || loc?.tokenId || undefined,
+            paidMonths: finalPaidMonths,
+            attendance: finalAttendance
           };
         });
       } catch (err) {
@@ -435,21 +454,7 @@ export const studentsService = {
 
     if (isSupabaseConfigured()) {
       try {
-        const payload = makeStudentPayload(student);
-        const { data, error } = await supabase
-          .from('students')
-          .insert([payload])
-          .select()
-          .single();
-
-        if (!error && data) {
-          const created = mapToStudent(data);
-          local.push(created);
-          saveLocalData('school_students', local);
-          return created;
-        }
-
-        // Retry 1: Snake case structure
+        // Attempt 1: Standard snake_case payload
         const snakePayload = {
           name: student.name,
           parent_phone: student.parentPhone,
@@ -462,20 +467,55 @@ export const studentsService = {
           attendance_data: student.attendance || {}
         };
 
-        const { data: retry1Data, error: retry1Error } = await supabase
+        const { data, error } = await supabase
           .from('students')
           .insert([snakePayload])
           .select()
           .single();
 
-        if (!retry1Error && retry1Data) {
-          const created = mapToStudent(retry1Data);
-          local.push(created);
+        if (!error && data) {
+          const created = mapToStudent(data);
+          const finalCreated = {
+            ...created,
+            paidMonths: (created.paidMonths && created.paidMonths.length > 0) ? created.paidMonths : (student.paidMonths || []),
+            attendance: (created.attendance && Object.keys(created.attendance).length > 0) ? created.attendance : (student.attendance || {})
+          };
+          local.push(finalCreated);
           saveLocalData('school_students', local);
-          return created;
+          return finalCreated;
         }
 
-        // Retry 2: Minimal core payload
+        // Attempt 2: Without attendance_data if column missing
+        const snakePayloadNoAttendance = {
+          name: student.name,
+          parent_phone: student.parentPhone,
+          class_id: student.classId,
+          token_id: student.tokenId || null,
+          current_month: student.currentMonth || 1,
+          sessions_completed: student.sessionsCompleted || 0,
+          payment_status: student.paymentStatus || 'Paid',
+          paid_months: student.paidMonths || []
+        };
+
+        const { data: retry1Data, error: retry1Error } = await supabase
+          .from('students')
+          .insert([snakePayloadNoAttendance])
+          .select()
+          .single();
+
+        if (!retry1Error && retry1Data) {
+          const created = mapToStudent(retry1Data);
+          const finalCreated = {
+            ...created,
+            paidMonths: (created.paidMonths && created.paidMonths.length > 0) ? created.paidMonths : (student.paidMonths || []),
+            attendance: student.attendance || {}
+          };
+          local.push(finalCreated);
+          saveLocalData('school_students', local);
+          return finalCreated;
+        }
+
+        // Attempt 3: Minimal core payload
         const minimalPayload = {
           name: student.name,
           parent_phone: student.parentPhone,
@@ -494,6 +534,8 @@ export const studentsService = {
           created.currentMonth = student.currentMonth;
           created.sessionsCompleted = student.sessionsCompleted;
           created.paymentStatus = student.paymentStatus;
+          created.paidMonths = student.paidMonths || [];
+          created.attendance = student.attendance || {};
           local.push(created);
           saveLocalData('school_students', local);
           return created;
@@ -559,25 +601,7 @@ export const studentsService = {
 
     if (isSupabaseConfigured()) {
       try {
-        const payload = makeStudentPayload(student);
-        const { data, error } = await supabase
-          .from('students')
-          .update(payload)
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (!error && data) {
-          const res = mapToStudent(data);
-          return {
-            ...res,
-            currentMonth: student.currentMonth || res.currentMonth || 1,
-            sessionsCompleted: student.sessionsCompleted !== undefined ? student.sessionsCompleted : res.sessionsCompleted,
-            paymentStatus: student.paymentStatus || res.paymentStatus
-          };
-        }
-
-        // Retry 1: Snake case payload
+        // Attempt 1: Standard snake_case payload
         const snakePayload = {
           name: student.name,
           parent_phone: student.parentPhone,
@@ -590,9 +614,38 @@ export const studentsService = {
           attendance_data: student.attendance || {}
         };
 
-        const { data: retry1Data, error: retry1Error } = await supabase
+        const { data, error } = await supabase
           .from('students')
           .update(snakePayload)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (!error && data) {
+          const res = mapToStudent(data);
+          return {
+            ...updatedStudentObj,
+            ...res,
+            paidMonths: (res.paidMonths && res.paidMonths.length > 0) ? res.paidMonths : updatedStudentObj.paidMonths,
+            attendance: (res.attendance && Object.keys(res.attendance).length > 0) ? res.attendance : updatedStudentObj.attendance
+          };
+        }
+
+        // Attempt 2: Without attendance_data if column missing
+        const snakePayloadNoAttendance = {
+          name: student.name,
+          parent_phone: student.parentPhone,
+          class_id: student.classId,
+          token_id: student.tokenId || null,
+          current_month: student.currentMonth || 1,
+          sessions_completed: student.sessionsCompleted || 0,
+          payment_status: student.paymentStatus || 'Paid',
+          paid_months: student.paidMonths || []
+        };
+
+        const { data: retry1Data, error: retry1Error } = await supabase
+          .from('students')
+          .update(snakePayloadNoAttendance)
           .eq('id', id)
           .select()
           .single();
@@ -600,24 +653,29 @@ export const studentsService = {
         if (!retry1Error && retry1Data) {
           const res = mapToStudent(retry1Data);
           return {
+            ...updatedStudentObj,
             ...res,
-            currentMonth: student.currentMonth || res.currentMonth || 1,
-            sessionsCompleted: student.sessionsCompleted !== undefined ? student.sessionsCompleted : res.sessionsCompleted,
-            paymentStatus: student.paymentStatus || res.paymentStatus
+            paidMonths: (res.paidMonths && res.paidMonths.length > 0) ? res.paidMonths : updatedStudentObj.paidMonths,
+            attendance: updatedStudentObj.attendance
           };
         }
 
-        // Retry 2: Minimal core payload (omits current_month, sessions_completed, payment_status if missing in schema)
-        const minimalPayload = {
+        // Attempt 3: CamelCase payload (if DB has camelCase columns)
+        const camelPayload = {
           name: student.name,
-          parent_phone: student.parentPhone,
-          class_id: student.classId,
-          token_id: student.tokenId || null
+          parentPhone: student.parentPhone,
+          classId: student.classId,
+          tokenId: student.tokenId || null,
+          currentMonth: student.currentMonth || 1,
+          sessionsCompleted: student.sessionsCompleted || 0,
+          paymentStatus: student.paymentStatus || 'Paid',
+          paidMonths: student.paidMonths || [],
+          attendance: student.attendance || {}
         };
 
         const { data: retry2Data, error: retry2Error } = await supabase
           .from('students')
-          .update(minimalPayload)
+          .update(camelPayload)
           .eq('id', id)
           .select()
           .single();
@@ -625,14 +683,39 @@ export const studentsService = {
         if (!retry2Error && retry2Data) {
           const res = mapToStudent(retry2Data);
           return {
+            ...updatedStudentObj,
             ...res,
-            currentMonth: student.currentMonth || res.currentMonth || 1,
-            sessionsCompleted: student.sessionsCompleted !== undefined ? student.sessionsCompleted : res.sessionsCompleted,
-            paymentStatus: student.paymentStatus || res.paymentStatus
+            paidMonths: (res.paidMonths && res.paidMonths.length > 0) ? res.paidMonths : updatedStudentObj.paidMonths,
+            attendance: (res.attendance && Object.keys(res.attendance).length > 0) ? res.attendance : updatedStudentObj.attendance
           };
         }
 
-        console.warn('Student update on Supabase schema notice, saved to local cache:', error || retry1Error || retry2Error);
+        // Attempt 4: Minimal core payload
+        const minimalPayload = {
+          name: student.name,
+          parent_phone: student.parentPhone,
+          class_id: student.classId,
+          token_id: student.tokenId || null
+        };
+
+        const { data: retry3Data, error: retry3Error } = await supabase
+          .from('students')
+          .update(minimalPayload)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (!retry3Error && retry3Data) {
+          const res = mapToStudent(retry3Data);
+          return {
+            ...updatedStudentObj,
+            ...res,
+            paidMonths: updatedStudentObj.paidMonths,
+            attendance: updatedStudentObj.attendance
+          };
+        }
+
+        console.warn('Student update on Supabase schema notice, saved to local cache:', error || retry1Error || retry2Error || retry3Error);
         return updatedStudentObj;
       } catch (err: any) {
         console.warn('Error updating student on Supabase, using local storage cache:', err);

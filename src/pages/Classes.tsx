@@ -105,16 +105,14 @@ export function Classes() {
   };
 
   const handleToggleAttendance = async (student: Student, month: number, sessionIndex: number) => {
-    const attendance = student.attendance || {};
-    const monthAttendance = attendance[month] || [false, false, false, false];
+    const attendance = { ...(student.attendance || {}) };
+    const monthAttendance = [...(attendance[month] || [false, false, false, false])];
     monthAttendance[sessionIndex] = !monthAttendance[sessionIndex];
+    attendance[month] = monthAttendance;
     
     const updatedStudent: Student = {
       ...student,
-      attendance: {
-        ...attendance,
-        [month]: monthAttendance
-      }
+      attendance
     };
     
     setStudents(prev => prev.map(s => s.id === student.id ? updatedStudent : s));
