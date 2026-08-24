@@ -1,3 +1,30 @@
+export interface RentVaultDeposit {
+  id: string;
+  amount: number;
+  date: string;
+  month: number;
+  year: number;
+  note?: string;
+}
+
+export interface RentVaultConfig {
+  targetAnnualRent: number;
+  deposits: RentVaultDeposit[];
+}
+
+export type ExpenseCategory = 'rent' | 'utilities' | 'salaries' | 'supplies' | 'maintenance' | 'marketing' | 'taxes' | 'other';
+
+export interface Expense {
+  id: string;
+  title: string;
+  amount: number;
+  category: ExpenseCategory;
+  date: string;
+  month: number;
+  year: number;
+  notes?: string;
+}
+
 export type PaymentStatus = 'Paid' | 'Unpaid' | 'Pending';
 
 export interface Student {

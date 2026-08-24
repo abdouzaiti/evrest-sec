@@ -29,13 +29,13 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden"
+            className="relative bg-white w-full max-w-lg rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[90vh] flex flex-col z-10"
           >
             <div className={cn(
-              "p-6 border-b border-slate-100 flex items-center justify-between",
+              "p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between shrink-0",
               isRTL && "flex-row-reverse"
             )}>
-              <h3 className="text-xl font-black text-primary tracking-tight">{title}</h3>
+              <h3 className="text-lg sm:text-xl font-black text-primary tracking-tight">{title}</h3>
               <button 
                 onClick={onClose}
                 className="p-2 hover:bg-slate-50 rounded-xl text-slate-400 hover:text-primary transition-colors"
@@ -43,7 +43,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
                 <X size={20} />
               </button>
             </div>
-            <div className="p-6">
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 custom-scrollbar">
               {children}
             </div>
           </motion.div>

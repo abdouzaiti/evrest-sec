@@ -5,10 +5,10 @@ import {
   Users, 
   UserSquare2, 
   CreditCard, 
+  Receipt,
   Bell, 
   LogOut,
   X,
-  Scan,
   GraduationCap
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -30,7 +30,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     { icon: GraduationCap, label: t('students'), href: '/students' },
     { icon: UserSquare2, label: t('teachers'), href: '/teachers' },
     { icon: CreditCard, label: t('payments'), href: '/payments' },
-    { icon: Scan, label: t('pointage_terminal'), href: '/pointage' },
+    { icon: Receipt, label: t('expenses'), href: '/expenses' },
   ];
 
   return (

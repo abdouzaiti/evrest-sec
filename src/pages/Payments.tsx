@@ -150,8 +150,8 @@ export function Payments() {
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
-          <table className={cn("w-full text-left", isRTL && "text-right")}>
+        <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm overflow-x-auto w-full">
+          <table className={cn("w-full text-left min-w-[650px]", isRTL && "text-right")}>
             <thead>
               <tr className="bg-slate-50/50 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
                 <th className="px-8 py-5">Entity</th>

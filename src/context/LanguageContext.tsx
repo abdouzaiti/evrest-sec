@@ -16,6 +16,7 @@ export const translations: Translations = {
   sessions: { fr: 'Séances', ar: 'الحصص', en: 'Sessions' },
   teachers: { fr: 'Enseignants', ar: 'الأساتذة', en: 'Teachers' },
   payments: { fr: 'Paiements', ar: 'المدفوعات', en: 'Payments' },
+  expenses: { fr: 'Charges & Bilan', ar: 'المصاريف والربح/الخسارة', en: 'Expenses & P&L' },
   notifications: { fr: 'Notifications', ar: 'الإشعارات', en: 'Notifications' },
   signOut: { fr: 'Déconnexion', ar: 'تسجيل الخروج', en: 'Sign Out' },
   

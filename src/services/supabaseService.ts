@@ -1,5 +1,25 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { SchoolClass, Student, Teacher, PaymentRecord } from '../types';
+import { SchoolClass, Student, Teacher, PaymentRecord, Expense, RentVaultDeposit, RentVaultConfig } from '../types';
+
+const defaultRentVault: RentVaultConfig = {
+  targetAnnualRent: 180000, // Default annual rent e.g., 180,000 DA (18 M)
+  deposits: [
+    { id: 'rvd-1', amount: 15000, date: '2026-01-10', month: 1, year: 2026, note: 'Épargne mensuelle du loyer - Janvier' },
+    { id: 'rvd-2', amount: 15000, date: '2026-02-12', month: 2, year: 2026, note: 'Épargne mensuelle du loyer - Février' },
+    { id: 'rvd-3', amount: 15000, date: '2026-03-08', month: 3, year: 2026, note: 'Épargne mensuelle du loyer - Mars' },
+    { id: 'rvd-4', amount: 15000, date: '2026-04-10', month: 4, year: 2026, note: 'Épargne mensuelle du loyer - Avril' },
+  ]
+};
+
+// Default annual expenses for financial simulation
+const defaultExpenses: Expense[] = [
+  { id: 'exp-1', title: 'Loyer annuel des locaux de l\'école', amount: 150000, category: 'rent', date: '2026-01-05', month: 1, year: 2026, notes: 'Premier versement du loyer' },
+  { id: 'exp-2', title: 'Factures d\'électricité et d\'eau (Sonelgaz/ADE)', amount: 24500, category: 'utilities', date: '2026-02-10', month: 2, year: 2026, notes: 'Consommation éclairage et climatisation' },
+  { id: 'exp-3', title: 'Abonnement Internet & Fibre (Algérie Télécom)', amount: 7500, category: 'utilities', date: '2026-03-01', month: 3, year: 2026, notes: 'Abonnement mensuel Fibre 100 Mega' },
+  { id: 'exp-4', title: 'Fournitures scolaires, papier & impression', amount: 32000, category: 'supplies', date: '2026-03-15', month: 3, year: 2026, notes: 'Feutres, rames de papier et cahiers' },
+  { id: 'exp-5', title: 'Entretien de la climatisation et mobilier', amount: 18000, category: 'maintenance', date: '2026-04-12', month: 4, year: 2026, notes: 'Maintenance périodique des salles de cours' },
+  { id: 'exp-6', title: 'Campagnes publicitaires & flyers', amount: 15000, category: 'marketing', date: '2026-05-02', month: 5, year: 2026, notes: 'Publicité pour révision du Bac et BEM' }
+];
 
 // Mock/Local Storage fallback default databases (Algerian/Academy Focused)
 const defaultClasses: SchoolClass[] = [
@@ -1154,3 +1174,187 @@ export const paymentsService = {
       return getLocalData<PaymentRecord>('payments', []);
   }
 };
+
+export const expensesService = {
+  async getAll(): Promise<Expense[]> {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase
+          .from('expenses')
+          .select('*')
+          .order('date', { ascending: false });
+        if (error) throw error;
+        return (data || []).map((row: any) => ({
+          id: row.id,
+          title: row.title || row.name || '',
+          amount: Number(row.amount || 0),
+          category: row.category || 'other',
+          date: row.date || new Date().toISOString().split('T')[0],
+          month: Number(row.month || new Date(row.date || Date.now()).getMonth() + 1),
+          year: Number(row.year || new Date(row.date || Date.now()).getFullYear()),
+          notes: row.notes || ''
+        }));
+      } catch (err) {
+        console.warn('Failed to fetch expenses from Supabase, falling back to LocalStorage', err);
+        return getLocalData<Expense>('school_expenses', defaultExpenses);
+      }
+    } else {
+      return getLocalData<Expense>('school_expenses', defaultExpenses);
+    }
+  },
+
+  async create(expense: Omit<Expense, 'id'>): Promise<Expense> {
+    const local = getLocalData<Expense>('school_expenses', defaultExpenses);
+    const newExpense: Expense = {
+      ...expense,
+      id: 'exp-' + Date.now()
+    };
+
+    if (isSupabaseConfigured()) {
+      try {
+        const payload = {
+          title: expense.title,
+          amount: Number(expense.amount),
+          category: expense.category,
+          date: expense.date,
+          month: Number(expense.month),
+          year: Number(expense.year),
+          notes: expense.notes || ''
+        };
+
+        const { data, error } = await supabase
+          .from('expenses')
+          .insert([payload])
+          .select()
+          .single();
+
+        if (!error && data) {
+          const created: Expense = {
+            id: data.id,
+            title: data.title || expense.title,
+            amount: Number(data.amount || expense.amount),
+            category: data.category || expense.category,
+            date: data.date || expense.date,
+            month: Number(data.month || expense.month),
+            year: Number(data.year || expense.year),
+            notes: data.notes || expense.notes
+          };
+          local.push(created);
+          saveLocalData('school_expenses', local);
+          return created;
+        }
+      } catch (err) {
+        console.warn('Failed to create expense on Supabase, saving locally', err);
+      }
+    }
+
+    local.push(newExpense);
+    saveLocalData('school_expenses', local);
+    return newExpense;
+  },
+
+  async delete(id: string): Promise<void> {
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase
+          .from('expenses')
+          .delete()
+          .eq('id', id);
+      } catch (err) {
+        console.warn('Error deleting expense on Supabase', err);
+      }
+    }
+    const local = getLocalData<Expense>('school_expenses', defaultExpenses);
+    const filtered = local.filter(e => e.id !== id);
+    saveLocalData('school_expenses', filtered);
+  },
+
+  async update(id: string, updates: Partial<Expense>): Promise<Expense> {
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase
+          .from('expenses')
+          .update({
+            ...(updates.title !== undefined && { title: updates.title }),
+            ...(updates.amount !== undefined && { amount: Number(updates.amount) }),
+            ...(updates.category !== undefined && { category: updates.category }),
+            ...(updates.date !== undefined && { date: updates.date }),
+            ...(updates.month !== undefined && { month: Number(updates.month) }),
+            ...(updates.year !== undefined && { year: Number(updates.year) }),
+            ...(updates.notes !== undefined && { notes: updates.notes })
+          })
+          .eq('id', id);
+      } catch (err) {
+        console.warn('Error updating expense on Supabase', err);
+      }
+    }
+    const local = getLocalData<Expense>('school_expenses', defaultExpenses);
+    const index = local.findIndex(e => e.id === id);
+    let updatedExpense: Expense;
+    if (index !== -1) {
+      local[index] = { ...local[index], ...updates };
+      updatedExpense = local[index];
+    } else {
+      updatedExpense = { id, title: '', amount: 0, category: 'other', date: '', month: 1, year: 2026, ...updates } as Expense;
+      local.push(updatedExpense);
+    }
+    saveLocalData('school_expenses', local);
+    return updatedExpense;
+  }
+};
+
+const getRentVaultLocalData = (): RentVaultConfig => {
+  const data = localStorage.getItem('rent_vault_config');
+  if (!data) {
+    localStorage.setItem('rent_vault_config', JSON.stringify(defaultRentVault));
+    return defaultRentVault;
+  }
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    return defaultRentVault;
+  }
+};
+
+const saveRentVaultLocalData = (data: RentVaultConfig): void => {
+  localStorage.setItem('rent_vault_config', JSON.stringify(data));
+};
+
+export const rentVaultService = {
+  async getConfig(): Promise<RentVaultConfig> {
+    return getRentVaultLocalData();
+  },
+
+  async updateTarget(targetAnnualRent: number): Promise<RentVaultConfig> {
+    const config = getRentVaultLocalData();
+    const updated: RentVaultConfig = { ...config, targetAnnualRent };
+    saveRentVaultLocalData(updated);
+    return updated;
+  },
+
+  async addDeposit(deposit: Omit<RentVaultDeposit, 'id'>): Promise<RentVaultConfig> {
+    const config = getRentVaultLocalData();
+    const newDeposit: RentVaultDeposit = {
+      ...deposit,
+      id: 'rvd-' + Date.now()
+    };
+    const updated: RentVaultConfig = {
+      ...config,
+      deposits: [newDeposit, ...(config.deposits || [])]
+    };
+    saveRentVaultLocalData(updated);
+    return updated;
+  },
+
+  async deleteDeposit(id: string): Promise<RentVaultConfig> {
+    const config = getRentVaultLocalData();
+    const updated: RentVaultConfig = {
+      ...config,
+      deposits: (config.deposits || []).filter(d => d.id !== id)
+    };
+    saveRentVaultLocalData(updated);
+    return updated;
+  }
+};
+
+

@@ -208,8 +208,8 @@ export function Teachers() {
 
       <div className={cn("grid grid-cols-1", isRTL && "lg:flex lg:flex-row-reverse")}>
         <div className="space-y-10 focus-within:ring-2 ring-primary/5 transition-all">
-          <div className="overflow-x-auto">
-            <table className={cn("w-full text-left", isRTL && "text-right")}>
+          <div className="overflow-x-auto w-full">
+            <table className={cn("w-full text-left min-w-[720px]", isRTL && "text-right")}>
               <thead>
                 <tr className="bg-slate-50/50 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
                   <th className="px-8 py-5">{t('staff_member')}</th>
