@@ -7,8 +7,10 @@ export interface Student {
   classId: string;
   tokenId?: string;
   currentMonth: number;
+  paidMonths: number[];
   sessionsCompleted: number;
   paymentStatus: PaymentStatus;
+  attendance?: Record<number, boolean[]>;
 }
 
 export interface SchoolClass {

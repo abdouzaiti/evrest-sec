@@ -178,6 +178,8 @@ export function Dashboard() {
         classId: regClassId,
         sessionsCompleted: 0,
         currentMonth: 1,
+        paidMonths: [],
+        attendance: {},
         paymentStatus: 'Unpaid'
       });
 

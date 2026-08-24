@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Calendar, DollarSign, Briefcase, Banknote, Loader2, Trash2, AlertCircle, Shield, Pencil, FileText, Clock, ChevronDown } from 'lucide-react';
-import { Teacher, PointageLog } from '../types';
+import { Teacher, PointageLog, SchoolClass, Student, PaymentStatus } from '../types';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -206,7 +206,7 @@ export function Teachers() {
         )}
       </header>
 
-      <div className={cn("grid grid-cols-1 pt-10 border-t border-slate-100", isRTL && "lg:flex lg:flex-row-reverse")}>
+      <div className={cn("grid grid-cols-1", isRTL && "lg:flex lg:flex-row-reverse")}>
         <div className="space-y-10 focus-within:ring-2 ring-primary/5 transition-all">
           <div className="overflow-x-auto">
             <table className={cn("w-full text-left", isRTL && "text-right")}>

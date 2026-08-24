@@ -16,6 +16,8 @@ export function Classes() {
   const [allLogs, setAllLogs] = useState<any[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [search, setSearch] = useState('');
+  const [openMonthDropdownId, setOpenMonthDropdownId] = useState<string | null>(null);
+  const [attendanceStudent, setAttendanceStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Modal states
@@ -72,7 +74,7 @@ export function Classes() {
     try {
       let { sessionsCompleted, currentMonth, paymentStatus } = student;
       
-      sessionsCompleted++;
+      sessionsCompleted = Math.min(sessionsCompleted + 1, 4);
       
       if (sessionsCompleted >= 4) {
         paymentStatus = 'Unpaid';
@@ -89,12 +91,103 @@ export function Classes() {
     }
   };
 
+  const handleUpdateStudentMonthStatus = async (student: Student, newMonth: number) => {
+    const updatedStudent: Student = {
+      ...student,
+      currentMonth: newMonth
+    };
+    setStudents(prev => prev.map(s => s.id === student.id ? updatedStudent : s));
+    try {
+      await studentsService.update(student.id, updatedStudent);
+    } catch (error) {
+      console.error('Error updating student month:', error);
+    }
+  };
+
+  const handleToggleAttendance = async (student: Student, month: number, sessionIndex: number) => {
+    const attendance = student.attendance || {};
+    const monthAttendance = attendance[month] || [false, false, false, false];
+    monthAttendance[sessionIndex] = !monthAttendance[sessionIndex];
+    
+    const updatedStudent: Student = {
+      ...student,
+      attendance: {
+        ...attendance,
+        [month]: monthAttendance
+      }
+    };
+    
+    setStudents(prev => prev.map(s => s.id === student.id ? updatedStudent : s));
+    setAttendanceStudent(updatedStudent);
+    
+    try {
+      await studentsService.update(student.id, updatedStudent);
+    } catch (error) {
+      console.error('Error updating attendance:', error);
+    }
+  };
+
+  const handleToggleMonthPayment = async (student: Student, month: number) => {
+    try {
+      const paidMonths = student.paidMonths || [];
+      const isPaid = paidMonths.includes(month);
+      let updatedPaidMonths: number[];
+
+      if (isPaid) {
+        updatedPaidMonths = paidMonths.filter(m => m !== month);
+      } else {
+        updatedPaidMonths = [...paidMonths, month];
+      }
+
+      const isCurrentMonth = month === student.currentMonth;
+      const newPaymentStatus = updatedPaidMonths.includes(student.currentMonth) ? 'Paid' : 'Unpaid';
+
+      const updatedStudent: Student = {
+        ...student,
+        paidMonths: updatedPaidMonths,
+        paymentStatus: isCurrentMonth ? newPaymentStatus : student.paymentStatus
+      };
+
+      setStudents(prev => prev.map(s => s.id === student.id ? updatedStudent : s));
+      setAttendanceStudent(updatedStudent);
+
+      await studentsService.update(student.id, updatedStudent);
+
+      if (!isPaid) {
+        const schoolClass = classes.find(c => c.id === student.classId);
+        if (schoolClass) {
+          await paymentsService.create({
+            studentId: student.id,
+            studentName: student.name,
+            classId: student.classId,
+            month: month,
+            amountPaid: schoolClass.price,
+            sarf: schoolClass.price * 0.5,
+            sessionDates: [],
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling month payment:', error);
+    }
+  };
+
   const handleTogglePaymentStatus = async (student: Student) => {
     try {
-      let { paymentStatus, currentMonth, sessionsCompleted } = student;
+      let { paymentStatus, currentMonth, sessionsCompleted, paidMonths = [] } = student;
       
       if (paymentStatus !== 'Paid') {
         paymentStatus = 'Paid';
+        
+        // Reset sessions if they have finished the 4 sessions for the current month
+        if (sessionsCompleted >= 4) {
+            sessionsCompleted = 0;
+        }
+
+        if (!paidMonths.includes(currentMonth)) {
+          paidMonths = [...paidMonths, currentMonth];
+        }
         
         const schoolClass = classes.find(c => c.id === student.classId);
         if (schoolClass) {
@@ -109,20 +202,15 @@ export function Classes() {
               timestamp: new Date().toISOString()
           });
         }
-
-        if (sessionsCompleted >= 4) {
-            currentMonth++;
-            sessionsCompleted = 0;
-            paymentStatus = 'Unpaid';
-        }
       } else {
         paymentStatus = 'Unpaid';
+        paidMonths = paidMonths.filter(m => m !== currentMonth);
       }
       
       const updated = await studentsService.update(student.id, {
         ...student,
         paymentStatus,
-        currentMonth,
+        paidMonths,
         sessionsCompleted
       });
       setStudents(prev => prev.map(s => s.id === student.id ? updated : s));
@@ -403,15 +491,13 @@ export function Classes() {
                         <th className="px-8 py-5">{t('parent_phone')}</th>
                         <th className="px-8 py-5">{t('token_id')}</th>
                         <th className="px-8 py-5">{isRTL ? "الشهر" : "Mois"}</th>
-                        <th className="px-8 py-5">{isRTL ? "الحصص" : "Sessions"}</th>
-                        <th className="px-8 py-5">{isRTL ? "الدفع" : "Payment"}</th>
                         <th className={cn("px-8 py-5", isRTL ? "text-left" : "text-right")}>{isRTL ? "الإجراءات" : "Actions"}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {classStudents.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-8 py-20 text-center text-slate-400 font-medium">
+                          <td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-medium">
                             {isRTL ? "Aucun étudiant enregistré dans cette classe" : "No students registered in this class"}
                           </td>
                         </tr>
@@ -441,30 +527,12 @@ export function Classes() {
                             </div>
                           </td>
                           <td className="px-8 py-6">
-                             <span className="font-black text-sm text-slate-600">{s.currentMonth}</span>
-                          </td>
-                          <td className="px-8 py-6">
                             <button
-                              type="button"
-                              onClick={() => handleIncrementSession(s)}
-                              className="flex items-center gap-2 font-black text-sm text-primary hover:text-accent"
+                              onClick={() => setAttendanceStudent(s)}
+                              className="flex items-center gap-1 font-black text-sm text-primary hover:text-accent bg-primary/10 px-3 py-1.5 rounded-lg transition-all"
                             >
-                                {s.sessionsCompleted}/4
-                            </button>
-                          </td>
-                          <td className="px-8 py-6">
-                            <button
-                              type="button"
-                              onClick={() => handleTogglePaymentStatus(s)}
-                              className={cn(
-                                "px-3 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all shadow-sm flex items-center gap-1.5",
-                                s.paymentStatus === 'Paid'
-                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100" 
-                                  : "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
-                              )}
-                            >
-                              {s.paymentStatus === 'Paid' ? <CheckCircle2 size={13} className="text-emerald-500" /> : <XCircle size={13} className="text-amber-500" />}
-                              <span>{s.paymentStatus === 'Paid' ? (isRTL ? 'مخلص' : 'Paid') : (isRTL ? 'غير مخلص' : 'Unpaid')}</span>
+                                {s.currentMonth}
+                                <BookOpen size={12} className="opacity-50" />
                             </button>
                           </td>
                            <td className={cn("px-8 py-6", isRTL ? "text-left" : "text-right")}>
@@ -887,6 +955,58 @@ export function Classes() {
             {isRTL ? "حفظ التعديلات" : "Update Student"}
           </button>
         </form>
+      </Modal>
+
+      {/* Attendance Modal */}
+      <Modal 
+        isOpen={!!attendanceStudent} 
+        onClose={() => setAttendanceStudent(null)} 
+        title={isRTL ? "الحضور والغياب والدفع" : "Attendance & Payment"}
+      >
+        {attendanceStudent && (
+          <div className="space-y-2">
+            <div className="grid grid-cols-6 gap-1 items-center text-left text-[10px] font-bold text-slate-500 uppercase pb-1 border-b border-slate-100">
+              <div className="pl-1">{isRTL ? "الشهر" : "Month"}</div>
+              {[1, 2, 3, 4].map(i => <div key={i} className="text-center">S{i}</div>)}
+              <div className="text-center">{isRTL ? "الدفع" : "Payment"}</div>
+            </div>
+            {[...Array(12)].map((_, monthIdx) => {
+               const month = monthIdx + 1;
+               const monthAttendance = (attendanceStudent.attendance || {})[month] || [false, false, false, false];
+               const isPaid = (attendanceStudent.paidMonths || []).includes(month);
+               return (
+                 <div key={month} className="grid grid-cols-6 gap-1 items-center py-0.5 border-b border-slate-50 last:border-none">
+                    <div className="font-bold text-xs text-slate-700 pl-1">M {month}</div>
+                    {monthAttendance.map((isPresent, sessionIdx) => (
+                      <button 
+                         key={sessionIdx}
+                         onClick={() => handleToggleAttendance(attendanceStudent, month, sessionIdx)}
+                         className={cn(
+                           "w-5 h-5 rounded-full transition-all border mx-auto flex items-center justify-center", 
+                           isPresent ? "bg-green-500 border-green-600" : "bg-red-500 border-red-600"
+                         )}
+                         title={`Session ${sessionIdx + 1}: ${isPresent ? 'Present' : 'Absent'}`}
+                      />
+                    ))}
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleMonthPayment(attendanceStudent, month)}
+                        className={cn(
+                          "px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all border shadow-xs whitespace-nowrap cursor-pointer",
+                          isPaid 
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" 
+                            : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
+                        )}
+                      >
+                        {isPaid ? (isRTL ? "مخلص" : "Paid") : (isRTL ? "غير مخلص" : "Unpaid")}
+                      </button>
+                    </div>
+                 </div>
+               )
+            })}
+          </div>
+        )}
       </Modal>
     </div>
   );
