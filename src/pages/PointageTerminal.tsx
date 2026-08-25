@@ -201,10 +201,10 @@ export default function PointageTerminal() {
       let logStatus = '';
 
       if (newSessionCount <= 4) {
-        detailsMsg = `${isRTL ? 'حضور مسجل - الحصة' : 'Presence recorded - Session'} ${newSessionCount}/4 (${studentClassName})`;
+        detailsMsg = `Présence enregistrée - Session ${newSessionCount}/4 (${studentClassName})`;
         logStatus = `Session ${newSessionCount}/4`;
       } else {
-        detailsMsg = `${isRTL ? 'تنبيه: تجاوز 4 حصص في الشهر' : 'Warning: Exceeded 4 sessions this month'} (${newSessionCount}/4)`;
+        detailsMsg = `Attention: Plus de 4 sessions ce mois-ci (${newSessionCount}/4)`;
         isSuccess = false;
         logStatus = `Session ${newSessionCount}/4 (Over limit)`;
       }
@@ -271,11 +271,7 @@ export default function PointageTerminal() {
         success: false,
         type: 'student',
         name: rawVal,
-        details: language === 'ar' 
-          ? 'المسح فشل: الرمز غير معرّف في النظام! يرجى ربطه أولاً.' 
-          : language === 'fr' 
-            ? 'Scan échoué : Jeton non reconnu dans le système !' 
-            : 'Scan failed: Token not recognized. Please register it.',
+        details: 'Scan échoué : Jeton non reconnu dans le système ! Veuillez d\'abord l\'associer.',
         tokenId: rawVal,
         isPaid: false
       });
@@ -294,7 +290,7 @@ export default function PointageTerminal() {
   };
 
   const clearAllLogs = async () => {
-    if (confirm(language === 'ar' ? 'هل أنت متأكد من مسح جميع السجلات؟' : 'Effacer l\'historique définitif ?')) {
+    if (confirm('Effacer l\'historique définitif ?')) {
       await pointageService.clearAll();
       setLogs([]);
     }
@@ -333,7 +329,7 @@ export default function PointageTerminal() {
       setSelectedPersonId('');
       
       // Notify
-      alert(language === 'ar' ? 'تم ربط البطاقة بنجاح!' : 'Jeton associé avec succès !');
+      alert('Jeton associé avec succès !');
       
       // Focus RFID
       setTimeout(() => rfidInputRef.current?.focus(), 200);
@@ -353,9 +349,7 @@ export default function PointageTerminal() {
             {t('pointage_terminal')}
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            {language === 'ar' 
-              ? 'تسيير دخول وخروج التلاميذ بنقرة واحدة بمراقبة الاشتراكات، وتسجيل نقطة حضور الأساتذة.' 
-              : 'Gérez l\'accès physique en vérifiant instantanément l\'état des paiements et effectuez le pointage automatique.'}
+            Gérez l'accès physique en vérifiant instantanément l'état des paiements et effectuez le pointage automatique.
           </p>
         </div>
 
@@ -372,7 +366,7 @@ export default function PointageTerminal() {
             title="Toggle Speaker beep sound"
           >
             {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            <span>{soundEnabled ? (language === 'ar' ? 'صوت مفعل' : 'Son activé') : (language === 'ar' ? 'صوت ملتغي' : 'Son coupé')}</span>
+            <span>{soundEnabled ? 'Son activé' : 'Son coupé'}</span>
           </button>
 
           <button
@@ -411,12 +405,10 @@ export default function PointageTerminal() {
             </div>
 
             <h3 className="text-lg font-bold text-slate-800">
-              {rfidFocus ? (language === 'ar' ? 'القارئ متصل وجاهز للمسح' : 'Lecteur RFID connecté & prêt') : t('scan_instruction')}
+              {rfidFocus ? 'Lecteur RFID connecté & prêt' : t('scan_instruction')}
             </h3>
             <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-              {language === 'ar'
-                ? 'الرجاء توجيه المؤشر هنا أو استخدام قارئ الباركود/RFID. يقوم بمحاكاة الإدخال عند الضغط على زر الإرسال.'
-                : 'Veuillez cliquer dans cette zone et badger, ou tapez manuellement le code du jeton ci-dessous.'}
+              Veuillez cliquer dans cette zone et badger, ou tapez manuellement le code du jeton ci-dessous.
             </p>
 
             {/* Hidden Input field for RFID scanners (keyboard emulators) */}
@@ -438,14 +430,14 @@ export default function PointageTerminal() {
                   className="mt-2.5 w-full bg-slate-800 text-white hover:bg-slate-900 font-semibold py-2 rounded-lg text-xs transition-colors tracking-wide flex items-center justify-center gap-1.5"
                 >
                   <Keyboard size={14} />
-                  {language === 'ar' ? 'إرسال ومحاكاة البطاقة' : 'Valider & Simuler'}
+                  Valider & Simuler
                 </button>
               </div>
             </form>
 
             <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
               <span className={`w-2.5 h-2.5 rounded-full ${rfidFocus ? 'bg-emerald-500 animate-ping' : 'bg-amber-400'}`} />
-              <span>{rfidFocus ? (language === 'ar' ? 'حالة الاستيعاب: نشط' : 'Statut: Prêt à badger') : (language === 'ar' ? 'اضغط للتركيز وتوصيل القارئ' : 'Cliquez ici pour focaliser le terminal')}</span>
+              <span>{rfidFocus ? 'Statut: Prêt à badger' : 'Cliquez ici pour focaliser le terminal'}</span>
             </div>
           </div>
 
@@ -467,7 +459,7 @@ export default function PointageTerminal() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-                      {recentScanResult.type === 'student' ? (language === 'ar' ? 'بطاقة تلميذ' : 'Jeton Élève') : (language === 'ar' ? 'بطاقة أستاذ' : 'Jeton Enseignant')}
+                      {recentScanResult.type === 'student' ? 'Jeton Élève' : 'Jeton Enseignant'}
                     </span>
                     <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border">
                       ID: {recentScanResult.tokenId}
@@ -496,13 +488,13 @@ export default function PointageTerminal() {
                           ? 'bg-emerald-100 text-emerald-800' 
                           : 'bg-rose-100 text-rose-800'
                       }`}>
-                        {recentScanResult.success ? (isRTL ? 'مقبول' : 'OK') : (isRTL ? 'مرفوض' : 'Declined')}
+                        {recentScanResult.success ? 'OK' : 'Declined'}
                       </span>
                     )}
 
                     {recentScanResult.type === 'teacher' && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">
-                        {language === 'ar' ? 'تم تسجيل حضور' : 'Pointage OK'}
+                        Pointage OK
                       </span>
                     )}
                   </div>
@@ -512,9 +504,7 @@ export default function PointageTerminal() {
           ) : (
             <div className="p-12 rounded-2xl border border-dashed border-slate-200 text-center bg-slate-50/50">
               <p className="text-slate-400 text-sm">
-                {language === 'ar' 
-                  ? 'لم يتم مسح أي بطاقة حتى الآن. مرر بطاقة RFID للتجربة.' 
-                  : 'Aucun scan en cours. Présentez un jeton pour afficher ses données.'}
+                Aucun scan en cours. Présentez un jeton pour afficher ses données.
               </p>
             </div>
           )}
@@ -536,9 +526,7 @@ export default function PointageTerminal() {
             </h3>
             
             <p className="text-xs text-slate-500 mb-4">
-              {language === 'ar' 
-                ? 'اربط بطاقة RFID أو رمز الباركود بحساب تلميذ أو أستاذ للعمل به في البوابة.'
-                : 'Associez un jeton physique à un profil pour qu\'il soit opérationnel immédiatement.'}
+              Associez un jeton physique à un profil pour qu'il soit opérationnel immédiatement.
             </p>
 
             <form onSubmit={handleAssignTokenSubmit} className="space-y-4">
@@ -546,7 +534,7 @@ export default function PointageTerminal() {
               {/* Type Switcher */}
               <div>
                 <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase">
-                  {language === 'ar' ? 'نوع الحساب' : 'Type de profil'}
+                  Type de profil
                 </label>
                 <div className="grid grid-cols-2 gap-2 text-center">
                   <button
@@ -561,7 +549,7 @@ export default function PointageTerminal() {
                         : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    {language === 'ar' ? 'تلميذ' : 'Élève'}
+                    Élève
                   </button>
 
                   <button
@@ -576,7 +564,7 @@ export default function PointageTerminal() {
                         : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    {language === 'ar' ? 'أستاذ' : 'Enseignant'}
+                    Enseignant
                   </button>
                 </div>
               </div>
@@ -584,7 +572,7 @@ export default function PointageTerminal() {
               {/* Selection Person */}
               <div>
                 <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase">
-                  {assignTargetType === 'student' ? (language === 'ar' ? 'اختر التلميذ' : 'Sélectionner l\'élève') : (language === 'ar' ? 'اختر الأستاذ' : 'Sélectionner l\'enseignant')}
+                  {assignTargetType === 'student' ? 'Sélectionner l\'élève' : 'Sélectionner l\'enseignant'}
                 </label>
                 <select
                   required
@@ -603,18 +591,18 @@ export default function PointageTerminal() {
                   }}
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white text-slate-700"
                 >
-                  <option value="">-- {language === 'ar' ? 'اختر من القائمة' : 'Sélectionner'} --</option>
+                  <option value="">-- Sélectionner --</option>
                   
                   {assignTargetType === 'student' ? (
                     students.map(s => (
                       <option key={s.id} value={s.id}>
-                        {s.name} {s.tokenId ? `(Possède déjà: ${s.tokenId})` : `(${language === 'ar' ? 'لا يملك بطاقة' : 'Sans jeton'})`}
+                        {s.name} {s.tokenId ? `(Possède déjà: ${s.tokenId})` : '(Sans jeton)'}
                       </option>
                     ))
                   ) : (
                     teachers.map(t => (
                       <option key={t.id} value={t.id}>
-                        {t.name} {t.tokenId ? `(Possède déjà: ${t.tokenId})` : `(${language === 'ar' ? 'لا يملك بطاقة' : 'Sans jeton'})`}
+                        {t.name} {t.tokenId ? `(Possède déjà: ${t.tokenId})` : '(Sans jeton)'}
                       </option>
                     ))
                   )}
@@ -637,9 +625,7 @@ export default function PointageTerminal() {
                   />
                 </div>
                 <p className="text-[10px] text-slate-400 mt-1">
-                  {language === 'ar' 
-                    ? 'يمكنك تمرير البطاقة الآن على القارئ لكتابة الرمز تلقائيًا.' 
-                    : 'Astuce : Vous pouvez badger pour remplir ce champ automatiquement.'}
+                  Astuce : Vous pouvez badger pour remplir ce champ automatiquement.
                 </p>
               </div>
 
@@ -653,13 +639,13 @@ export default function PointageTerminal() {
                   }}
                   className="w-1/2 border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold py-2.5 rounded-lg text-xs transition-colors"
                 >
-                  {language === 'ar' ? 'إلغاء' : 'Annuler'}
+                  Annuler
                 </button>
                 <button
                   type="submit"
                   className="w-1/2 bg-primary text-white hover:bg-primary/95 font-semibold py-2.5 rounded-lg text-xs transition-colors shadow-sm"
                 >
-                  {language === 'ar' ? 'حفظ وتثبيت' : 'Associer & Enregistrer'}
+                  Associer & Enregistrer
                 </button>
               </div>
 

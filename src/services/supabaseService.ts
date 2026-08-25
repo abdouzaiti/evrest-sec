@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { SchoolClass, Student, Teacher, PaymentRecord, Expense, RentVaultDeposit, RentVaultConfig } from '../types';
+import { SchoolClass, Student, Teacher, PaymentRecord, Expense, RentVaultDeposit, RentVaultConfig, AttendanceRecord } from '../types';
 
 const defaultRentVault: RentVaultConfig = {
   targetAnnualRent: 180000, // Default annual rent e.g., 180,000 DA (18 M)
@@ -1003,7 +1003,6 @@ const mapToPointageLog = (row: any): PointageLog => {
     details: row.details || ''
   };
 };
-
 export const pointageService = {
   async getAll(): Promise<PointageLog[]> {
     if (isSupabaseConfigured()) {
@@ -1155,6 +1154,35 @@ export const pointageService = {
       const local = getLocalData<PointageLog>('pointage_logs', defaultPointageLogs);
       const filtered = local.filter(l => l.id !== id);
       saveLocalData('pointage_logs', filtered);
+    }
+  }
+};
+
+export const attendanceService = {
+  async getByStudent(studentId: string): Promise<AttendanceRecord[]> {
+    if (isSupabaseConfigured()) {
+      const { data, error } = await supabase
+        .from('attendance_records')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('session_date', { ascending: true });
+      if (error) throw error;
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        student_id: row.student_id,
+        session_date: row.session_date,
+        is_present: row.is_present
+      }));
+    }
+    return [];
+  },
+  
+  async add(studentId: string, isPresent: boolean): Promise<void> {
+    if (isSupabaseConfigured()) {
+      const { error } = await supabase
+        .from('attendance_records')
+        .insert([{ student_id: studentId, is_present: isPresent, session_date: new Date().toISOString() }]);
+      if (error) throw error;
     }
   }
 };

@@ -196,12 +196,12 @@ export function Teachers() {
             className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl text-sm font-semibold shadow-lg shadow-primary/10 transition-all flex items-center justify-center gap-2"
           >
             <Plus size={18} />
-            {isRTL ? "إضافة معلم" : "Add Teacher"}
+            Ajouter un enseignant
           </button>
         ) : (
           <div className="flex items-center gap-2 text-xs font-black text-slate-400 bg-slate-50 border border-slate-100 px-4 py-3 rounded-2xl">
             <AlertCircle size={15} className="text-amber-500" />
-            <span>{isRTL ? "La création d'enseignants est réservée" : "Adding instructors is reserved for Director Mohamed"}</span>
+            <span>La création d'enseignants est réservée au directeur</span>
           </div>
         )}
       </header>
@@ -218,14 +218,14 @@ export function Teachers() {
                   <th className="px-8 py-5 text-center">{t('salary')}</th>
                   <th className="px-8 py-5 text-center">{t('payment_month')}</th>
                   <th className="px-8 py-5 text-center">{t('status')}</th>
-                  <th className={cn("px-8 py-5", isRTL ? "text-left" : "text-right")}>{isRTL ? "الإجراءات" : "Actions"}</th>
+                  <th className={cn("px-8 py-5", isRTL ? "text-left" : "text-right")}>Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {teachers.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-8 py-20 text-center text-slate-400 font-medium">
-                      {isRTL ? "Aucun enseignant trouvé" : "No teachers found or registered"}
+                      Aucun enseignant trouvé
                     </td>
                   </tr>
                 ) : teachers.map((teacher) => (
@@ -273,7 +273,7 @@ export function Teachers() {
                         >
                           <Calendar size={13} className="text-primary/70 shrink-0" />
                           <span>
-                            {isRTL ? `الشهر ${teacher.currentMonth || 1}` : `Mois ${teacher.currentMonth || 1}`}
+                            Mois {teacher.currentMonth || 1}
                           </span>
                           <ChevronDown size={13} className={cn("text-slate-400 transition-transform duration-200 group-hover:text-slate-600", openMonthDropdownId === teacher.id && "rotate-180 text-primary")} />
                         </button>
@@ -303,7 +303,7 @@ export function Teachers() {
                                       isSelected ? "text-primary font-bold bg-primary/10" : "text-slate-700"
                                     )}
                                   >
-                                    <span>{isRTL ? `الشهر ${m}` : `Mois ${m}`}</span>
+                                    <span>Mois {m}</span>
                                     {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
                                   </button>
                                 );
@@ -330,7 +330,7 @@ export function Teachers() {
                                   ? "bg-emerald-50 text-emerald-700 ring-emerald-200 hover:bg-emerald-100"
                                   : "bg-rose-50 text-rose-700 ring-rose-200 hover:bg-rose-100"
                               )}
-                              title={isRTL ? `حالة الشهر ${activeMonth}` : `Statut pour Mois ${activeMonth}`}
+                              title={`Statut pour Mois ${activeMonth}`}
                             >
                               <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", monthStatus === 'Paid' ? "bg-emerald-500" : "bg-rose-500")} />
                               <span>{monthStatus === 'Paid' ? t('paid') : t('pending')}</span>
@@ -393,7 +393,7 @@ export function Teachers() {
                          <button
                            onClick={() => handleViewLogs(teacher)}
                            className="p-2 text-slate-300 hover:text-primary transition-colors"
-                           title={isRTL ? "سجل الحضور" : "Attendance Logs"}
+                           title="Historique de présence"
                          >
                            <FileText size={18} />
                          </button>
@@ -420,7 +420,7 @@ export function Teachers() {
                                  setIsEditModalOpen(true);
                                }}
                                className="p-2 text-slate-300 hover:text-accent transition-colors"
-                               title={isRTL ? "تعديل المعلم" : "Edit Teacher"}
+                               title="Modifier l'enseignant"
                              >
                                <Pencil size={15} />
                              </button>
@@ -434,7 +434,7 @@ export function Teachers() {
                         ) : (
                           <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-slate-400 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-xl">
                             <Shield size={12} className="text-amber-500" />
-                            <span>{isRTL ? "Lecture seule" : "Read Only"}</span>
+                            <span>Lecture seule</span>
                           </div>
                         )}
                       </div>
@@ -451,18 +451,18 @@ export function Teachers() {
       <Modal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        title={isRTL ? "إضافة معلم جديد" : "Add New Teacher"}
+        title="Ajouter un nouvel enseignant"
       >
         <form onSubmit={handleCreateTeacher} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{isRTL ? "اسم المعلم" : "Teacher Name"}</label>
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Nom de l'enseignant</label>
             <input
               required
               type="text"
               value={newTeacher.name}
               onChange={e => setNewTeacher({ ...newTeacher, name: e.target.value })}
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
-              placeholder="Full Name"
+              placeholder="Nom complet"
             />
           </div>
           <div className="space-y-1">
@@ -473,7 +473,7 @@ export function Teachers() {
               value={newTeacher.email}
               onChange={e => setNewTeacher({ ...newTeacher, email: e.target.value })}
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
-              placeholder="email@school.com"
+              placeholder="email@ecole.com"
             />
           </div>
           <div className="space-y-1">
@@ -484,7 +484,7 @@ export function Teachers() {
               value={newTeacher.subject}
               onChange={e => setNewTeacher({ ...newTeacher, subject: e.target.value })}
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
-              placeholder="e.g. Mathematics"
+              placeholder="Ex: Mathématiques"
             />
           </div>
           <div className="space-y-1">
@@ -498,7 +498,7 @@ export function Teachers() {
             />
           </div>
           <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
-            {isRTL ? "إضافة" : "Add Teacher"}
+            Ajouter l'enseignant
           </button>
         </form>
       </Modal>
@@ -507,11 +507,11 @@ export function Teachers() {
       <Modal 
         isOpen={isEditModalOpen} 
         onClose={() => setIsEditModalOpen(false)} 
-        title={isRTL ? "تعديل بيانات المعلم" : "Edit Teacher Details"}
+        title="Modifier l'enseignant"
       >
         <form onSubmit={handleUpdateTeacher} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{isRTL ? "اسم المعلم" : "Teacher Name"}</label>
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Nom de l'enseignant</label>
             <input
               required
               type="text"
@@ -562,7 +562,7 @@ export function Teachers() {
             </select>
           </div>
           <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
-            {isRTL ? "حفظ التعديلات" : "Update Teacher"}
+            Enregistrer les modifications
           </button>
         </form>
       </Modal>
@@ -571,14 +571,14 @@ export function Teachers() {
       <Modal
         isOpen={isLogsModalOpen}
         onClose={() => setIsLogsModalOpen(false)}
-        title={isRTL ? `سجل حضور: ${selectedTeacher?.name}` : `Attendance Log: ${selectedTeacher?.name}`}
+        title={`Historique de présence : ${selectedTeacher?.name}`}
       >
         <div className="space-y-6">
           <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
             <div className="flex items-center gap-3">
               <Clock className="text-primary" size={20} />
               <span className="text-sm font-bold text-slate-600">
-                {isRTL ? "سجل الشهر الحالي" : "Current Month Log"}
+                Historique du mois en cours
               </span>
             </div>
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-100">
@@ -591,7 +591,7 @@ export function Teachers() {
               <div className="py-20 flex flex-col items-center justify-center gap-4">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
                 <p className="text-xs font-black uppercase tracking-widest text-slate-400">
-                  {isRTL ? "جاري التحميل..." : "Loading logs..."}
+                  Chargement...
                 </p>
               </div>
             ) : teacherLogs.length === 0 ? (
@@ -600,7 +600,7 @@ export function Teachers() {
                   <FileText size={24} />
                 </div>
                 <p className="text-sm font-bold text-slate-400">
-                  {isRTL ? "لا يوجد سجلات لهذا الشهر" : "No pointage records found for this teacher"}
+                  Aucun pointage enregistré pour cet enseignant ce mois-ci
                 </p>
               </div>
             ) : (
@@ -613,7 +613,7 @@ export function Teachers() {
                       </div>
                       <div>
                         <p className="text-sm font-black text-primary">
-                          {new Date(log.timestamp).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', { 
+                          {new Date(log.timestamp).toLocaleDateString('fr-FR', { 
                             weekday: 'long', 
                             day: 'numeric', 
                             month: 'short' 
@@ -627,7 +627,7 @@ export function Teachers() {
                     </div>
                     <div className="text-right">
                        <span className="inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase bg-primary/5 text-primary border border-primary/10">
-                         {log.details || "Clock-In"}
+                         {log.details || "Pointage"}
                        </span>
                     </div>
                   </div>
@@ -638,13 +638,13 @@ export function Teachers() {
 
           <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
             <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              Total: {teacherLogs.length} {isRTL ? "حضورا" : "sessions"}
+              Total: {teacherLogs.length} sessions
             </div>
             <button 
               onClick={() => setIsLogsModalOpen(false)}
               className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95"
             >
-              {isRTL ? "إغلاق" : "Close"}
+              Fermer
             </button>
           </div>
         </div>

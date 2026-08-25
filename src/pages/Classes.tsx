@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Phone, CheckCircle2, XCircle, Clock, BookOpen, Users, Loader2, Trash2, AlertCircle, Pencil, UserCheck, GraduationCap, UserPlus, Check } from 'lucide-react';
+import { Search, Plus, Phone, CheckCircle2, XCircle, Clock, BookOpen, Users, Loader2, Trash2, AlertCircle, Pencil, UserCheck, GraduationCap, UserPlus, Check, Printer } from 'lucide-react';
 import { Student, SchoolClass, Teacher } from '../types';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
@@ -18,6 +18,12 @@ export function Classes() {
   const [search, setSearch] = useState('');
   const [openMonthDropdownId, setOpenMonthDropdownId] = useState<string | null>(null);
   const [attendanceStudent, setAttendanceStudent] = useState<Student | null>(null);
+  const [printReceiptData, setPrintReceiptData] = useState<{
+    student: Student;
+    month: number;
+    schoolClass?: SchoolClass;
+  } | null>(null);
+
   const [loading, setLoading] = useState(true);
 
   // Modal states
@@ -106,13 +112,20 @@ export function Classes() {
 
   const handleToggleAttendance = async (student: Student, month: number, sessionIndex: number) => {
     const attendance = { ...(student.attendance || {}) };
+    const attendanceDates = { ...(student.attendanceDates || {}) };
     const monthAttendance = [...(attendance[month] || [false, false, false, false])];
-    monthAttendance[sessionIndex] = !monthAttendance[sessionIndex];
+    const monthDates = [...(attendanceDates[month] || ['', '', '', ''])];
+    
+    const nextState = !monthAttendance[sessionIndex];
+    monthAttendance[sessionIndex] = nextState;
+    monthDates[sessionIndex] = nextState ? new Date().toISOString() : '';
     attendance[month] = monthAttendance;
+    attendanceDates[month] = monthDates;
     
     const updatedStudent: Student = {
       ...student,
-      attendance
+      attendance,
+      attendanceDates
     };
     
     setStudents(prev => prev.map(s => s.id === student.id ? updatedStudent : s));
@@ -123,6 +136,18 @@ export function Classes() {
     } catch (error) {
       console.error('Error updating attendance:', error);
     }
+  };
+
+  const handlePrintMonthReceipt = (student: Student, month: number) => {
+    const currentClass = classes.find(c => c.id === (student.classId || selectedClassId)) || undefined;
+    setPrintReceiptData({
+      student,
+      month,
+      schoolClass: currentClass
+    });
+    setTimeout(() => {
+      window.print();
+    }, 150);
   };
 
   const handleToggleMonthPayment = async (student: Student, month: number) => {
@@ -319,7 +344,7 @@ export function Classes() {
   return (
     <div className={cn("space-y-6 animate-in", isRTL && "text-right")}>
       <header className={cn("flex flex-col md:flex-row justify-between items-start md:items-end gap-4", isRTL && "md:flex-row-reverse")}>
-        <div className={cn(isRTL && "text-right")}>
+        <div className="">
           <h1 className="text-3xl font-bold text-primary tracking-tight">{t('academic_classes')}</h1>
           <p className="text-slate-500 mt-1">{t('manage_rosters')}</p>
         </div>
@@ -334,7 +359,7 @@ export function Classes() {
         ) : (
           <div className="flex items-center gap-2 text-xs font-black text-slate-400 bg-slate-50 border border-slate-100 px-4 py-3 rounded-2xl">
             <AlertCircle size={15} className="text-amber-500" />
-            <span>{isRTL ? "Créativité réservée au Dir. Mohamed" : "Class creation reserved for Director Mohamed"}</span>
+            <span>Class creation reserved for Director Mohamed</span>
           </div>
         )}
       </header>
@@ -391,7 +416,7 @@ export function Classes() {
                       "p-2 text-slate-400 hover:text-accent transition-all rounded-lg hover:bg-slate-100/50",
                       selectedClassId === c.id && "text-white/80 hover:text-white hover:bg-white/10"
                     )}
-                    title={isRTL ? "تعديل" : "Edit"}
+                    title={isRTL ? "Modifier" : "Modifier"}
                   >
                     <Pencil size={15} />
                   </button>
@@ -401,7 +426,7 @@ export function Classes() {
                       "p-2 text-slate-400 hover:text-rose-500 transition-all rounded-lg hover:bg-rose-50",
                       selectedClassId === c.id && "text-rose-300 hover:text-rose-100 hover:bg-white/10"
                     )}
-                    title={isRTL ? "حذف الصف" : "Supprimer la classe"}
+                    title={isRTL ? "Supprimer la classe" : "Supprimer la classe"}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -436,14 +461,14 @@ export function Classes() {
                                  setIsEditClassModalOpen(true);
                                }}
                                className="text-slate-400 hover:text-accent p-1.5 rounded-lg hover:bg-slate-50 transition-all"
-                               title={isRTL ? "تعديل المادة" : "Edit Class"}
+                               title={isRTL ? "Modifier le cours" : "Modifier le cours"}
                              >
                                <Pencil size={18} />
                              </button>
                              <button
                                onClick={(e) => handleDeleteClass(selectedClass.id, e)}
                                className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-all"
-                               title={isRTL ? "حذف المادة" : "Delete Class"}
+                               title={isRTL ? "Supprimer le cours" : "Supprimer le cours"}
                              >
                                <Trash2 size={18} />
                              </button>
@@ -458,8 +483,8 @@ export function Classes() {
                             <GraduationCap size={15} className="text-accent" />
                             <span>
                               {currentTeacher 
-                                ? `${isRTL ? 'الأستاذ' : 'Prof'}: ${currentTeacher.name}` 
-                                : (isRTL ? 'لم يتم تعيين أستاذ' : 'No teacher assigned')}
+                                ? `Prof: ${currentTeacher.name}` 
+                                : 'Aucun enseignant assigné'}
                             </span>
                           </div>
                         </div>
@@ -488,15 +513,15 @@ export function Classes() {
                         <th className="px-8 py-5">{t('student_name')}</th>
                         <th className="px-8 py-5">{t('parent_phone')}</th>
                         <th className="px-8 py-5">{t('token_id')}</th>
-                        <th className="px-8 py-5">{isRTL ? "الشهر" : "Mois"}</th>
-                        <th className={cn("px-8 py-5", isRTL ? "text-left" : "text-right")}>{isRTL ? "الإجراءات" : "Actions"}</th>
+                        <th className="px-8 py-5">{isRTL ? "Mois" : "Mois"}</th>
+                        <th className={cn("px-8 py-5", isRTL ? "text-left" : "text-right")}>{isRTL ? "Actions" : "Actions"}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {classStudents.length === 0 ? (
                         <tr>
                           <td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-medium">
-                            {isRTL ? "Aucun étudiant enregistré dans cette classe" : "No students registered in this class"}
+                            {isRTL ? "Aucun étudiant enregistré dans cette classe" : "Aucun étudiant enregistré dans cette classe"}
                           </td>
                         </tr>
                       ) : classStudents.map((s) => {
@@ -535,7 +560,12 @@ export function Classes() {
                           </td>
                            <td className={cn("px-8 py-6", isRTL ? "text-left" : "text-right")}>
                              <div className={cn("flex items-center gap-4 justify-end", isRTL && "justify-start")}>
-                               <button className="text-[10px] font-black text-primary hover:text-accent transition-colors underline-offset-4 hover:underline uppercase tracking-widest whitespace-nowrap">
+                               <button 
+                                 onClick={() => handlePrintMonthReceipt(s, s.currentMonth)}
+                                 className="flex items-center gap-1.5 text-[10px] font-black text-primary hover:text-accent transition-colors underline-offset-4 hover:underline uppercase tracking-widest whitespace-nowrap cursor-pointer"
+                                 title="Imprimer le reçu"
+                               >
+                                 <Printer size={12} />
                                  {t('print_receipt')}
                                </button>
                                <button
@@ -545,7 +575,7 @@ export function Classes() {
                                    setIsEditStudentModalOpen(true);
                                  }}
                                  className="p-2 text-slate-300 hover:text-accent transition-colors"
-                                 title={isRTL ? "تعديل الطالب" : "Edit Student"}
+                                 title={isRTL ? "Modifier l'étudiant" : "Modifier l'étudiant"}
                                >
                                  <Pencil size={15} />
                                </button>
@@ -562,49 +592,11 @@ export function Classes() {
                       })}
                     </tbody>
                   </table>
-                  
-                  {/* Classe Pointage Section */}
-                  <div className="mt-10 p-6 bg-white rounded-3xl border border-slate-100 shadow-sm">
-                    <h3 className="text-lg font-black text-primary mb-6">{isRTL ? "Classe Pointage" : "Pointage de la classe"}</h3>
-                    
-                    <div className="mb-6">
-                      <input 
-                        type="text"
-                        placeholder={isRTL ? "امسح الرمز هنا..." : "Scan token here..."}
-                        value={scanToken}
-                        onChange={(e) => {
-                          const token = e.target.value;
-                          setScanToken(token);
-                          const student = classStudents.find(s => s.tokenId === token);
-                          if (student) {
-                            handleIncrementSession(student);
-                            setScanToken('');
-                          }
-                        }}
-                        className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary focus:border-transparent"
-                        autoFocus
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {classStudents.map(s => (
-                        <div key={s.id} className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
-                          <span className="font-bold text-sm text-slate-700">{s.name}</span>
-                          <button
-                            onClick={() => handleIncrementSession(s)}
-                            className="bg-primary text-white px-4 py-2 rounded-lg text-xs font-black hover:bg-primary/90 transition-all active:scale-95"
-                          >
-                            {isRTL ? "إثبات الحضور" : "Pointer"}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </div>
 
                 <div className={cn("py-12 flex flex-col md:flex-row justify-between items-center gap-8 mt-auto", isRTL && "md:flex-row-reverse")}>
                    <div className="text-[10px] md:text-sm font-black text-slate-400 uppercase tracking-[0.2em] text-center md:text-left">
-                      <span className="text-primary">{classStudents.length}</span> {isRTL ? "طلاب نشطين" : "active students enrolled"}
+                      <span className="text-primary">{classStudents.length}</span> {isRTL ? "élèves inscrits" : "élèves inscrits"}
                    </div>
                    <button 
                      onClick={() => setIsStudentModalOpen(true)}
@@ -690,7 +682,7 @@ export function Classes() {
       <Modal 
         isOpen={isStudentModalOpen} 
         onClose={() => setIsStudentModalOpen(false)} 
-        title={isRTL ? "إضافة طالب إلى هذا الصف" : "Inscrire un élève dans cette classe"}
+        title="Inscrire un élève dans cette classe"
       >
         <div className="space-y-5">
           {/* Tabs */}
@@ -704,7 +696,7 @@ export function Classes() {
               )}
             >
               <UserCheck size={16} />
-              <span>{isRTL ? "اختيار طالب مسجل" : "Choisir un élève existant"}</span>
+              <span>Choisir un élève existant</span>
             </button>
             <button
               type="button"
@@ -715,7 +707,7 @@ export function Classes() {
               )}
             >
               <UserPlus size={16} />
-              <span>{isRTL ? "إنشاء طالب جديد" : "Créer un nouvel élève"}</span>
+              <span>Créer un nouvel élève</span>
             </button>
           </div>
 
@@ -728,7 +720,7 @@ export function Classes() {
                   type="text"
                   value={existingStudentSearch}
                   onChange={e => setExistingStudentSearch(e.target.value)}
-                  placeholder={isRTL ? "البحث عن طالب بالاسم أو الهاتف..." : "Rechercher par nom ou téléphone..."}
+                  placeholder="Rechercher par nom ou téléphone..."
                   className={cn("w-full py-3 bg-slate-50 rounded-2xl text-sm font-bold border border-slate-200 outline-none focus:ring-2 focus:ring-primary/10", isRTL ? "pr-10 pl-4" : "pl-10 pr-4")}
                 />
               </div>
@@ -746,7 +738,7 @@ export function Classes() {
                   if (availableStudents.length === 0) {
                     return (
                       <div className="p-8 text-center text-slate-400 text-xs font-bold">
-                        {isRTL ? "لم يتم العثور على أي طالب" : "Aucun élève trouvé"}
+                        Aucun élève trouvé
                       </div>
                     );
                   }
@@ -783,7 +775,7 @@ export function Classes() {
                         {isAlreadyInThisClass ? (
                           <span className="inline-flex items-center gap-1 text-xs font-black text-emerald-600 px-3 py-1.5 bg-emerald-100/80 rounded-xl">
                             <Check size={14} />
-                            <span>{isRTL ? "مسجل هنا" : "Inscrit"}</span>
+                            <span>Inscrit</span>
                           </span>
                         ) : (
                           <button
@@ -792,7 +784,7 @@ export function Classes() {
                             className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 flex items-center gap-1.5 shrink-0"
                           >
                             <Plus size={14} />
-                            <span>{isRTL ? "إضافة للصف" : "Inscrire"}</span>
+                            <span>Inscrire</span>
                           </button>
                         )}
                       </div>
@@ -811,7 +803,7 @@ export function Classes() {
                   value={newStudent.name}
                   onChange={e => setNewStudent({ ...newStudent, name: e.target.value })}
                   className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
-                  placeholder="Full Name"
+                  placeholder="Nom complet"
                 />
               </div>
               <div className="space-y-1">
@@ -826,7 +818,7 @@ export function Classes() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} ({language === 'ar' ? 'اختياري' : 'Optionnel'})</label>
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} (Optionnel)</label>
                 <input
                   type="text"
                   value={newStudent.tokenId || ''}
@@ -847,7 +839,7 @@ export function Classes() {
       <Modal 
         isOpen={isEditClassModalOpen} 
         onClose={() => setIsEditClassModalOpen(false)} 
-        title={isRTL ? "تعديل الصف الدراسي" : "Edit Class"}
+        title="Modifier la classe"
       >
         <form onSubmit={handleUpdateClass} className="space-y-4">
           <div className="space-y-1">
@@ -872,14 +864,14 @@ export function Classes() {
           </div>
           <div className="space-y-1">
             <label className="text-xs font-black uppercase tracking-widest text-slate-400">
-              {isRTL ? 'الأستاذ المسؤول' : 'Enseignant / Teacher'}
+              Enseignant / Prof (Optionnel)
             </label>
             <select
               value={editClass.teacherId || ''}
               onChange={e => setEditClass({ ...editClass, teacherId: e.target.value })}
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold cursor-pointer"
             >
-              <option value="">{isRTL ? '-- اختر الأستاذ --' : '-- Choisir l\'enseignant --'}</option>
+              <option value="">-- Choisir l'enseignant --</option>
               {teachers.map(teach => (
                 <option key={teach.id} value={teach.id}>{teach.name} ({teach.subject})</option>
               ))}
@@ -895,7 +887,7 @@ export function Classes() {
             />
           </div>
           <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
-            {isRTL ? "تعديل الصف" : "Update Class"}
+            Enregistrer les modifications
           </button>
         </form>
       </Modal>
@@ -904,7 +896,7 @@ export function Classes() {
       <Modal 
         isOpen={isEditStudentModalOpen} 
         onClose={() => setIsEditStudentModalOpen(false)} 
-        title={isRTL ? "تعديل بيانات الطالب" : "Edit Student Details"}
+        title="Modifier l'élève"
       >
         <form onSubmit={handleUpdateStudent} className="space-y-4">
           <div className="space-y-1">
@@ -928,7 +920,7 @@ export function Classes() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} ({language === 'ar' ? 'اختياري' : 'Optionnel'})</label>
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} (Optionnel)</label>
             <input
               type="text"
               value={editStudent.tokenId || ''}
@@ -938,7 +930,7 @@ export function Classes() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{isRTL ? "الفوج / الصف الدراسي" : "Class Assignment"}</label>
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Classe</label>
             <select
               value={editStudent.classId}
               onChange={e => setEditStudent({ ...editStudent, classId: e.target.value })}
@@ -950,7 +942,7 @@ export function Classes() {
             </select>
           </div>
           <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
-            {isRTL ? "حفظ التعديلات" : "Update Student"}
+            Enregistrer les modifications
           </button>
         </form>
       </Modal>
@@ -959,46 +951,64 @@ export function Classes() {
       <Modal 
         isOpen={!!attendanceStudent} 
         onClose={() => setAttendanceStudent(null)} 
-        title={isRTL ? "الحضور والغياب والدفع" : "Attendance & Payment"}
+        title="Présences & Paiement"
       >
         {attendanceStudent && (
           <div className="space-y-2">
-            <div className="grid grid-cols-6 gap-1 items-center text-left text-[10px] font-bold text-slate-500 uppercase pb-1 border-b border-slate-100">
-              <div className="pl-1">{isRTL ? "الشهر" : "Month"}</div>
-              {[1, 2, 3, 4].map(i => <div key={i} className="text-center">S{i}</div>)}
-              <div className="text-center">{isRTL ? "الدفع" : "Payment"}</div>
+            <div className="grid grid-cols-6 gap-2 items-center text-left text-[10px] font-bold text-slate-500 uppercase pb-1 border-b border-slate-100">
+              <div className="pl-1 font-black">Mois</div>
+              {[1, 2, 3, 4].map(i => <div key={i} className="text-center font-black">S{i}</div>)}
+              <div className="text-center font-black">Paiement & Reçu</div>
             </div>
             {[...Array(12)].map((_, monthIdx) => {
                const month = monthIdx + 1;
                const monthAttendance = (attendanceStudent.attendance || {})[month] || [false, false, false, false];
+               const monthDates = (attendanceStudent.attendanceDates || {})[month] || ['', '', '', ''];
                const isPaid = (attendanceStudent.paidMonths || []).includes(month);
                return (
-                 <div key={month} className="grid grid-cols-6 gap-1 items-center py-0.5 border-b border-slate-50 last:border-none">
-                    <div className="font-bold text-xs text-slate-700 pl-1">M {month}</div>
-                    {monthAttendance.map((isPresent, sessionIdx) => (
-                      <button 
-                         key={sessionIdx}
-                         onClick={() => handleToggleAttendance(attendanceStudent, month, sessionIdx)}
-                         className={cn(
-                           "w-5 h-5 rounded-full transition-all border mx-auto flex items-center justify-center", 
-                           isPresent ? "bg-green-500 border-green-600" : "bg-red-500 border-red-600"
-                         )}
-                         title={`Session ${sessionIdx + 1}: ${isPresent ? 'Present' : 'Absent'}`}
-                      />
-                    ))}
-                    <div className="text-center">
+                 <div key={month} className="grid grid-cols-6 gap-2 items-center py-1.5 border-b border-slate-100 last:border-none hover:bg-slate-50/50 rounded-lg px-1 transition-colors">
+                    <div className="font-black text-xs text-slate-800 pl-1">M {month}</div>
+                    {monthAttendance.map((isPresent, sessionIdx) => {
+                      const dateStr = monthDates[sessionIdx] 
+                        ? new Date(monthDates[sessionIdx]).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+                        : null;
+                      return (
+                        <button 
+                           key={sessionIdx}
+                           type="button"
+                           onClick={() => handleToggleAttendance(attendanceStudent, month, sessionIdx)}
+                           className={cn(
+                             "w-5 h-5 rounded-full transition-all border mx-auto flex items-center justify-center cursor-pointer hover:scale-125 shadow-2xs", 
+                             isPresent ? "bg-green-500 border-green-600 shadow-green-500/20" : "bg-red-500 border-red-600 shadow-red-500/20"
+                           )}
+                           title={`Séance ${sessionIdx + 1}: ${isPresent ? (dateStr ? `Présent (${dateStr})` : 'Présent') : 'Absent'}`}
+                        />
+                      );
+                    })}
+                    <div className="text-center flex items-center justify-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => handleToggleMonthPayment(attendanceStudent, month)}
                         className={cn(
-                          "px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all border shadow-xs whitespace-nowrap cursor-pointer",
+                          "px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all border shadow-2xs whitespace-nowrap cursor-pointer",
                           isPaid 
                             ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" 
                             : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
                         )}
                       >
-                        {isPaid ? (isRTL ? "مخلص" : "Paid") : (isRTL ? "غير مخلص" : "Unpaid")}
+                        {isPaid ? "Payé" : "Non payé"}
                       </button>
+                      {isPaid && (
+                        <button
+                          type="button"
+                          onClick={() => handlePrintMonthReceipt(attendanceStudent, month)}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black bg-primary text-white hover:bg-primary/90 transition-all border border-primary shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap"
+                          title="Imprimer le reçu du mois avec les 4 séances"
+                        >
+                          <Printer size={12} />
+                          <span>Imprimer</span>
+                        </button>
+                      )}
                     </div>
                  </div>
                )
@@ -1006,6 +1016,100 @@ export function Classes() {
           </div>
         )}
       </Modal>
+
+      {/* Hidden Printable Receipt for Student Month Payment & Attendance */}
+      {printReceiptData && (
+        <div className="hidden print:block print-area p-8 max-w-xl mx-auto bg-white text-slate-900 font-sans border-2 border-slate-800 rounded-2xl shadow-none">
+          <div className="border-b-2 border-slate-800 pb-4 mb-4 flex justify-between items-start">
+            <div>
+              <h2 className="text-xl font-black uppercase tracking-wider text-slate-900">REÇU DE PAIEMENT & POINTAGE</h2>
+              <p className="text-xs text-slate-600 font-semibold mt-1">Académie / Centre d'Études</p>
+            </div>
+            <div className="text-right">
+              <span className="inline-block bg-emerald-600 text-white font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider">
+                PAYÉ
+              </span>
+              <p className="text-[10px] text-slate-500 font-mono mt-1">
+                Date: {new Date().toLocaleDateString('fr-FR')} {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-xs mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div>
+              <p className="text-slate-500 text-[10px] uppercase font-bold">Élève</p>
+              <p className="font-bold text-sm text-slate-900">{printReceiptData.student.name}</p>
+              {printReceiptData.student.parentPhone && (
+                <p className="text-[11px] text-slate-600 mt-0.5">Tél: {printReceiptData.student.parentPhone}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-slate-500 text-[10px] uppercase font-bold">Classe / Matière</p>
+              <p className="font-bold text-sm text-slate-900">{printReceiptData.schoolClass?.name || 'Classe'}</p>
+              {printReceiptData.schoolClass?.description && (
+                <p className="text-[11px] text-slate-600 mt-0.5">{printReceiptData.schoolClass.description}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-slate-500 text-[10px] uppercase font-bold">Mois concerné</p>
+              <p className="font-black text-base text-primary">Mois {printReceiptData.month}</p>
+            </div>
+            <div>
+              <p className="text-slate-500 text-[10px] uppercase font-bold">Tarif Mensuel</p>
+              <p className="font-black text-base text-emerald-700">
+                {(printReceiptData.schoolClass?.price || 0).toLocaleString()} DZD
+              </p>
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 mb-3 border-b border-slate-200 pb-1">
+              Détail des 4 Séances du Mois
+            </h3>
+            <div className="space-y-2">
+              {[0, 1, 2, 3].map((sessionIdx) => {
+                const attendanceList = (printReceiptData.student.attendance || {})[printReceiptData.month] || [false, false, false, false];
+                const datesList = (printReceiptData.student.attendanceDates || {})[printReceiptData.month] || ['', '', '', ''];
+                const isPresent = attendanceList[sessionIdx];
+                const dateStr = datesList[sessionIdx] 
+                  ? new Date(datesList[sessionIdx]).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+                  : null;
+
+                return (
+                  <div key={sessionIdx} className="flex justify-between items-center p-2.5 rounded-lg border border-slate-200 bg-white">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center bg-slate-100 text-slate-700">
+                        S{sessionIdx + 1}
+                      </span>
+                      <span className="font-bold text-xs text-slate-800">
+                        Séance {sessionIdx + 1}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[11px] text-slate-500 font-mono">
+                        {dateStr ? dateStr : (isPresent ? 'Pointé' : 'Non effectuée')}
+                      </span>
+                      <span className={cn(
+                        "px-2.5 py-0.5 text-[11px] font-black rounded-full border",
+                        isPresent 
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-300" 
+                          : "bg-rose-50 text-rose-700 border-rose-300"
+                      )}>
+                        {isPresent ? "PRÉSENT" : "ABSENT"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="border-t-2 border-slate-800 pt-4 flex justify-between items-end text-xs text-slate-500">
+            <p className="font-bold text-slate-700">Everest Secretory</p>
+            <p className="border-b border-dashed border-slate-400 pb-8 w-36 text-center font-bold text-slate-700">Cachet & Signature</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

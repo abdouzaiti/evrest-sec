@@ -38,6 +38,7 @@ export interface Student {
   sessionsCompleted: number;
   paymentStatus: PaymentStatus;
   attendance?: Record<number, boolean[]>;
+  attendanceDates?: Record<number, string[]>;
 }
 
 export interface SchoolClass {
@@ -69,6 +70,13 @@ export interface PointageLog {
   tokenId: string;
   timestamp: string;
   details: string;
+}
+
+export interface AttendanceRecord {
+  id: string;
+  student_id: string;
+  session_date: string; // ISO String
+  is_present: boolean;
 }
 
 export interface Notification {

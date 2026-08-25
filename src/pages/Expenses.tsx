@@ -32,15 +32,15 @@ import { Modal } from '../components/Modal';
 import { Expense, ExpenseCategory, Student, Teacher, SchoolClass, RentVaultConfig, RentVaultDeposit } from '../types';
 import { expensesService, studentsService, teachersService, classesService, rentVaultService } from '../services/supabaseService';
 
-const CATEGORY_CONFIG: Record<ExpenseCategory, { labelAr: string; labelFr: string; icon: React.ElementType; color: string }> = {
-  rent: { labelAr: 'كراء مقر المدرسة', labelFr: 'Loyer des locaux', icon: Building2, color: 'bg-amber-50 text-amber-700 border-amber-200' },
-  utilities: { labelAr: 'كهرباء، ماء، إنترنيت', labelFr: 'Électricité, Eau & Web', icon: Zap, color: 'bg-blue-50 text-blue-700 border-blue-200' },
-  salaries: { labelAr: 'رواتب وإضافات', labelFr: 'Salaires & Primes', icon: DollarSign, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  supplies: { labelAr: 'أدوات وتجهيزات', labelFr: 'Fournitures & Matériel', icon: ShoppingBag, color: 'bg-purple-50 text-purple-700 border-purple-200' },
-  maintenance: { labelAr: 'صيانة ونظافة', labelFr: 'Maintenance & Entretien', icon: Wrench, color: 'bg-orange-50 text-orange-700 border-orange-200' },
-  marketing: { labelAr: 'إشهار وتوزيع', labelFr: 'Marketing & Pub', icon: Megaphone, color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-  taxes: { labelAr: 'ضرائب ورسوم', labelFr: 'Taxes & Impôts', icon: Landmark, color: 'bg-rose-50 text-rose-700 border-rose-200' },
-  other: { labelAr: 'مصاريف أخرى', labelFr: 'Autres charges', icon: HelpCircle, color: 'bg-slate-50 text-slate-700 border-slate-200' },
+const CATEGORY_CONFIG: Record<ExpenseCategory, { label: string; icon: React.ElementType; color: string }> = {
+  rent: { label: 'Loyer des locaux', icon: Building2, color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  utilities: { label: 'Électricité, Eau & Web', icon: Zap, color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  salaries: { label: 'Salaires & Primes', icon: DollarSign, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  supplies: { label: 'Fournitures & Matériel', icon: ShoppingBag, color: 'bg-purple-50 text-purple-700 border-purple-200' },
+  maintenance: { label: 'Maintenance & Entretien', icon: Wrench, color: 'bg-orange-50 text-orange-700 border-orange-200' },
+  marketing: { label: 'Marketing & Pub', icon: Megaphone, color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  taxes: { label: 'Taxes & Impôts', icon: Landmark, color: 'bg-rose-50 text-rose-700 border-rose-200' },
+  other: { label: 'Autres charges', icon: HelpCircle, color: 'bg-slate-50 text-slate-700 border-slate-200' },
 };
 
 const MONTH_NAMES_AR = [
@@ -324,11 +324,7 @@ export function Expenses() {
               <h1 className="text-2xl sm:text-3xl font-black text-primary tracking-tight">
                 {isRTL ? 'إدارة المصاريف' : 'Gestion des Charges'}
               </h1>
-              <p className="text-slate-500 text-sm mt-0.5">
-                {isRTL 
-                  ? 'تتبع أرباح ومصاريف المدرسة والتقرير المالي' 
-                  : 'Gestion des charges et suivi du bilan financier.'}
-              </p>
+
             </div>
           </div>
         </div>
@@ -336,7 +332,7 @@ export function Expenses() {
         <div className={cn("flex items-center gap-3", isRTL && "flex-row-reverse")}>
           <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-2xl border-2 border-slate-100 shadow-sm">
             <Calendar size={18} className="text-slate-400" />
-            <span className="text-xs font-bold text-slate-500">{isRTL ? 'السنة المالية:' : 'Année:'}</span>
+            <span className="text-xs font-bold text-slate-500">Année:</span>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -350,13 +346,10 @@ export function Expenses() {
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className={cn(
-              "flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-2xl font-bold text-sm shadow-lg shadow-rose-600/20 transition-all active:scale-95",
-              isRTL && "flex-row-reverse"
-            )}
+            className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-2xl font-bold text-sm shadow-lg shadow-rose-600/20 transition-all active:scale-95"
           >
             <Plus size={18} />
-            <span>{isRTL ? 'إضافة مصروف جديد' : 'Ajouter une Charge'}</span>
+            <span>Ajouter une Charge</span>
           </button>
         </div>
       </div>
@@ -369,7 +362,7 @@ export function Expenses() {
         <div className="bg-white p-6 rounded-3xl border-2 border-slate-100 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              {isRTL ? 'مداخيل اشتراكات الطلاب' : 'Recettes Étudiants'}
+              Recettes Étudiants
             </span>
             <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
               <TrendingUp size={22} />
@@ -380,7 +373,7 @@ export function Expenses() {
               {totalRevenue.toLocaleString()} <span className="text-sm font-bold text-slate-400">{t('currency')}</span>
             </p>
             <p className="text-xs font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-              <span>✓</span> {isRTL ? 'تم احتساب الاشتراكات المدفوعة' : 'Calculé d\'après les cotisations'}
+              <span>✓</span> Calculé d'après les cotisations
             </p>
           </div>
         </div>
@@ -389,7 +382,7 @@ export function Expenses() {
         <div className="bg-white p-6 rounded-3xl border-2 border-slate-100 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              {isRTL ? 'المصاريف العامة (التشغيل)' : 'Charges d\'Exploitation'}
+              Charges d'Exploitation
             </span>
             <div className="p-3 bg-rose-50 text-rose-600 rounded-2xl">
               <Receipt size={22} />
@@ -400,7 +393,7 @@ export function Expenses() {
               {loggedExpensesTotal.toLocaleString()} <span className="text-sm font-bold text-slate-400">{t('currency')}</span>
             </p>
             <p className="text-xs font-semibold text-slate-500 mt-1">
-              {yearExpenses.length} {isRTL ? 'مصاريف مسجلة هذا العام' : 'charges enregistrées'}
+              {yearExpenses.length} charges enregistrées
             </p>
           </div>
         </div>
@@ -409,7 +402,7 @@ export function Expenses() {
         <div className="bg-white p-6 rounded-3xl border-2 border-slate-100 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              {isRTL ? 'كتلة رواتب الأساتذة' : 'Masse Salariale'}
+              Masse Salariale
             </span>
             <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
               <DollarSign size={22} />
@@ -420,7 +413,7 @@ export function Expenses() {
               {teacherPayrollTotal.toLocaleString()} <span className="text-sm font-bold text-slate-400">{t('currency')}</span>
             </p>
             <p className="text-xs font-semibold text-slate-500 mt-1">
-              {teachers.length} {isRTL ? 'أساتذة ومؤطرين' : 'enseignants'}
+              {teachers.length} enseignants
             </p>
           </div>
         </div>
@@ -435,7 +428,7 @@ export function Expenses() {
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-emerald-200/80 uppercase tracking-wider">
-                {isRTL ? 'صافي نتيجة السنة (ربح / خسارة)' : 'Résultat Net (Bilan)'}
+                Résultat Net (Bilan)
               </span>
               <div className={cn("p-2 rounded-xl text-white", isProfit ? "bg-emerald-700/60" : "bg-rose-800/80")}>
                 {isProfit ? <TrendingUp size={22} /> : <TrendingDown size={22} />}
@@ -458,13 +451,13 @@ export function Expenses() {
               isProfit ? "bg-emerald-500/30 text-emerald-200 border border-emerald-400/30" : "bg-rose-500/30 text-rose-200 border border-rose-400/30"
             )}>
               {isProfit ? (
-                <><span>✓</span> {isRTL ? 'ربح صافي' : 'Profit Net'}</>
+                <><span>✓</span> Profit Net</>
               ) : (
-                <><span>⚠</span> {isRTL ? 'عجز / خسارة' : 'Déficit'}</>
+                <><span>⚠</span> Déficit</>
               )}
             </span>
             <span className="text-xs font-semibold opacity-80">
-              {isRTL ? `السيولة بعد الحصالة: ${netProfitAfterRentVault.toLocaleString()} د.ج` : `Liquides: ${netProfitAfterRentVault.toLocaleString()} DA`}
+              Liquides: {netProfitAfterRentVault.toLocaleString()} DA
             </span>
           </div>
         </div>
@@ -474,40 +467,36 @@ export function Expenses() {
       <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
         
-        <div className={cn("relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6", isRTL && "lg:flex-row-reverse")}>
+        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="space-y-2 max-w-xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold text-accent">
               <PieChart size={14} />
-              <span>{isRTL ? 'معادلة حساب أرباح/خسائر المدرسة' : 'Calculateur de Bilan'}</span>
+              <span>Calculateur de Bilan</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black tracking-tight">
-              {isRTL 
-                ? 'كيف يتم حساب الفائدة أو الخسارة في البوابة؟' 
-                : 'Comment le résultat financier est-il calculé ?'}
+              Comment le résultat financier est-il calculé ?
             </h2>
             <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
-              {isRTL 
-                ? 'النتيجة = (إجمالي مداخيل الطلاب) - (رواتب الأساتذة + المصاريف التشغيلية للمدرسة مثل الكهرباء والماء والأدوات).' 
-                : 'Résultat = Recettes cotisations - (Masse salariale + Charges d\'exploitation globales).'}
+              Résultat = Recettes cotisations - (Masse salariale + Charges d'exploitation globales).
             </p>
           </div>
 
           <div className="w-full lg:w-auto bg-white/5 border border-white/10 rounded-2xl p-4 space-y-2 font-mono text-xs text-slate-200">
             <div className="flex justify-between items-center gap-6">
-              <span className="text-emerald-400 font-bold">+ {isRTL ? 'المداخيل' : 'Recettes'}:</span>
+              <span className="text-emerald-400 font-bold">+ Recettes:</span>
               <span>{totalRevenue.toLocaleString()} {t('currency')}</span>
             </div>
             <div className="flex justify-between items-center gap-6">
-              <span className="text-rose-400 font-bold">- {isRTL ? 'رواتب الأساتذة' : 'Salaires'}:</span>
+              <span className="text-rose-400 font-bold">- Salaires:</span>
               <span>{teacherPayrollTotal.toLocaleString()} {t('currency')}</span>
             </div>
             <div className="flex justify-between items-center gap-6">
-              <span className="text-rose-400 font-bold">- {isRTL ? 'مصاريف التشغيل' : 'Charges'}:</span>
+              <span className="text-rose-400 font-bold">- Charges:</span>
               <span>{loggedExpensesTotal.toLocaleString()} {t('currency')}</span>
             </div>
             <div className="pt-2 border-t border-white/20 flex justify-between items-center gap-6 text-sm font-bold">
               <span className={isProfit ? "text-emerald-400" : "text-rose-400"}>
-                = {isProfit ? (isRTL ? 'صافي الربح' : 'Profit Net') : (isRTL ? 'صافي الخسارة' : 'Perte Nette')}:
+                = {isProfit ? 'Profit Net' : 'Perte Nette'}:
               </span>
               <span className={isProfit ? "text-emerald-400" : "text-rose-400"}>
                 {netProfitOrLoss.toLocaleString()} {t('currency')}
@@ -536,7 +525,7 @@ export function Expenses() {
                   <div className="flex items-center justify-between">
                     <span className={cn("px-2.5 py-1 rounded-xl text-xs font-bold border flex items-center gap-1.5", conf.color)}>
                       <Icon size={14} />
-                      {isRTL ? conf.labelAr : conf.labelFr}
+                      {conf.label}
                     </span>
                     <span className="text-xs font-bold text-slate-400">{percentage}%</span>
                   </div>
@@ -591,7 +580,7 @@ export function Expenses() {
                   selectedCategoryFilter === cat ? "bg-primary text-white shadow-sm border-primary" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                 )}
               >
-                {isRTL ? CATEGORY_CONFIG[cat].labelAr : CATEGORY_CONFIG[cat].labelFr}
+                {CATEGORY_CONFIG[cat].label}
               </button>
             ))}
           </div>
@@ -639,7 +628,7 @@ export function Expenses() {
                       <td className="px-6 py-4">
                         <span className={cn("px-2.5 py-1 rounded-xl text-xs font-bold border inline-flex items-center gap-1.5", categoryConf.color)}>
                           <Icon size={14} />
-                          {isRTL ? categoryConf.labelAr : categoryConf.labelFr}
+                          {categoryConf.label}
                         </span>
                       </td>
                       <td className="px-6 py-4 font-black text-rose-600">
@@ -726,7 +715,7 @@ export function Expenses() {
               >
                 {(Object.keys(CATEGORY_CONFIG) as ExpenseCategory[]).map(cat => (
                   <option key={cat} value={cat}>
-                    {isRTL ? CATEGORY_CONFIG[cat].labelAr : CATEGORY_CONFIG[cat].labelFr}
+                    {CATEGORY_CONFIG[cat].label}
                   </option>
                 ))}
               </select>
@@ -826,7 +815,7 @@ export function Expenses() {
               >
                 {(Object.keys(CATEGORY_CONFIG) as ExpenseCategory[]).map(cat => (
                   <option key={cat} value={cat}>
-                    {isRTL ? CATEGORY_CONFIG[cat].labelAr : CATEGORY_CONFIG[cat].labelFr}
+                    {CATEGORY_CONFIG[cat].label}
                   </option>
                 ))}
               </select>
@@ -902,7 +891,7 @@ export function Expenses() {
               type="number"
               required
               min="1"
-              placeholder={`مثال: ${suggestedMonthlySavings}`}
+              placeholder={isRTL ? `مثال: ${suggestedMonthlySavings}` : `Ex: ${suggestedMonthlySavings}`}
               value={depositAmount}
               onChange={(e) => setDepositAmount(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-2xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20"

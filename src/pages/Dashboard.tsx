@@ -494,7 +494,7 @@ export function Dashboard() {
                                 <div className="text-right">
                                   <div className="font-extrabold text-slate-900 text-sm">{val.toLocaleString()} DA</div>
                                   <div className={cn("text-[10px] font-black uppercase text-slate-500", isRTL && "text-left")}>
-                                    {isRTL ? 'نشط' : 'Active'}
+                                    Actif
                                   </div>
                                 </div>
 
@@ -503,7 +503,7 @@ export function Dashboard() {
                                   className="bg-primary text-white font-black text-xs px-4 py-2.5 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-md shadow-primary/10 flex items-center gap-1.5"
                                 >
                                   <Coins size={14} />
-                                  <span>{isRTL ? "Encaisser Cash" : "Collect Cash"}</span>
+                                  <span>Encaisser Cash</span>
                                 </button>
                               </div>
                             </div>
