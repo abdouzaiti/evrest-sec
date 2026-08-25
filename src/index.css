@@ -40,6 +40,10 @@
 }
 
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm;
+  }
   body {
     background: white !important;
     color: black !important;
@@ -56,9 +60,12 @@
     position: absolute;
     left: 0;
     top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
     background: white !important;
     display: block !important;
   }
