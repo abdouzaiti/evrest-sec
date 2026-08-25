@@ -409,12 +409,18 @@ export function Classes() {
                       {t('subscription')}: {c.price} {t('currency')}
                     </p>
                     <h4 className="font-black text-lg leading-tight tracking-tight">{c.name}</h4>
-                    {assignedTeacher && (
-                      <p className={cn("text-xs font-semibold mt-1.5 flex items-center gap-1.5", selectedClassId === c.id ? "text-white/80" : "text-slate-500", isRTL && "flex-row-reverse")}>
-                        <GraduationCap size={14} className="shrink-0" />
-                        <span>{assignedTeacher.name}</span>
-                      </p>
-                    )}
+                    <div className={cn(
+                      "mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all",
+                      selectedClassId === c.id 
+                        ? "bg-white/15 text-white border border-white/20" 
+                        : "bg-slate-100 text-slate-700 border border-slate-200",
+                      isRTL && "flex-row-reverse"
+                    )}>
+                      <GraduationCap size={13} className={selectedClassId === c.id ? "text-accent" : "text-primary shrink-0"} />
+                      <span className="truncate">
+                        {assignedTeacher ? assignedTeacher.name : (isRTL ? "بدون أستاذ" : "Non assigné")}
+                      </span>
+                    </div>
                   </div>
                 </button>
                 <div className={cn(
