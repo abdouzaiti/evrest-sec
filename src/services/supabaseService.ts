@@ -31,15 +31,15 @@ const defaultClasses: SchoolClass[] = [
 ];
 
 const defaultStudents: Student[] = [
-  { id: 'student-1', name: 'Abderrahmane Zaiti', parentPhone: '0661245892', classId: 'class-1', tokenId: 'S101', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
-  { id: 'student-2', name: 'Leila Kaddour', parentPhone: '0555321456', classId: 'class-1', tokenId: 'S102', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
-  { id: 'student-3', name: 'Yanis Amrani', parentPhone: '0772183495', classId: 'class-2', tokenId: 'S103', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
-  { id: 'student-4', name: 'Fatma-Zohra Mansouri', parentPhone: '0561234567', classId: 'class-3', tokenId: 'S104', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
-  { id: 'student-5', name: 'Mohamed Amine Bouzidi', parentPhone: '0662895412', classId: 'class-4', tokenId: 'S105', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
-  { id: 'student-6', name: 'Meriem Ouchene', parentPhone: '0770987654', classId: 'class-5', tokenId: 'S106', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
-  { id: 'student-7', name: 'Anis Belkacem', parentPhone: '0551743621', classId: 'class-2', tokenId: 'S107', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
-  { id: 'student-8', name: 'Khadidja Haddad', parentPhone: '0663152436', classId: 'class-3', tokenId: 'S108', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
-  { id: 'student-9', name: 'Oussama Sifi', parentPhone: '0792345678', classId: 'class-5', tokenId: 'S109', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } }
+  { id: 'student-1', name: 'Abderrahmane Zaiti', parentPhone: '0661245892', classId: 'class-1', classIds: ['class-1', 'class-2'], tokenId: 'S101', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
+  { id: 'student-2', name: 'Leila Kaddour', parentPhone: '0555321456', classId: 'class-1', classIds: ['class-1', 'class-3'], tokenId: 'S102', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
+  { id: 'student-3', name: 'Yanis Amrani', parentPhone: '0772183495', classId: 'class-2', classIds: ['class-2'], tokenId: 'S103', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
+  { id: 'student-4', name: 'Fatma-Zohra Mansouri', parentPhone: '0561234567', classId: 'class-3', classIds: ['class-3', 'class-4'], tokenId: 'S104', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
+  { id: 'student-5', name: 'Mohamed Amine Bouzidi', parentPhone: '0662895412', classId: 'class-4', classIds: ['class-4', 'class-5'], tokenId: 'S105', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
+  { id: 'student-6', name: 'Meriem Ouchene', parentPhone: '0770987654', classId: 'class-5', classIds: ['class-5'], tokenId: 'S106', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
+  { id: 'student-7', name: 'Anis Belkacem', parentPhone: '0551743621', classId: 'class-2', classIds: ['class-2', 'class-1'], tokenId: 'S107', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
+  { id: 'student-8', name: 'Khadidja Haddad', parentPhone: '0663152436', classId: 'class-3', classIds: ['class-3'], tokenId: 'S108', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
+  { id: 'student-9', name: 'Oussama Sifi', parentPhone: '0792345678', classId: 'class-5', classIds: ['class-5'], tokenId: 'S109', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } }
 ];
 
 const defaultTeachers: Teacher[] = [
@@ -143,12 +143,29 @@ const mapToStudent = (row: any): Student => {
 
   const parsedPaidMonths = parsePaidMonths(row.paid_months ?? row.paidMonths);
   const parsedAttendance = parseAttendance(row.attendance_data ?? row.attendance);
+  
+  let parsedClassIds: string[] = [];
+  if (Array.isArray(row.classIds)) parsedClassIds = row.classIds;
+  else if (Array.isArray(row.class_ids)) parsedClassIds = row.class_ids;
+  else if (typeof row.classIds === 'string') {
+    try { parsedClassIds = JSON.parse(row.classIds); } catch {}
+  } else if (typeof row.class_ids === 'string') {
+    try { parsedClassIds = JSON.parse(row.class_ids); } catch {}
+  }
+
+  const primaryClassId = row.classId !== undefined ? row.classId : (row.class_id !== undefined ? row.class_id : '');
+  if (parsedClassIds.length === 0 && primaryClassId) {
+    parsedClassIds = [primaryClassId];
+  } else if (primaryClassId && !parsedClassIds.includes(primaryClassId)) {
+    parsedClassIds = [primaryClassId, ...parsedClassIds];
+  }
 
   return {
     id: row.id,
     name: row.name || '',
     parentPhone: row.parentPhone !== undefined ? row.parentPhone : (row.parent_phone !== undefined ? row.parent_phone : ''),
-    classId: row.classId !== undefined ? row.classId : (row.class_id !== undefined ? row.class_id : ''),
+    classId: primaryClassId,
+    classIds: parsedClassIds,
     tokenId: row.tokenId !== undefined ? row.tokenId : (row.token_id !== undefined ? row.token_id : undefined),
     currentMonth: row.currentMonth !== undefined ? Number(row.currentMonth) : (row.current_month !== undefined ? Number(row.current_month) : 1),
     sessionsCompleted: row.sessionsCompleted !== undefined ? Number(row.sessionsCompleted) : (row.sessions_completed !== undefined ? Number(row.sessions_completed) : 0),
@@ -188,12 +205,15 @@ const mapToTeacher = (row: any): Teacher => {
  * so that they seamlessly insert and update regardless of how the user named their tables.
  */
 const makeStudentPayload = (s: Omit<Student, 'id'>) => {
+  const classIds = s.classIds && s.classIds.length > 0 ? s.classIds : (s.classId ? [s.classId] : []);
   return {
     name: s.name,
     parentPhone: s.parentPhone,
     parent_phone: s.parentPhone,
-    classId: s.classId,
-    class_id: s.classId,
+    classId: s.classId || (classIds[0] || ''),
+    class_id: s.classId || (classIds[0] || ''),
+    classIds: classIds,
+    class_ids: classIds,
     tokenId: s.tokenId || null,
     token_id: s.tokenId || null,
     currentMonth: s.currentMonth,

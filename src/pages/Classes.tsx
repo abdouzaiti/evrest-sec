@@ -272,7 +272,11 @@ export function Classes() {
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const created = await studentsService.create({ ...newStudent, classId: selectedClassId });
+      const created = await studentsService.create({ 
+        ...newStudent, 
+        classId: selectedClassId,
+        classIds: [selectedClassId]
+      });
       setStudents(prev => [...prev, created]);
       setIsStudentModalOpen(false);
       setNewStudent({ name: '', parentPhone: '', classId: '', tokenId: '' });
@@ -285,9 +289,18 @@ export function Classes() {
     const targetStudent = students.find(s => s.id === studentId);
     if (!targetStudent) return;
     try {
+      const currentClassIds = (targetStudent.classIds && targetStudent.classIds.length > 0)
+        ? targetStudent.classIds
+        : (targetStudent.classId ? [targetStudent.classId] : []);
+      
+      const newClassIds = currentClassIds.includes(selectedClassId)
+        ? currentClassIds
+        : [...currentClassIds, selectedClassId];
+
       const updated = await studentsService.update(targetStudent.id, {
         ...targetStudent,
-        classId: selectedClassId
+        classId: targetStudent.classId || selectedClassId,
+        classIds: newClassIds
       });
       setStudents(prev => prev.map(s => s.id === studentId ? updated : s));
     } catch (error) {
@@ -328,10 +341,13 @@ export function Classes() {
   };
 
   const selectedClass = classes.find(c => c.id === selectedClassId);
-  const classStudents = students.filter(s => 
-    s.classId === selectedClassId && 
-    (search === '' || s.name.toLowerCase().includes(search.toLowerCase()))
-  );
+  const classStudents = students.filter(s => {
+    const studentClassIds = (s.classIds && s.classIds.length > 0)
+      ? s.classIds
+      : (s.classId ? [s.classId] : []);
+    const inThisClass = studentClassIds.includes(selectedClassId);
+    return inThisClass && (search === '' || s.name.toLowerCase().includes(search.toLowerCase()));
+  });
 
   if (loading) {
     return (
@@ -531,9 +547,35 @@ export function Classes() {
                              <p className="text-base font-black text-primary group-hover:text-accent transition-colors">{s.name}</p>
                           </td>
                           <td className="px-8 py-6">
-                            <div className={cn("flex items-center gap-2 text-slate-500 font-black text-sm", isRTL && "flex-row-reverse text-right")}>
-                              <Phone size={14} className="text-accent" />
-                              <span>{s.parentPhone}</span>
+                            <div className="space-y-1.5">
+                              <div className={cn("flex items-center gap-2 text-slate-500 font-black text-sm", isRTL && "flex-row-reverse text-right")}>
+                                <Phone size={14} className="text-accent" />
+                                <span>{s.parentPhone}</span>
+                              </div>
+                              <div className={cn("flex flex-wrap items-center gap-1 max-w-[260px]", isRTL && "justify-end")}>
+                                {(() => {
+                                  const studentClassIds = (s.classIds && s.classIds.length > 0)
+                                    ? s.classIds
+                                    : (s.classId ? [s.classId] : []);
+                                  return studentClassIds.map(cid => {
+                                    const found = classes.find(c => c.id === cid);
+                                    const isCurrent = cid === selectedClassId;
+                                    return (
+                                      <span
+                                        key={cid}
+                                        className={cn(
+                                          "inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border",
+                                          isCurrent
+                                            ? "bg-primary/10 text-primary border-primary/20"
+                                            : "bg-slate-100 text-slate-600 border-slate-200"
+                                        )}
+                                      >
+                                        {found ? found.name : 'Classe'}
+                                      </span>
+                                    );
+                                  });
+                                })()}
+                              </div>
                             </div>
                           </td>
                           <td className="px-8 py-6">
@@ -744,8 +786,11 @@ export function Classes() {
                   }
 
                   return availableStudents.map(st => {
-                    const isAlreadyInThisClass = st.classId === selectedClassId;
-                    const stClass = classes.find(c => c.id === st.classId);
+                    const studentClassIds = (st.classIds && st.classIds.length > 0)
+                      ? st.classIds
+                      : (st.classId ? [st.classId] : []);
+                    const isAlreadyInThisClass = studentClassIds.includes(selectedClassId);
+                    const enrolledClasses = studentClassIds.map(cid => classes.find(c => c.id === cid)).filter(Boolean) as SchoolClass[];
 
                     return (
                       <div 
@@ -759,16 +804,16 @@ export function Classes() {
                       >
                         <div className="min-w-0 flex-1">
                           <p className="font-bold text-sm text-slate-800 truncate">{st.name}</p>
-                          <div className="flex items-center gap-2 text-xs text-slate-400 font-medium mt-0.5">
+                          <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-400 font-medium mt-1">
                             <span>📞 {st.parentPhone}</span>
-                            {stClass && (
-                              <span className={cn(
+                            {enrolledClasses.map(cl => (
+                              <span key={cl.id} className={cn(
                                 "px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider",
-                                isAlreadyInThisClass ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
+                                cl.id === selectedClassId ? "bg-emerald-100 text-emerald-800 border border-emerald-200" : "bg-slate-100 text-slate-600 border border-slate-200"
                               )}>
-                                {stClass.name}
+                                {cl.name}
                               </span>
-                            )}
+                            ))}
                           </div>
                         </div>
 

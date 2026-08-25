@@ -32,6 +32,7 @@ export interface Student {
   name: string;
   parentPhone: string;
   classId: string;
+  classIds?: string[];
   tokenId?: string;
   currentMonth: number;
   paidMonths: number[];

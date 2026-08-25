@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, User, Phone, CreditCard, GraduationCap, Loader2, Trash2, Shield, Pencil, AlertCircle, CheckCircle2, Circle, Clock, FileText, Calendar } from 'lucide-react';
+import { Search, Plus, User, Phone, CreditCard, GraduationCap, Loader2, Trash2, Shield, Pencil, AlertCircle, CheckCircle2, Circle, Clock, FileText, Calendar, Check } from 'lucide-react';
 import { Student, SchoolClass, PointageLog } from '../types';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
@@ -30,6 +30,7 @@ export function Students() {
     parentPhone: '',
     paymentStatus: 'Pending',
     classId: '',
+    classIds: [],
     tokenId: ''
   });
 
@@ -110,9 +111,22 @@ export function Students() {
     (student.tokenId && student.tokenId.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const getClassBadge = (classId: string) => {
-    const studentClass = classes.find(c => c.id === classId);
-    return studentClass ? studentClass.name : 'Inconnu';
+  const getClassBadges = (student: Student) => {
+    const studentClassIds = (student.classIds && student.classIds.length > 0)
+      ? student.classIds
+      : (student.classId ? [student.classId] : []);
+
+    if (studentClassIds.length === 0) {
+      return [{ id: 'none', name: 'Non assigné' }];
+    }
+
+    return studentClassIds.map(cid => {
+      const found = classes.find(c => c.id === cid);
+      return {
+        id: cid,
+        name: found ? found.name : 'Inconnu'
+      };
+    });
   };
 
   // Calculate sessions for current month
@@ -290,9 +304,16 @@ export function Students() {
                         </div>
                       </td>
                       <td className="px-8 py-6">
-                         <span className="inline-flex items-center px-3 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase bg-slate-100 text-slate-600 border border-slate-200">
-                           {getClassBadge(student.classId)}
-                         </span>
+                         <div className="flex flex-wrap items-center gap-1.5 max-w-[280px]">
+                           {getClassBadges(student).map(b => (
+                             <span 
+                               key={b.id} 
+                               className="inline-flex items-center px-3 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase bg-slate-100 text-slate-700 border border-slate-200 shadow-sm"
+                             >
+                               {b.name}
+                             </span>
+                           ))}
+                         </div>
                       </td>
                       <td className="px-8 py-6">
                         <div className="flex items-center gap-2 text-sm font-bold text-slate-600">
@@ -380,18 +401,45 @@ export function Students() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t('classes')}</label>
-              <select
-                required
-                value={newStudent.classId}
-                onChange={(e) => setNewStudent({...newStudent, classId: e.target.value})}
-                className="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:outline-none focus:border-primary/20 focus:bg-white transition-all appearance-none"
-              >
-                <option value="">Sélectionner la classe</option>
-                {classes.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                {t('classes')} (Sélectionner une ou plusieurs classes)
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
+                {classes.map(c => {
+                  const currentClassIds = newStudent.classIds && newStudent.classIds.length > 0 
+                    ? newStudent.classIds 
+                    : (newStudent.classId ? [newStudent.classId] : []);
+                  const isSelected = currentClassIds.includes(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => {
+                        let nextIds: string[];
+                        if (isSelected) {
+                          nextIds = currentClassIds.filter(id => id !== c.id);
+                        } else {
+                          nextIds = [...currentClassIds, c.id];
+                        }
+                        setNewStudent({
+                          ...newStudent,
+                          classIds: nextIds,
+                          classId: nextIds[0] || ''
+                        });
+                      }}
+                      className={cn(
+                        "flex items-center justify-between p-3 rounded-2xl border text-left text-xs font-bold transition-all",
+                        isSelected 
+                          ? "bg-primary/10 border-primary text-primary" 
+                          : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                      )}
+                    >
+                      <span className="truncate">{c.name}</span>
+                      {isSelected && <Check size={14} className="shrink-0 text-primary" />}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -444,17 +492,45 @@ export function Students() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t('classes')}</label>
-                <select
-                  required
-                  value={selectedStudent.classId}
-                  onChange={(e) => setSelectedStudent({...selectedStudent, classId: e.target.value})}
-                  className="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:outline-none focus:border-primary/20 focus:bg-white transition-all appearance-none"
-                >
-                  {classes.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                  {t('classes')} (Sélectionner une ou plusieurs classes)
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
+                  {classes.map(c => {
+                    const currentClassIds = selectedStudent.classIds && selectedStudent.classIds.length > 0 
+                      ? selectedStudent.classIds 
+                      : (selectedStudent.classId ? [selectedStudent.classId] : []);
+                    const isSelected = currentClassIds.includes(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => {
+                          let nextIds: string[];
+                          if (isSelected) {
+                            nextIds = currentClassIds.filter(id => id !== c.id);
+                          } else {
+                            nextIds = [...currentClassIds, c.id];
+                          }
+                          setSelectedStudent({
+                            ...selectedStudent,
+                            classIds: nextIds,
+                            classId: nextIds[0] || ''
+                          });
+                        }}
+                        className={cn(
+                          "flex items-center justify-between p-3 rounded-2xl border text-left text-xs font-bold transition-all",
+                          isSelected 
+                            ? "bg-primary/10 border-primary text-primary" 
+                            : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                        )}
+                      >
+                        <span className="truncate">{c.name}</span>
+                        {isSelected && <Check size={14} className="shrink-0 text-primary" />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
