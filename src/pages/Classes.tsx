@@ -985,12 +985,12 @@ export function Classes() {
                         />
                       );
                     })}
-                    <div className="text-center flex items-center justify-center gap-1.5">
+                    <div className="text-center flex items-center justify-center gap-1">
                       <button
                         type="button"
                         onClick={() => handleToggleMonthPayment(attendanceStudent, month)}
                         className={cn(
-                          "px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all border shadow-2xs whitespace-nowrap cursor-pointer",
+                          "px-2 py-0.5 rounded-md text-[10px] font-bold transition-all border shadow-2xs whitespace-nowrap cursor-pointer",
                           isPaid 
                             ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" 
                             : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
@@ -1002,11 +1002,10 @@ export function Classes() {
                         <button
                           type="button"
                           onClick={() => handlePrintMonthReceipt(attendanceStudent, month)}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black bg-primary text-white hover:bg-primary/90 transition-all border border-primary shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap"
-                          title="Imprimer le reçu du mois avec les 4 séances"
+                          className="p-1 rounded-md bg-slate-100 hover:bg-primary hover:text-white text-slate-600 transition-all border border-slate-200 shadow-2xs cursor-pointer active:scale-90"
+                          title="Imprimer le reçu de paiement de ce mois"
                         >
-                          <Printer size={12} />
-                          <span>Imprimer</span>
+                          <Printer size={11} />
                         </button>
                       )}
                     </div>
@@ -1017,56 +1016,81 @@ export function Classes() {
         )}
       </Modal>
 
-      {/* Hidden Printable Receipt for Student Month Payment & Attendance */}
+      {/* Printable Official Payment Receipt (Single Month) */}
       {printReceiptData && (
-        <div className="hidden print:block print-area p-8 max-w-xl mx-auto bg-white text-slate-900 font-sans border-2 border-slate-800 rounded-2xl shadow-none">
-          <div className="border-b-2 border-slate-800 pb-4 mb-4 flex justify-between items-start">
-            <div>
-              <h2 className="text-xl font-black uppercase tracking-wider text-slate-900">REÇU DE PAIEMENT & POINTAGE</h2>
-              <p className="text-xs text-slate-600 font-semibold mt-1">Académie / Centre d'Études</p>
+        <div id="print-receipt-section" className="hidden print:block p-8 max-w-xl mx-auto bg-white text-slate-900 font-sans border-2 border-slate-900 rounded-3xl shadow-none">
+          {/* Logo & Header */}
+          <div className="text-center pb-4 mb-4 border-b-2 border-slate-900">
+            <div className="flex justify-center items-center mb-2">
+              <img 
+                src="/logo.png" 
+                alt="Logo" 
+                className="h-16 max-h-16 w-auto object-contain"
+                onError={(e) => {
+                  // Fallback in case image is loading
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
             </div>
-            <div className="text-right">
-              <span className="inline-block bg-emerald-600 text-white font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider">
+            <h1 className="text-xl font-black uppercase tracking-wider text-slate-900">REÇU DE PAIEMENT</h1>
+            <p className="text-xs font-bold text-slate-600 tracking-wide">Fiche de Paiement & Assiduité Mensuelle</p>
+          </div>
+
+          {/* Receipt Info Bar */}
+          <div className="flex justify-between items-center bg-slate-100 px-4 py-2.5 rounded-xl border border-slate-300 mb-4 text-xs">
+            <div>
+              <span className="text-slate-500 font-bold text-[10px] uppercase">Réf Reçu: </span>
+              <span className="font-mono font-bold text-slate-800">
+                REC-M{printReceiptData.month}-{printReceiptData.student.id.slice(0, 5).toUpperCase()}
+              </span>
+            </div>
+            <div>
+              <span className="text-slate-500 font-bold text-[10px] uppercase">Date d'édition: </span>
+              <span className="font-semibold text-slate-800">
+                {new Date().toLocaleDateString('fr-FR')} {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+            <div>
+              <span className="bg-emerald-600 text-white font-black text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                 PAYÉ
               </span>
-              <p className="text-[10px] text-slate-500 font-mono mt-1">
-                Date: {new Date().toLocaleDateString('fr-FR')} {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-              </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-xs mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+          {/* Student & Class Details Card */}
+          <div className="grid grid-cols-2 gap-3 text-xs mb-5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
             <div>
-              <p className="text-slate-500 text-[10px] uppercase font-bold">Élève</p>
-              <p className="font-bold text-sm text-slate-900">{printReceiptData.student.name}</p>
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Élève</p>
+              <p className="font-black text-sm text-slate-900 mt-0.5">{printReceiptData.student.name}</p>
               {printReceiptData.student.parentPhone && (
-                <p className="text-[11px] text-slate-600 mt-0.5">Tél: {printReceiptData.student.parentPhone}</p>
+                <p className="text-[11px] font-semibold text-slate-600 mt-0.5">Tél Parent: {printReceiptData.student.parentPhone}</p>
               )}
             </div>
             <div>
-              <p className="text-slate-500 text-[10px] uppercase font-bold">Classe / Matière</p>
-              <p className="font-bold text-sm text-slate-900">{printReceiptData.schoolClass?.name || 'Classe'}</p>
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Classe & Matière</p>
+              <p className="font-black text-sm text-slate-900 mt-0.5">{printReceiptData.schoolClass?.name || 'Classe'}</p>
               {printReceiptData.schoolClass?.description && (
-                <p className="text-[11px] text-slate-600 mt-0.5">{printReceiptData.schoolClass.description}</p>
+                <p className="text-[11px] font-semibold text-slate-600 mt-0.5">{printReceiptData.schoolClass.description}</p>
               )}
             </div>
-            <div>
-              <p className="text-slate-500 text-[10px] uppercase font-bold">Mois concerné</p>
-              <p className="font-black text-base text-primary">Mois {printReceiptData.month}</p>
+            <div className="pt-2 border-t border-slate-200">
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Mois Réglé</p>
+              <p className="font-black text-sm text-primary mt-0.5">Mois {printReceiptData.month}</p>
             </div>
-            <div>
-              <p className="text-slate-500 text-[10px] uppercase font-bold">Tarif Mensuel</p>
-              <p className="font-black text-base text-emerald-700">
-                {(printReceiptData.schoolClass?.price || 0).toLocaleString()} DZD
-              </p>
+            <div className="pt-2 border-t border-slate-200">
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Statut Paiement</p>
+              <p className="font-bold text-xs text-emerald-700 mt-0.5">Règlement validé</p>
             </div>
           </div>
 
-          <div className="mb-6">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 mb-3 border-b border-slate-200 pb-1">
-              Détail des 4 Séances du Mois
+          {/* 4 Sessions Detail for THIS Month */}
+          <div className="mb-5">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 mb-2.5 flex items-center justify-between border-b border-slate-200 pb-1">
+              <span>Pointage des 4 séances (Mois {printReceiptData.month})</span>
+              <span className="text-[10px] font-semibold text-slate-500 normal-case">4 séances / mois</span>
             </h3>
-            <div className="space-y-2">
+            
+            <div className="space-y-1.5">
               {[0, 1, 2, 3].map((sessionIdx) => {
                 const attendanceList = (printReceiptData.student.attendance || {})[printReceiptData.month] || [false, false, false, false];
                 const datesList = (printReceiptData.student.attendanceDates || {})[printReceiptData.month] || ['', '', '', ''];
@@ -1076,21 +1100,25 @@ export function Classes() {
                   : null;
 
                 return (
-                  <div key={sessionIdx} className="flex justify-between items-center p-2.5 rounded-lg border border-slate-200 bg-white">
-                    <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center bg-slate-100 text-slate-700">
+                  <div key={sessionIdx} className="flex justify-between items-center p-2.5 rounded-xl border border-slate-200 bg-white">
+                    <div className="flex items-center gap-2.5">
+                      <span className={cn(
+                        "w-6 h-6 rounded-full font-black text-[11px] flex items-center justify-center border",
+                        isPresent ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-slate-100 text-slate-600 border-slate-300"
+                      )}>
                         S{sessionIdx + 1}
                       </span>
                       <span className="font-bold text-xs text-slate-800">
                         Séance {sessionIdx + 1}
                       </span>
                     </div>
+
                     <div className="flex items-center gap-3">
                       <span className="text-[11px] text-slate-500 font-mono">
-                        {dateStr ? dateStr : (isPresent ? 'Pointé' : 'Non effectuée')}
+                        {dateStr ? dateStr : (isPresent ? 'Pointage enregistré' : 'Non effectuée')}
                       </span>
                       <span className={cn(
-                        "px-2.5 py-0.5 text-[11px] font-black rounded-full border",
+                        "px-2.5 py-0.5 text-[10px] font-black rounded-full border tracking-wide",
                         isPresent 
                           ? "bg-emerald-50 text-emerald-700 border-emerald-300" 
                           : "bg-rose-50 text-rose-700 border-rose-300"
@@ -1104,9 +1132,29 @@ export function Classes() {
             </div>
           </div>
 
-          <div className="border-t-2 border-slate-800 pt-4 flex justify-between items-end text-xs text-slate-500">
-            <p className="font-bold text-slate-700">Everest Secretory</p>
-            <p className="border-b border-dashed border-slate-400 pb-8 w-36 text-center font-bold text-slate-700">Cachet & Signature</p>
+          {/* Prominent Class Total Price Section at the bottom */}
+          <div className="bg-slate-900 text-white p-4 rounded-2xl mb-6 flex justify-between items-center">
+            <div>
+              <p className="text-[10px] uppercase font-black tracking-widest text-slate-400">Prix total de la classe</p>
+              <p className="text-xs text-slate-300 font-medium">Tarif mensuel pour le Mois {printReceiptData.month}</p>
+            </div>
+            <div className="text-right">
+              <span className="text-2xl font-black tracking-tight text-emerald-400">
+                {(printReceiptData.schoolClass?.price || 0).toLocaleString()} DZD
+              </span>
+            </div>
+          </div>
+
+          {/* Footer Signature & Stamp */}
+          <div className="border-t-2 border-slate-900 pt-4 flex justify-between items-end text-xs">
+            <div>
+              <p className="font-black text-slate-800 uppercase tracking-wide text-[11px]">Administration</p>
+              <p className="text-[10px] text-slate-500 mt-0.5 italic">Merci pour votre confiance</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] font-black uppercase text-slate-500 mb-8">Cachet & Signature</p>
+              <div className="border-b-2 border-dashed border-slate-400 w-36"></div>
+            </div>
           </div>
         </div>
       )}
