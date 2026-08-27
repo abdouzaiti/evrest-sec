@@ -1515,13 +1515,64 @@ const saveTimetableLocalData = (data: TimetableConfig): void => {
   localStorage.setItem('everest_timetable_config', JSON.stringify(data));
 };
 
+const TIMETABLE_CONFIG_ID = 'default_timetable';
+
 export const timetableService = {
   async getConfig(): Promise<TimetableConfig> {
-    return getTimetableLocalData();
+    const local = getTimetableLocalData();
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase
+          .from('timetable_config')
+          .select('*')
+          .eq('id', TIMETABLE_CONFIG_ID)
+          .maybeSingle();
+
+        if (!error && data) {
+          const config: TimetableConfig = {
+            days: Array.isArray(data.days) && data.days.length > 0 ? data.days : local.days,
+            timeSlots: Array.isArray(data.time_slots) && data.time_slots.length > 0 ? data.time_slots : (Array.isArray(data.timeSlots) ? data.timeSlots : local.timeSlots),
+            rooms: Array.isArray(data.rooms) && data.rooms.length > 0 ? data.rooms : local.rooms,
+            cells: typeof data.cells === 'object' && data.cells !== null ? data.cells : (local.cells || {})
+          };
+          saveTimetableLocalData(config);
+          return config;
+        } else if (error && error.code !== 'PGRST116') {
+          console.warn('Supabase timetable fetch info:', error.message);
+        }
+      } catch (err) {
+        console.warn('Supabase timetable fetch error (using local storage):', err);
+      }
+    }
+    return local;
   },
 
   async saveConfig(config: TimetableConfig): Promise<TimetableConfig> {
     saveTimetableLocalData(config);
+
+    if (isSupabaseConfigured()) {
+      try {
+        const payload = {
+          id: TIMETABLE_CONFIG_ID,
+          days: config.days,
+          time_slots: config.timeSlots,
+          rooms: config.rooms,
+          cells: config.cells,
+          updated_at: new Date().toISOString()
+        };
+
+        const { error } = await supabase
+          .from('timetable_config')
+          .upsert([payload], { onConflict: 'id' });
+
+        if (error) {
+          console.warn('Supabase timetable upsert notice:', error.message);
+        }
+      } catch (err) {
+        console.warn('Supabase timetable save error:', err);
+      }
+    }
     return config;
   },
 
@@ -1546,8 +1597,7 @@ export const timetableService = {
       ...config,
       cells: newCells
     };
-    saveTimetableLocalData(updatedConfig);
-    return updatedConfig;
+    return this.saveConfig(updatedConfig);
   },
 
   async addTimeSlot(timeSlot: string): Promise<TimetableConfig> {
@@ -1557,8 +1607,7 @@ export const timetableService = {
       ...config,
       timeSlots: [...config.timeSlots, timeSlot]
     };
-    saveTimetableLocalData(updatedConfig);
-    return updatedConfig;
+    return this.saveConfig(updatedConfig);
   },
 
   async removeTimeSlot(timeSlot: string): Promise<TimetableConfig> {
@@ -1570,13 +1619,12 @@ export const timetableService = {
     // Also remove cells with that timeSlot
     const newCells = { ...config.cells };
     Object.keys(newCells).forEach(key => {
-      if (newCells[key].timeSlot === timeSlot) {
+      if (newCells[key]?.timeSlot === timeSlot) {
         delete newCells[key];
       }
     });
     updatedConfig.cells = newCells;
-    saveTimetableLocalData(updatedConfig);
-    return updatedConfig;
+    return this.saveConfig(updatedConfig);
   },
 
   async addDay(day: string): Promise<TimetableConfig> {
@@ -1586,8 +1634,7 @@ export const timetableService = {
       ...config,
       days: [...config.days, day]
     };
-    saveTimetableLocalData(updatedConfig);
-    return updatedConfig;
+    return this.saveConfig(updatedConfig);
   },
 
   async removeDay(day: string): Promise<TimetableConfig> {
@@ -1598,13 +1645,12 @@ export const timetableService = {
     };
     const newCells = { ...config.cells };
     Object.keys(newCells).forEach(key => {
-      if (newCells[key].day === day) {
+      if (newCells[key]?.day === day) {
         delete newCells[key];
       }
     });
     updatedConfig.cells = newCells;
-    saveTimetableLocalData(updatedConfig);
-    return updatedConfig;
+    return this.saveConfig(updatedConfig);
   },
 
   async addRoom(room: string): Promise<TimetableConfig> {
@@ -1614,8 +1660,7 @@ export const timetableService = {
       ...config,
       rooms: [...config.rooms, room]
     };
-    saveTimetableLocalData(updatedConfig);
-    return updatedConfig;
+    return this.saveConfig(updatedConfig);
   },
 
   async removeRoom(room: string): Promise<TimetableConfig> {
@@ -1624,13 +1669,11 @@ export const timetableService = {
       ...config,
       rooms: config.rooms.filter(r => r !== room)
     };
-    saveTimetableLocalData(updatedConfig);
-    return updatedConfig;
+    return this.saveConfig(updatedConfig);
   },
 
   async resetToDefault(): Promise<TimetableConfig> {
-    saveTimetableLocalData(defaultTimetableConfig);
-    return defaultTimetableConfig;
+    return this.saveConfig(defaultTimetableConfig);
   }
 };
 
