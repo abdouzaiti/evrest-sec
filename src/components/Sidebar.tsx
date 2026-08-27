@@ -9,7 +9,8 @@ import {
   Bell, 
   LogOut,
   X,
-  GraduationCap
+  GraduationCap,
+  CalendarDays
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +27,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const navItems = [
     { icon: LayoutDashboard, label: t('dashboard'), href: '/' },
+    { icon: CalendarDays, label: t('timetable'), href: '/timetable' },
     { icon: Users, label: t('classes'), href: '/classes' },
     { icon: GraduationCap, label: t('students'), href: '/students' },
     { icon: UserSquare2, label: t('teachers'), href: '/teachers' },

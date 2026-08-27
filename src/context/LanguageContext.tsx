@@ -11,6 +11,7 @@ interface Translations {
 export const translations: Translations = {
   // Sidebar & Navigation
   dashboard: { fr: 'Tableau de bord', ar: 'Tableau de bord', en: 'Dashboard' },
+  timetable: { fr: 'Emploi du temps', ar: 'جدول التوقيت', en: 'Timetable' },
   classes: { fr: 'Classes', ar: 'Classes', en: 'Classes' },
   students: { fr: 'Étudiants', ar: 'Étudiants', en: 'Students' },
   sessions: { fr: 'Séances', ar: 'Séances', en: 'Sessions' },

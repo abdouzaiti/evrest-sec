@@ -96,6 +96,27 @@ export interface User {
   role: 'director' | 'secretary';
 }
 
+export interface TimetableCell {
+  id: string;
+  day: string; // 'Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'
+  timeSlot: string; // e.g. '08:00 - 10:00'
+  classId?: string;
+  className?: string;
+  teacherId?: string;
+  teacherName?: string;
+  room?: string;
+  subject?: string;
+  color?: string;
+  note?: string;
+}
+
+export interface TimetableConfig {
+  days: string[];
+  timeSlots: string[];
+  cells: Record<string, TimetableCell>; // key: `${day}_${timeSlot}`
+  rooms: string[];
+}
+
 export interface PaymentRecord {
   id: string;
   studentId: string;

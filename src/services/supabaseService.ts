@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { SchoolClass, Student, Teacher, PaymentRecord, Expense, RentVaultDeposit, RentVaultConfig, AttendanceRecord } from '../types';
+import { SchoolClass, Student, Teacher, PaymentRecord, Expense, RentVaultDeposit, RentVaultConfig, AttendanceRecord, TimetableConfig, TimetableCell } from '../types';
 
 const defaultRentVault: RentVaultConfig = {
   targetAnnualRent: 180000, // Default annual rent e.g., 180,000 DA (18 M)
@@ -1404,5 +1404,235 @@ export const rentVaultService = {
     return updated;
   }
 };
+
+const defaultTimetableConfig: TimetableConfig = {
+  days: ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'],
+  timeSlots: [
+    '08:00 - 10:00',
+    '10:00 - 12:00',
+    '13:00 - 15:00',
+    '15:00 - 17:00',
+    '17:00 - 19:00',
+    '19:00 - 21:00'
+  ],
+  rooms: ['Salle 1', 'Salle 2', 'Salle 3', 'Salle 4'],
+  cells: {
+    'Dimanche_08:00 - 10:00': {
+      id: 'cell-1',
+      day: 'Dimanche',
+      timeSlot: '08:00 - 10:00',
+      classId: 'class-1',
+      className: 'Terminale - Mathématiques',
+      teacherName: 'Prof. Amine Benali',
+      subject: 'Mathématiques',
+      room: 'Salle 1',
+      color: '#3b82f6',
+      note: 'Groupe A'
+    },
+    'Dimanche_10:00 - 12:00': {
+      id: 'cell-2',
+      day: 'Dimanche',
+      timeSlot: '10:00 - 12:00',
+      classId: 'class-2',
+      className: 'Terminale - Sciences Physiques',
+      teacherName: 'Prof. Sarah Mansouri',
+      subject: 'Physique & Chimie',
+      room: 'Salle 2',
+      color: '#8b5cf6',
+      note: 'Cours & Exercices'
+    },
+    'Mardi_13:00 - 15:00': {
+      id: 'cell-3',
+      day: 'Mardi',
+      timeSlot: '13:00 - 15:00',
+      classId: 'class-3',
+      className: '1ère AS - Tronc Commun Sciences',
+      teacherName: 'Prof. Karim Dahmani',
+      subject: 'Sciences Naturelles',
+      room: 'Salle 3',
+      color: '#10b981',
+      note: 'TP & Synthèse'
+    },
+    'Mercredi_15:00 - 17:00': {
+      id: 'cell-4',
+      day: 'Mercredi',
+      timeSlot: '15:00 - 17:00',
+      classId: 'class-4',
+      className: '4ème AM - BEM Préparation',
+      teacherName: 'Prof. Nassim Brahimi',
+      subject: 'Français & Anglais',
+      room: 'Salle 1',
+      color: '#f59e0b',
+      note: 'Révision BEM'
+    },
+    'Samedi_08:00 - 10:00': {
+      id: 'cell-5',
+      day: 'Samedi',
+      timeSlot: '08:00 - 10:00',
+      classId: 'class-1',
+      className: 'Terminale - Mathématiques',
+      teacherName: 'Prof. Amine Benali',
+      subject: 'Mathématiques',
+      room: 'Salle 1',
+      color: '#3b82f6',
+      note: 'Série Bac Blanc'
+    },
+    'Samedi_10:00 - 12:00': {
+      id: 'cell-6',
+      day: 'Samedi',
+      timeSlot: '10:00 - 12:00',
+      classId: 'class-5',
+      className: 'Langues Étrangères - Anglais Intensif',
+      teacherName: 'Prof. Houda Meziani',
+      subject: 'Anglais',
+      room: 'Salle 4',
+      color: '#ec4899',
+      note: 'Expression orale'
+    }
+  }
+};
+
+const getTimetableLocalData = (): TimetableConfig => {
+  const data = localStorage.getItem('everest_timetable_config');
+  if (!data) {
+    localStorage.setItem('everest_timetable_config', JSON.stringify(defaultTimetableConfig));
+    return defaultTimetableConfig;
+  }
+  try {
+    const parsed: TimetableConfig = JSON.parse(data);
+    // Ensure Labo Info and Amphi are removed if present
+    if (parsed.rooms && (parsed.rooms.includes('Labo Info') || parsed.rooms.includes('Amphi'))) {
+      parsed.rooms = parsed.rooms.filter(r => r !== 'Labo Info' && r !== 'Amphi');
+      localStorage.setItem('everest_timetable_config', JSON.stringify(parsed));
+    }
+    return parsed;
+  } catch (e) {
+    return defaultTimetableConfig;
+  }
+};
+
+const saveTimetableLocalData = (data: TimetableConfig): void => {
+  localStorage.setItem('everest_timetable_config', JSON.stringify(data));
+};
+
+export const timetableService = {
+  async getConfig(): Promise<TimetableConfig> {
+    return getTimetableLocalData();
+  },
+
+  async saveConfig(config: TimetableConfig): Promise<TimetableConfig> {
+    saveTimetableLocalData(config);
+    return config;
+  },
+
+  async updateCell(day: string, timeSlot: string, cellData: Partial<TimetableCell> | null): Promise<TimetableConfig> {
+    const config = getTimetableLocalData();
+    const key = `${day}_${timeSlot}`;
+    const newCells = { ...config.cells };
+
+    if (!cellData || Object.keys(cellData).length === 0) {
+      delete newCells[key];
+    } else {
+      newCells[key] = {
+        id: newCells[key]?.id || `cell-${Date.now()}`,
+        day,
+        timeSlot,
+        ...newCells[key],
+        ...cellData
+      };
+    }
+
+    const updatedConfig: TimetableConfig = {
+      ...config,
+      cells: newCells
+    };
+    saveTimetableLocalData(updatedConfig);
+    return updatedConfig;
+  },
+
+  async addTimeSlot(timeSlot: string): Promise<TimetableConfig> {
+    const config = getTimetableLocalData();
+    if (config.timeSlots.includes(timeSlot)) return config;
+    const updatedConfig: TimetableConfig = {
+      ...config,
+      timeSlots: [...config.timeSlots, timeSlot]
+    };
+    saveTimetableLocalData(updatedConfig);
+    return updatedConfig;
+  },
+
+  async removeTimeSlot(timeSlot: string): Promise<TimetableConfig> {
+    const config = getTimetableLocalData();
+    const updatedConfig: TimetableConfig = {
+      ...config,
+      timeSlots: config.timeSlots.filter(ts => ts !== timeSlot)
+    };
+    // Also remove cells with that timeSlot
+    const newCells = { ...config.cells };
+    Object.keys(newCells).forEach(key => {
+      if (newCells[key].timeSlot === timeSlot) {
+        delete newCells[key];
+      }
+    });
+    updatedConfig.cells = newCells;
+    saveTimetableLocalData(updatedConfig);
+    return updatedConfig;
+  },
+
+  async addDay(day: string): Promise<TimetableConfig> {
+    const config = getTimetableLocalData();
+    if (config.days.includes(day)) return config;
+    const updatedConfig: TimetableConfig = {
+      ...config,
+      days: [...config.days, day]
+    };
+    saveTimetableLocalData(updatedConfig);
+    return updatedConfig;
+  },
+
+  async removeDay(day: string): Promise<TimetableConfig> {
+    const config = getTimetableLocalData();
+    const updatedConfig: TimetableConfig = {
+      ...config,
+      days: config.days.filter(d => d !== day)
+    };
+    const newCells = { ...config.cells };
+    Object.keys(newCells).forEach(key => {
+      if (newCells[key].day === day) {
+        delete newCells[key];
+      }
+    });
+    updatedConfig.cells = newCells;
+    saveTimetableLocalData(updatedConfig);
+    return updatedConfig;
+  },
+
+  async addRoom(room: string): Promise<TimetableConfig> {
+    const config = getTimetableLocalData();
+    if (config.rooms.includes(room)) return config;
+    const updatedConfig: TimetableConfig = {
+      ...config,
+      rooms: [...config.rooms, room]
+    };
+    saveTimetableLocalData(updatedConfig);
+    return updatedConfig;
+  },
+
+  async removeRoom(room: string): Promise<TimetableConfig> {
+    const config = getTimetableLocalData();
+    const updatedConfig: TimetableConfig = {
+      ...config,
+      rooms: config.rooms.filter(r => r !== room)
+    };
+    saveTimetableLocalData(updatedConfig);
+    return updatedConfig;
+  },
+
+  async resetToDefault(): Promise<TimetableConfig> {
+    saveTimetableLocalData(defaultTimetableConfig);
+    return defaultTimetableConfig;
+  }
+};
+
 
 

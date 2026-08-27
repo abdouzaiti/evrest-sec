@@ -11,6 +11,7 @@ import { Students } from './pages/Students';
 import { Payments } from './pages/Payments';
 import { Expenses } from './pages/Expenses';
 import { Notifications } from './pages/Notifications';
+import { Timetable } from './pages/Timetable';
 import PointageTerminal from './pages/PointageTerminal';
 import { Loader2 } from 'lucide-react';
 
@@ -59,6 +60,7 @@ export default function App() {
               </ProtectedRoute>
             }>
               <Route index element={<Dashboard />} />
+              <Route path="timetable" element={<Timetable />} />
               <Route path="classes" element={<Classes />} />
               <Route path="students" element={<Students />} />
               <Route path="teachers" element={<Teachers />} />
