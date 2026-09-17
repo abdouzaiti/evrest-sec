@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Phone, CheckCircle2, XCircle, Clock, BookOpen, Users, Loader2, Trash2, AlertCircle, Pencil, UserCheck, GraduationCap, UserPlus, Check, Printer, Calendar, CheckCheck, FileText, Sparkles, Shield, User } from 'lucide-react';
+import { Search, Plus, Phone, CheckCircle2, XCircle, Clock, BookOpen, Users, Loader2, Trash2, AlertCircle, Pencil, UserCheck, GraduationCap, UserPlus, Check, X, Printer, Calendar, CheckCheck, FileText, Sparkles, Shield, User } from 'lucide-react';
 import { Student, SchoolClass, Teacher } from '../types';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
@@ -126,12 +126,29 @@ export function Classes() {
   const handleToggleAttendance = async (student: Student, month: number, sessionIndex: number) => {
     const attendance = { ...(student.attendance || {}) };
     const attendanceDates = { ...(student.attendanceDates || {}) };
-    const monthAttendance = [...(attendance[month] || [false, false, false, false])];
+    const monthAttendance: (boolean | string)[] = [...(attendance[month] || [false, false, false, false])];
     const monthDates = [...(attendanceDates[month] || ['', '', '', ''])];
     
-    const nextState = !monthAttendance[sessionIndex];
+    const currentVal: any = monthAttendance[sessionIndex];
+    let nextState: boolean | string;
+    let nextDate = '';
+
+    if (currentVal === true || currentVal === 'present') {
+      // 1. Green (Present) -> Red (Absent)
+      nextState = 'absent';
+      nextDate = monthDates[sessionIndex] || new Date().toISOString();
+    } else if (currentVal === 'absent') {
+      // 2. Red (Absent) -> Normal White (false)
+      nextState = false;
+      nextDate = '';
+    } else {
+      // 3. Normal White (false / null / undefined) -> Green (Present)
+      nextState = true;
+      nextDate = new Date().toISOString();
+    }
+
     monthAttendance[sessionIndex] = nextState;
-    monthDates[sessionIndex] = nextState ? new Date().toISOString() : '';
+    monthDates[sessionIndex] = nextDate;
     attendance[month] = monthAttendance;
     attendanceDates[month] = monthDates;
     
@@ -954,7 +971,7 @@ export function Classes() {
                           const attendanceList = (s.attendance || {})[selectedAttendanceMonth] || [false, false, false, false];
                           const datesList = (s.attendanceDates || {})[selectedAttendanceMonth] || ['', '', '', ''];
                           const isPaidThisMonth = (s.paidMonths || []).includes(selectedAttendanceMonth);
-                          const totalPresent = attendanceList.filter(Boolean).length;
+                          const totalPresent = attendanceList.filter(val => val === true || val === 'present').length;
 
                           return (
                             <tr key={s.id} className="hover:bg-slate-50/70 transition-colors group">
@@ -985,7 +1002,9 @@ export function Classes() {
 
                               {/* 4 Attendance Toggle Cells: S1, S2, S3, S4 */}
                               {[0, 1, 2, 3].map((sessionIdx) => {
-                                const isPresent = attendanceList[sessionIdx];
+                                const sessionVal = attendanceList[sessionIdx];
+                                const isPresent = sessionVal === true || sessionVal === 'present';
+                                const isAbsent = sessionVal === 'absent';
                                 const dateStr = datesList[sessionIdx] 
                                   ? new Date(datesList[sessionIdx]).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
                                   : null;
@@ -996,14 +1015,28 @@ export function Classes() {
                                       type="button"
                                       onClick={() => handleToggleAttendance(s, selectedAttendanceMonth, sessionIdx)}
                                       className={cn(
-                                        "w-9 h-9 rounded-xl font-black text-xs transition-all inline-flex flex-col items-center justify-center cursor-pointer shadow-xs active:scale-90 border",
+                                        "w-9 h-9 rounded-xl font-black text-xs transition-all inline-flex flex-col items-center justify-center cursor-pointer shadow-2xs active:scale-90 border",
                                         isPresent
                                           ? "bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600 shadow-emerald-500/20"
-                                          : "bg-rose-50 hover:bg-rose-100 text-rose-600 border-rose-200"
+                                          : isAbsent
+                                          ? "bg-rose-500 hover:bg-rose-600 text-white border-rose-600 shadow-rose-500/20"
+                                          : "bg-white hover:bg-slate-100 text-slate-400 hover:text-slate-700 border-slate-200 hover:border-slate-300"
                                       )}
-                                      title={`Séance ${sessionIdx + 1} : ${isPresent ? `Présent (${dateStr || 'Enregistré'})` : 'Absent (cliquez pour marquer présent)'}`}
+                                      title={
+                                        isPresent
+                                          ? `Séance ${sessionIdx + 1} : Présent (${dateStr || 'Enregistré'}) — Clic pour marquer Absent`
+                                          : isAbsent
+                                          ? `Séance ${sessionIdx + 1} : Absent — Clic pour réinitialiser (Neutre / Blanc)`
+                                          : `Séance ${sessionIdx + 1} : Non renseigné (Neutre) — Clic pour marquer Présent`
+                                      }
                                     >
-                                      {isPresent ? <Check size={16} className="stroke-[3]" /> : <span className="text-[11px] font-black">ABS</span>}
+                                      {isPresent ? (
+                                        <Check size={16} className="stroke-[3]" />
+                                      ) : isAbsent ? (
+                                        <X size={16} className="stroke-[3]" />
+                                      ) : (
+                                        <span className="text-[11px] font-extrabold text-slate-400">S{sessionIdx + 1}</span>
+                                      )}
                                     </button>
                                   </td>
                                 );
@@ -1589,7 +1622,9 @@ export function Classes() {
                return (
                  <div key={month} className="grid grid-cols-6 gap-2 items-center py-1.5 border-b border-slate-100 last:border-none hover:bg-slate-50/50 rounded-lg px-1 transition-colors">
                     <div className="font-black text-xs text-slate-800 pl-1">M {month}</div>
-                    {monthAttendance.map((isPresent, sessionIdx) => {
+                    {monthAttendance.map((val, sessionIdx) => {
+                      const isPresent = val === true || val === 'present';
+                      const isAbsent = val === 'absent';
                       const dateStr = monthDates[sessionIdx] 
                         ? new Date(monthDates[sessionIdx]).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
                         : null;
@@ -1599,11 +1634,17 @@ export function Classes() {
                            type="button"
                            onClick={() => handleToggleAttendance(attendanceStudent, month, sessionIdx)}
                            className={cn(
-                             "w-5 h-5 rounded-full transition-all border mx-auto flex items-center justify-center cursor-pointer hover:scale-125 shadow-2xs", 
-                             isPresent ? "bg-green-500 border-green-600 shadow-green-500/20" : "bg-red-500 border-red-600 shadow-red-500/20"
+                             "w-5 h-5 rounded-full transition-all border mx-auto flex items-center justify-center cursor-pointer hover:scale-125 shadow-2xs text-[9px] font-black", 
+                             isPresent 
+                               ? "bg-emerald-500 border-emerald-600 text-white shadow-emerald-500/20" 
+                               : isAbsent 
+                               ? "bg-rose-500 border-rose-600 text-white shadow-rose-500/20" 
+                               : "bg-white border-slate-300 text-slate-400 hover:border-slate-400"
                            )}
-                           title={`Séance ${sessionIdx + 1}: ${isPresent ? (dateStr ? `Présent (${dateStr})` : 'Présent') : 'Absent'}`}
-                        />
+                           title={`Séance ${sessionIdx + 1}: ${isPresent ? (dateStr ? `Présent (${dateStr})` : 'Présent') : isAbsent ? 'Absent' : 'Non renseigné'}`}
+                        >
+                          {isPresent ? "✓" : isAbsent ? "✕" : ""}
+                        </button>
                       );
                     })}
                     <div className="text-center flex items-center justify-center gap-1">
@@ -1717,7 +1758,9 @@ export function Classes() {
               {[0, 1, 2, 3].map((sessionIdx) => {
                 const attendanceList = (printReceiptData.student.attendance || {})[printReceiptData.month] || [false, false, false, false];
                 const datesList = (printReceiptData.student.attendanceDates || {})[printReceiptData.month] || ['', '', '', ''];
-                const isPresent = attendanceList[sessionIdx];
+                const sessionVal = attendanceList[sessionIdx];
+                const isPresent = sessionVal === true || sessionVal === 'present';
+                const isAbsent = sessionVal === 'absent';
                 const dateStr = datesList[sessionIdx] 
                   ? new Date(datesList[sessionIdx]).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
                   : null;
@@ -1727,7 +1770,11 @@ export function Classes() {
                     <div className="flex items-center gap-3">
                       <span className={cn(
                         "w-7 h-7 rounded-full font-black text-xs flex items-center justify-center border",
-                        isPresent ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-slate-100 text-slate-600 border-slate-300"
+                        isPresent 
+                          ? "bg-emerald-100 text-emerald-800 border-emerald-300" 
+                          : isAbsent 
+                          ? "bg-rose-100 text-rose-800 border-rose-300" 
+                          : "bg-slate-100 text-slate-600 border-slate-300"
                       )}>
                         S{sessionIdx + 1}
                       </span>
@@ -1736,7 +1783,7 @@ export function Classes() {
                           Séance {sessionIdx + 1}
                         </p>
                         <p className="text-[10px] text-slate-400">
-                          {isPresent ? "Séance effectuée" : "En attente / Absente"}
+                          {isPresent ? "Séance effectuée" : isAbsent ? "Absence enregistrée" : "En attente / Non renseignée"}
                         </p>
                       </div>
                     </div>
@@ -1749,9 +1796,11 @@ export function Classes() {
                         "px-3 py-1 text-[10px] font-black rounded-full border tracking-wider uppercase",
                         isPresent 
                           ? "bg-emerald-50 text-emerald-700 border-emerald-300" 
-                          : "bg-rose-50 text-rose-700 border-rose-300"
+                          : isAbsent 
+                          ? "bg-rose-50 text-rose-700 border-rose-300" 
+                          : "bg-slate-50 text-slate-600 border-slate-200"
                       )}>
-                        {isPresent ? "PRÉSENT" : "ABSENT"}
+                        {isPresent ? "PRÉSENT" : isAbsent ? "ABSENT" : "NON RENSEIGNÉ"}
                       </span>
                     </div>
                   </div>
@@ -1851,7 +1900,13 @@ export function Classes() {
               {printClassAttendanceData.students.map((s, idx) => {
                 const att = (s.attendance || {})[printClassAttendanceData.month] || [false, false, false, false];
                 const isPaid = (s.paidMonths || []).includes(printClassAttendanceData.month);
-                const totalPresent = att.filter(Boolean).length;
+                const totalPresent = att.filter(val => val === true || val === 'present').length;
+
+                const renderSessionCell = (val: any) => {
+                  if (val === true || val === 'present') return <span className="text-emerald-700">✓ Présent</span>;
+                  if (val === 'absent') return <span className="text-rose-600">✕ Absent</span>;
+                  return <span className="text-slate-400">—</span>;
+                };
 
                 return (
                   <tr key={s.id} className="border-b border-slate-300">
@@ -1859,16 +1914,16 @@ export function Classes() {
                     <td className="border border-slate-400 p-2 font-black text-slate-900">{s.name}</td>
                     <td className="border border-slate-400 p-2 text-slate-600 font-mono text-[11px]">{s.parentPhone || '—'}</td>
                     <td className="border border-slate-400 p-2 text-center font-bold">
-                      {att[0] ? '✓ Présent' : '—'}
+                      {renderSessionCell(att[0])}
                     </td>
                     <td className="border border-slate-400 p-2 text-center font-bold">
-                      {att[1] ? '✓ Présent' : '—'}
+                      {renderSessionCell(att[1])}
                     </td>
                     <td className="border border-slate-400 p-2 text-center font-bold">
-                      {att[2] ? '✓ Présent' : '—'}
+                      {renderSessionCell(att[2])}
                     </td>
                     <td className="border border-slate-400 p-2 text-center font-bold">
-                      {att[3] ? '✓ Présent' : '—'}
+                      {renderSessionCell(att[3])}
                     </td>
                     <td className="border border-slate-400 p-2 text-center font-black">
                       {totalPresent}/4

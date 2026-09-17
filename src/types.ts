@@ -38,7 +38,7 @@ export interface Student {
   paidMonths: number[];
   sessionsCompleted: number;
   paymentStatus: PaymentStatus;
-  attendance?: Record<number, boolean[]>;
+  attendance?: Record<number, (boolean | string)[]>;
   attendanceDates?: Record<number, string[]>;
 }
 
