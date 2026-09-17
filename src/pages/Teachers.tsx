@@ -466,14 +466,14 @@ export function Teachers() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Email</label>
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Numéro de téléphone</label>
             <input
               required
-              type="email"
+              type="tel"
               value={newTeacher.email}
               onChange={e => setNewTeacher({ ...newTeacher, email: e.target.value })}
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
-              placeholder="email@ecole.com"
+              placeholder="06XX XX XX XX"
             />
           </div>
           <div className="space-y-1">
@@ -521,13 +521,14 @@ export function Teachers() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Email</label>
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Numéro de téléphone</label>
             <input
               required
-              type="email"
+              type="tel"
               value={editTeacher.email}
               onChange={e => setEditTeacher({ ...editTeacher, email: e.target.value })}
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+              placeholder="06XX XX XX XX"
             />
           </div>
           <div className="space-y-1">
