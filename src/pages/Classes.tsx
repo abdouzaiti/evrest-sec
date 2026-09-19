@@ -54,13 +54,39 @@ export function Classes() {
 
   // Form states
   const [newClass, setNewClass] = useState<Omit<SchoolClass, 'id'>>({ name: '', price: 0, description: '', teacherId: '' });
-  const [newStudent, setNewStudent] = useState<Omit<Student, 'id'>>({ name: '', parentPhone: '', classId: '', tokenId: '' });
+  const [newStudent, setNewStudent] = useState<Omit<Student, 'id'>>({
+    name: '',
+    parentPhone: '',
+    secondaryPhone: '',
+    email: '',
+    birthDate: '',
+    address: '',
+    classId: '',
+    tokenId: '',
+    currentMonth: 1,
+    paidMonths: [],
+    sessionsCompleted: 0,
+    paymentStatus: 'Pending'
+  });
 
   const [editingClassId, setEditingClassId] = useState<string>('');
   const [editClass, setEditClass] = useState<Omit<SchoolClass, 'id'>>({ name: '', price: 0, description: '', teacherId: '' });
 
   const [editingStudentId, setEditingStudentId] = useState<string>('');
-  const [editStudent, setEditStudent] = useState<Omit<Student, 'id'>>({ name: '', parentPhone: '', classId: '', tokenId: '' });
+  const [editStudent, setEditStudent] = useState<Omit<Student, 'id'>>({
+    name: '',
+    parentPhone: '',
+    secondaryPhone: '',
+    email: '',
+    birthDate: '',
+    address: '',
+    classId: '',
+    tokenId: '',
+    currentMonth: 1,
+    paidMonths: [],
+    sessionsCompleted: 0,
+    paymentStatus: 'Pending'
+  });
 
   useEffect(() => {
     fetchData();
@@ -456,7 +482,20 @@ export function Classes() {
       });
       setStudents(prev => [...prev, created]);
       setIsStudentModalOpen(false);
-      setNewStudent({ name: '', parentPhone: '', classId: '', tokenId: '' });
+      setNewStudent({
+        name: '',
+        parentPhone: '',
+        secondaryPhone: '',
+        email: '',
+        birthDate: '',
+        address: '',
+        classId: '',
+        tokenId: '',
+        currentMonth: 1,
+        paidMonths: [],
+        sessionsCompleted: 0,
+        paymentStatus: 'Pending'
+      });
     } catch (error) {
       console.error('Error creating student:', error);
     }
@@ -989,14 +1028,28 @@ export function Classes() {
                                       {s.tokenId}
                                     </span>
                                   )}
+                                  {s.email && (
+                                    <p className="text-[11px] text-slate-400 font-medium pt-0.5">✉️ {s.email}</p>
+                                  )}
+                                  {s.birthDate && (
+                                    <p className="text-[11px] text-slate-400 font-medium">🎂 Né(e) le: {s.birthDate}</p>
+                                  )}
+                                  {s.address && (
+                                    <p className="text-[11px] text-slate-400 font-medium truncate max-w-[180px]">📍 {s.address}</p>
+                                  )}
                                 </div>
                               </td>
 
                               {/* Phone */}
                               <td className="px-4 py-4">
-                                <div className="flex items-center gap-1.5 text-slate-600 font-bold text-xs">
-                                  <Phone size={12} className="text-slate-400 shrink-0" />
-                                  <span>{s.parentPhone || '—'}</span>
+                                <div className="flex flex-col gap-0.5 text-slate-600 font-bold text-xs">
+                                  <div className="flex items-center gap-1.5">
+                                    <Phone size={12} className="text-slate-400 shrink-0" />
+                                    <span>{s.parentPhone || '—'}</span>
+                                  </div>
+                                  {s.secondaryPhone && (
+                                    <p className="text-[11px] text-slate-400 font-medium">Tél 2: {s.secondaryPhone}</p>
+                                  )}
                                 </div>
                               </td>
 
@@ -1102,7 +1155,16 @@ export function Classes() {
                                   <button
                                     onClick={() => {
                                       setEditingStudentId(s.id);
-                                      setEditStudent({ name: s.name, parentPhone: s.parentPhone, classId: s.classId, tokenId: s.tokenId || '' });
+                                      setEditStudent({
+                                        name: s.name,
+                                        parentPhone: s.parentPhone,
+                                        secondaryPhone: s.secondaryPhone || '',
+                                        email: s.email || '',
+                                        birthDate: s.birthDate || '',
+                                        address: s.address || '',
+                                        classId: s.classId,
+                                        tokenId: s.tokenId || ''
+                                      });
                                       setIsEditStudentModalOpen(true);
                                     }}
                                     className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all"
@@ -1149,13 +1211,29 @@ export function Classes() {
                           return (
                           <tr key={s.id} className="hover:bg-slate-50/50 transition-colors group">
                             <td className="px-8 py-6">
-                               <p className="text-base font-black text-primary group-hover:text-accent transition-colors">{s.name}</p>
+                               <div>
+                                 <p className="text-base font-black text-primary group-hover:text-accent transition-colors">{s.name}</p>
+                                 {s.email && (
+                                   <p className="text-xs text-slate-400 font-medium pt-0.5">✉️ {s.email}</p>
+                                 )}
+                                 {s.birthDate && (
+                                   <p className="text-xs text-slate-400 font-medium">🎂 Né(e) le: {s.birthDate}</p>
+                                 )}
+                                 {s.address && (
+                                   <p className="text-xs text-slate-400 font-medium truncate max-w-[220px]">📍 {s.address}</p>
+                                 )}
+                               </div>
                             </td>
                             <td className="px-8 py-6">
                               <div className="space-y-1.5">
-                                <div className={cn("flex items-center gap-2 text-slate-500 font-black text-sm", isRTL && "flex-row-reverse text-right")}>
-                                  <Phone size={14} className="text-accent" />
-                                  <span>{s.parentPhone}</span>
+                                <div className={cn("flex flex-col gap-0.5 text-slate-500 font-black text-sm", isRTL && "text-right")}>
+                                  <div className="flex items-center gap-2">
+                                    <Phone size={14} className="text-accent" />
+                                    <span>{s.parentPhone}</span>
+                                  </div>
+                                  {s.secondaryPhone && (
+                                    <p className="text-xs text-slate-400 font-medium pl-5">Tél 2: {s.secondaryPhone}</p>
+                                  )}
                                 </div>
                                 <div className={cn("flex flex-wrap items-center gap-1 max-w-[260px]", isRTL && "justify-end")}>
                                   {(() => {
@@ -1218,7 +1296,16 @@ export function Classes() {
                                  <button
                                    onClick={() => {
                                      setEditingStudentId(s.id);
-                                     setEditStudent({ name: s.name, parentPhone: s.parentPhone, classId: s.classId, tokenId: s.tokenId || '' });
+                                     setEditStudent({
+                                       name: s.name,
+                                       parentPhone: s.parentPhone,
+                                       secondaryPhone: s.secondaryPhone || '',
+                                       email: s.email || '',
+                                       birthDate: s.birthDate || '',
+                                       address: s.address || '',
+                                       classId: s.classId,
+                                       tokenId: s.tokenId || ''
+                                     });
                                      setIsEditStudentModalOpen(true);
                                    }}
                                    className="p-2 text-slate-300 hover:text-accent transition-colors"
@@ -1460,26 +1547,71 @@ export function Classes() {
                   placeholder="Nom complet"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('parent_phone')}</label>
-                <input
-                  required
-                  type="tel"
-                  value={newStudent.parentPhone}
-                  onChange={e => setNewStudent({ ...newStudent, parentPhone: e.target.value })}
-                  className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
-                  placeholder="0550..."
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('parent_phone')}</label>
+                  <input
+                    required
+                    type="tel"
+                    value={newStudent.parentPhone}
+                    onChange={e => setNewStudent({ ...newStudent, parentPhone: e.target.value })}
+                    className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+                    placeholder="0550..."
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">2ème Tél. (Optionnel)</label>
+                  <input
+                    type="tel"
+                    value={newStudent.secondaryPhone || ''}
+                    onChange={e => setNewStudent({ ...newStudent, secondaryPhone: e.target.value })}
+                    className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+                    placeholder="0660..."
+                  />
+                </div>
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} (Optionnel)</label>
-                <input
-                  type="text"
-                  value={newStudent.tokenId || ''}
-                  onChange={e => setNewStudent({ ...newStudent, tokenId: e.target.value })}
-                  className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold placeholder:font-medium font-mono uppercase"
-                  placeholder="Ex: S101"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">Email (Optionnel)</label>
+                  <input
+                    type="email"
+                    value={newStudent.email || ''}
+                    onChange={e => setNewStudent({ ...newStudent, email: e.target.value })}
+                    className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+                    placeholder="eleve@exemple.com"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">Date de naissance (Optionnel)</label>
+                  <input
+                    type="date"
+                    value={newStudent.birthDate || ''}
+                    onChange={e => setNewStudent({ ...newStudent, birthDate: e.target.value })}
+                    className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">Adresse (Optionnel)</label>
+                  <input
+                    type="text"
+                    value={newStudent.address || ''}
+                    onChange={e => setNewStudent({ ...newStudent, address: e.target.value })}
+                    className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+                    placeholder="Adresse"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} (Optionnel)</label>
+                  <input
+                    type="text"
+                    value={newStudent.tokenId || ''}
+                    onChange={e => setNewStudent({ ...newStudent, tokenId: e.target.value })}
+                    className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold placeholder:font-medium font-mono uppercase"
+                    placeholder="Ex: S101"
+                  />
+                </div>
               </div>
               <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
                 {t('add_student')}
@@ -1563,25 +1695,67 @@ export function Classes() {
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
             />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('parent_phone')}</label>
-            <input
-              required
-              type="tel"
-              value={editStudent.parentPhone}
-              onChange={e => setEditStudent({ ...editStudent, parentPhone: e.target.value })}
-              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('parent_phone')}</label>
+              <input
+                required
+                type="tel"
+                value={editStudent.parentPhone}
+                onChange={e => setEditStudent({ ...editStudent, parentPhone: e.target.value })}
+                className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">2ème Tél. (Optionnel)</label>
+              <input
+                type="tel"
+                value={editStudent.secondaryPhone || ''}
+                onChange={e => setEditStudent({ ...editStudent, secondaryPhone: e.target.value })}
+                className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+              />
+            </div>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} (Optionnel)</label>
-            <input
-              type="text"
-              value={editStudent.tokenId || ''}
-              onChange={e => setEditStudent({ ...editStudent, tokenId: e.target.value })}
-              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold placeholder:font-medium font-mono uppercase"
-              placeholder="Ex: S101"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Email (Optionnel)</label>
+              <input
+                type="email"
+                value={editStudent.email || ''}
+                onChange={e => setEditStudent({ ...editStudent, email: e.target.value })}
+                className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Date de naissance (Optionnel)</label>
+              <input
+                type="date"
+                value={editStudent.birthDate || ''}
+                onChange={e => setEditStudent({ ...editStudent, birthDate: e.target.value })}
+                className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Adresse (Optionnel)</label>
+              <input
+                type="text"
+                value={editStudent.address || ''}
+                onChange={e => setEditStudent({ ...editStudent, address: e.target.value })}
+                className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} (Optionnel)</label>
+              <input
+                type="text"
+                value={editStudent.tokenId || ''}
+                onChange={e => setEditStudent({ ...editStudent, tokenId: e.target.value })}
+                className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold placeholder:font-medium font-mono uppercase"
+                placeholder="Ex: S101"
+              />
+            </div>
           </div>
           <div className="space-y-1">
             <label className="text-xs font-black uppercase tracking-widest text-slate-400">Classe</label>
@@ -1716,12 +1890,33 @@ export function Classes() {
             <div className="space-y-1">
               <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Nom & Prénom de l'Élève</p>
               <p className="font-black text-base text-slate-900">{printReceiptData.student.name}</p>
-              {printReceiptData.student.parentPhone && (
-                <p className="text-xs font-semibold text-slate-600 pt-1">
-                  <span className="text-slate-400 font-bold">Contact: </span>
-                  {printReceiptData.student.parentPhone}
-                </p>
-              )}
+              <div className="space-y-0.5 text-xs font-semibold text-slate-600 pt-1">
+                {printReceiptData.student.parentPhone && (
+                  <p>
+                    <span className="text-slate-400 font-bold">Tél. Parent: </span>
+                    {printReceiptData.student.parentPhone}
+                    {printReceiptData.student.secondaryPhone && ` / ${printReceiptData.student.secondaryPhone}`}
+                  </p>
+                )}
+                {printReceiptData.student.email && (
+                  <p>
+                    <span className="text-slate-400 font-bold">Email: </span>
+                    {printReceiptData.student.email}
+                  </p>
+                )}
+                {printReceiptData.student.birthDate && (
+                  <p>
+                    <span className="text-slate-400 font-bold">Date de N.: </span>
+                    {printReceiptData.student.birthDate}
+                  </p>
+                )}
+                {printReceiptData.student.address && (
+                  <p>
+                    <span className="text-slate-400 font-bold">Adresse: </span>
+                    {printReceiptData.student.address}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -1911,8 +2106,14 @@ export function Classes() {
                 return (
                   <tr key={s.id} className="border-b border-slate-300">
                     <td className="border border-slate-400 p-2 text-center font-bold">{idx + 1}</td>
-                    <td className="border border-slate-400 p-2 font-black text-slate-900">{s.name}</td>
-                    <td className="border border-slate-400 p-2 text-slate-600 font-mono text-[11px]">{s.parentPhone || '—'}</td>
+                    <td className="border border-slate-400 p-2 font-black text-slate-900">
+                      <div>{s.name}</div>
+                      {s.email && <div className="text-[10px] font-normal text-slate-500">✉️ {s.email}</div>}
+                    </td>
+                    <td className="border border-slate-400 p-2 text-slate-600 font-mono text-[11px]">
+                      <div>{s.parentPhone || '—'}</div>
+                      {s.secondaryPhone && <div className="text-[10px] text-slate-500">{s.secondaryPhone}</div>}
+                    </td>
                     <td className="border border-slate-400 p-2 text-center font-bold">
                       {renderSessionCell(att[0])}
                     </td>

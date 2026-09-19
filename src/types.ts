@@ -31,6 +31,10 @@ export interface Student {
   id: string;
   name: string;
   parentPhone: string;
+  secondaryPhone?: string;
+  email?: string;
+  birthDate?: string;
+  address?: string;
   classId: string;
   classIds?: string[];
   tokenId?: string;
@@ -54,6 +58,10 @@ export interface Teacher {
   id: string;
   name: string;
   email: string;
+  phone?: string;
+  secondaryPhone?: string;
+  birthDate?: string;
+  address?: string;
   subject: string;
   salary: number;
   paymentStatus: PaymentStatus;

@@ -26,6 +26,10 @@ export function Teachers() {
   const [newTeacher, setNewTeacher] = useState<Omit<Teacher, 'id'>>({
     name: '',
     email: '',
+    phone: '',
+    secondaryPhone: '',
+    birthDate: '',
+    address: '',
     subject: '',
     salary: 0,
     paymentStatus: 'Unpaid',
@@ -36,6 +40,10 @@ export function Teachers() {
   const [editTeacher, setEditTeacher] = useState<Omit<Teacher, 'id'>>({
     name: '',
     email: '',
+    phone: '',
+    secondaryPhone: '',
+    birthDate: '',
+    address: '',
     subject: '',
     salary: 0,
     paymentStatus: 'Unpaid',
@@ -85,6 +93,10 @@ export function Teachers() {
       setNewTeacher({
         name: '',
         email: '',
+        phone: '',
+        secondaryPhone: '',
+        birthDate: '',
+        address: '',
         subject: '',
         salary: 0,
         paymentStatus: 'Unpaid',
@@ -237,7 +249,19 @@ export function Teachers() {
                         </div>
                         <div className={cn(isRTL && "text-right")}>
                           <p className="text-base font-black text-primary group-hover:text-accent transition-colors">{teacher.name}</p>
-                          <p className="text-xs text-slate-400 font-bold tracking-widest">{teacher.email}</p>
+                          <p className="text-xs text-slate-500 font-bold tracking-wider">{teacher.phone || teacher.email}</p>
+                          {teacher.secondaryPhone && (
+                            <p className="text-[11px] text-slate-400 font-medium">Tél 2: {teacher.secondaryPhone}</p>
+                          )}
+                          {teacher.phone && teacher.email && (
+                            <p className="text-[11px] text-slate-400 font-medium">✉️ {teacher.email}</p>
+                          )}
+                          {teacher.birthDate && (
+                            <p className="text-[11px] text-slate-400 font-medium">🎂 Né(e) le: {teacher.birthDate}</p>
+                          )}
+                          {teacher.address && (
+                            <p className="text-[11px] text-slate-400 font-medium truncate max-w-[200px]">📍 {teacher.address}</p>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -466,14 +490,53 @@ export function Teachers() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Numéro de téléphone</label>
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Numéro de téléphone principal</label>
             <input
               required
               type="tel"
-              value={newTeacher.email}
-              onChange={e => setNewTeacher({ ...newTeacher, email: e.target.value })}
+              value={newTeacher.phone || (newTeacher.email && newTeacher.email.match(/^\d+$/) ? newTeacher.email : '')}
+              onChange={e => setNewTeacher({ ...newTeacher, phone: e.target.value, email: newTeacher.email && !newTeacher.email.match(/^\d+$/) ? newTeacher.email : e.target.value })}
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
               placeholder="06XX XX XX XX"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">2ème Numéro de téléphone (Optionnel)</label>
+            <input
+              type="tel"
+              value={newTeacher.secondaryPhone || ''}
+              onChange={e => setNewTeacher({ ...newTeacher, secondaryPhone: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+              placeholder="05XX XX XX XX"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Email (Optionnel)</label>
+            <input
+              type="email"
+              value={newTeacher.email && !newTeacher.email.match(/^\d+$/) ? newTeacher.email : ''}
+              onChange={e => setNewTeacher({ ...newTeacher, email: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+              placeholder="enseignant@exemple.com"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Date de Naissance (Optionnel)</label>
+            <input
+              type="date"
+              value={newTeacher.birthDate || ''}
+              onChange={e => setNewTeacher({ ...newTeacher, birthDate: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold cursor-pointer"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Adresse de résidence (Optionnel)</label>
+            <input
+              type="text"
+              value={newTeacher.address || ''}
+              onChange={e => setNewTeacher({ ...newTeacher, address: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+              placeholder="Ex: Cité 1000 Logements, Alger"
             />
           </div>
           <div className="space-y-1">
@@ -521,14 +584,53 @@ export function Teachers() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Numéro de téléphone</label>
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Numéro de téléphone principal</label>
             <input
               required
               type="tel"
-              value={editTeacher.email}
-              onChange={e => setEditTeacher({ ...editTeacher, email: e.target.value })}
+              value={editTeacher.phone || (editTeacher.email && editTeacher.email.match(/^\d+$/) ? editTeacher.email : '')}
+              onChange={e => setEditTeacher({ ...editTeacher, phone: e.target.value, email: editTeacher.email && !editTeacher.email.match(/^\d+$/) ? editTeacher.email : e.target.value })}
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
               placeholder="06XX XX XX XX"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">2ème Numéro de téléphone (Optionnel)</label>
+            <input
+              type="tel"
+              value={editTeacher.secondaryPhone || ''}
+              onChange={e => setEditTeacher({ ...editTeacher, secondaryPhone: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+              placeholder="05XX XX XX XX"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Email (Optionnel)</label>
+            <input
+              type="email"
+              value={editTeacher.email && !editTeacher.email.match(/^\d+$/) ? editTeacher.email : ''}
+              onChange={e => setEditTeacher({ ...editTeacher, email: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+              placeholder="enseignant@exemple.com"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Date de Naissance (Optionnel)</label>
+            <input
+              type="date"
+              value={editTeacher.birthDate || ''}
+              onChange={e => setEditTeacher({ ...editTeacher, birthDate: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold cursor-pointer"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Adresse de résidence (Optionnel)</label>
+            <input
+              type="text"
+              value={editTeacher.address || ''}
+              onChange={e => setEditTeacher({ ...editTeacher, address: e.target.value })}
+              className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+              placeholder="Ex: Cité 1000 Logements, Alger"
             />
           </div>
           <div className="space-y-1">
