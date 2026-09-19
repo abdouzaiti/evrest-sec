@@ -216,30 +216,18 @@ const makeStudentPayload = (s: Omit<Student, 'id'>) => {
   const classIds = s.classIds && s.classIds.length > 0 ? s.classIds : (s.classId ? [s.classId] : []);
   return {
     name: s.name,
-    parentPhone: s.parentPhone,
     parent_phone: s.parentPhone,
-    secondaryPhone: s.secondaryPhone || null,
     secondary_phone: s.secondaryPhone || null,
-    phone2: s.secondaryPhone || null,
     email: s.email || null,
-    birthDate: s.birthDate || null,
     birth_date: s.birthDate || null,
     address: s.address || null,
-    classId: s.classId || (classIds[0] || ''),
     class_id: s.classId || (classIds[0] || ''),
-    classIds: classIds,
     class_ids: classIds,
-    tokenId: s.tokenId || null,
     token_id: s.tokenId || null,
-    currentMonth: s.currentMonth,
-    current_month: s.currentMonth,
-    sessionsCompleted: s.sessionsCompleted,
-    sessions_completed: s.sessionsCompleted,
-    paymentStatus: s.paymentStatus || 'Paid',
+    current_month: s.currentMonth || 1,
+    sessions_completed: s.sessionsCompleted || 0,
     payment_status: s.paymentStatus || 'Paid',
-    paidMonths: s.paidMonths || [],
     paid_months: s.paidMonths || [],
-    attendance: s.attendance || {},
     attendance_data: s.attendance || {}
   };
 };
@@ -247,26 +235,18 @@ const makeStudentPayload = (s: Omit<Student, 'id'>) => {
 const makeTeacherPayload = (t: Omit<Teacher, 'id'>) => {
   return {
     name: t.name,
-    email: t.email,
-    phone: t.phone || t.email || null,
-    secondaryPhone: t.secondaryPhone || null,
+    email: t.email || null,
+    phone: t.phone || null,
     secondary_phone: t.secondaryPhone || null,
-    phone2: t.secondaryPhone || null,
-    birthDate: t.birthDate || null,
     birth_date: t.birthDate || null,
     address: t.address || null,
     subject: t.subject,
     salary: Number(t.salary),
     payment_status: t.paymentStatus,
-    paymentStatus: t.paymentStatus,
     last_payment_date: t.lastPaymentDate || null,
-    lastPaymentDate: t.lastPaymentDate || null,
     token_id: t.tokenId || null,
-    tokenId: t.tokenId || null,
     current_month: t.currentMonth || 1,
-    currentMonth: t.currentMonth || 1,
-    paid_months: t.paidMonths || [],
-    paidMonths: t.paidMonths || []
+    paid_months: t.paidMonths || []
   };
 };
 
@@ -516,18 +496,8 @@ export const studentsService = {
 
     if (isSupabaseConfigured()) {
       try {
-        // Attempt 1: Standard snake_case payload
-        const snakePayload = {
-          name: student.name,
-          parent_phone: student.parentPhone,
-          class_id: student.classId,
-          token_id: student.tokenId || null,
-          current_month: student.currentMonth || 1,
-          sessions_completed: student.sessionsCompleted || 0,
-          payment_status: student.paymentStatus || 'Paid',
-          paid_months: student.paidMonths || [],
-          attendance_data: student.attendance || {}
-        };
+        // Attempt 1: Full snake_case payload
+        const snakePayload = makeStudentPayload(student);
 
         const { data, error } = await supabase
           .from('students')
@@ -547,7 +517,7 @@ export const studentsService = {
           return finalCreated;
         }
 
-        // Attempt 2: Without attendance_data if column missing
+        // Attempt 2: Without optional secondary fields if table has not been updated with SQL yet
         const snakePayloadNoAttendance = {
           name: student.name,
           parent_phone: student.parentPhone,
@@ -569,6 +539,10 @@ export const studentsService = {
           const created = mapToStudent(retry1Data);
           const finalCreated = {
             ...created,
+            secondaryPhone: student.secondaryPhone,
+            email: student.email,
+            birthDate: student.birthDate,
+            address: student.address,
             paidMonths: (created.paidMonths && created.paidMonths.length > 0) ? created.paidMonths : (student.paidMonths || []),
             attendance: student.attendance || {}
           };
@@ -592,6 +566,10 @@ export const studentsService = {
 
         if (!retry2Error && retry2Data) {
           const created = mapToStudent(retry2Data);
+          created.secondaryPhone = student.secondaryPhone;
+          created.email = student.email;
+          created.birthDate = student.birthDate;
+          created.address = student.address;
           created.tokenId = student.tokenId;
           created.currentMonth = student.currentMonth;
           created.sessionsCompleted = student.sessionsCompleted;
@@ -663,18 +641,8 @@ export const studentsService = {
 
     if (isSupabaseConfigured()) {
       try {
-        // Attempt 1: Standard snake_case payload
-        const snakePayload = {
-          name: student.name,
-          parent_phone: student.parentPhone,
-          class_id: student.classId,
-          token_id: student.tokenId || null,
-          current_month: student.currentMonth || 1,
-          sessions_completed: student.sessionsCompleted || 0,
-          payment_status: student.paymentStatus || 'Paid',
-          paid_months: student.paidMonths || [],
-          attendance_data: student.attendance || {}
-        };
+        // Attempt 1: Full snake_case payload
+        const snakePayload = makeStudentPayload(student);
 
         const { data, error } = await supabase
           .from('students')
@@ -693,7 +661,7 @@ export const studentsService = {
           };
         }
 
-        // Attempt 2: Without attendance_data if column missing
+        // Attempt 2: Without optional secondary fields if column missing
         const snakePayloadNoAttendance = {
           name: student.name,
           parent_phone: student.parentPhone,
@@ -722,37 +690,7 @@ export const studentsService = {
           };
         }
 
-        // Attempt 3: CamelCase payload (if DB has camelCase columns)
-        const camelPayload = {
-          name: student.name,
-          parentPhone: student.parentPhone,
-          classId: student.classId,
-          tokenId: student.tokenId || null,
-          currentMonth: student.currentMonth || 1,
-          sessionsCompleted: student.sessionsCompleted || 0,
-          paymentStatus: student.paymentStatus || 'Paid',
-          paidMonths: student.paidMonths || [],
-          attendance: student.attendance || {}
-        };
-
-        const { data: retry2Data, error: retry2Error } = await supabase
-          .from('students')
-          .update(camelPayload)
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (!retry2Error && retry2Data) {
-          const res = mapToStudent(retry2Data);
-          return {
-            ...updatedStudentObj,
-            ...res,
-            paidMonths: (res.paidMonths && res.paidMonths.length > 0) ? res.paidMonths : updatedStudentObj.paidMonths,
-            attendance: (res.attendance && Object.keys(res.attendance).length > 0) ? res.attendance : updatedStudentObj.attendance
-          };
-        }
-
-        // Attempt 4: Minimal core payload
+        // Attempt 3: Minimal core payload
         const minimalPayload = {
           name: student.name,
           parent_phone: student.parentPhone,
@@ -777,7 +715,7 @@ export const studentsService = {
           };
         }
 
-        console.warn('Student update on Supabase schema notice, saved to local cache:', error || retry1Error || retry2Error || retry3Error);
+        console.warn('Student update on Supabase schema notice, saved to local cache:', error || retry1Error || retry3Error);
         return updatedStudentObj;
       } catch (err: any) {
         console.warn('Error updating student on Supabase, using local storage cache:', err);
@@ -817,6 +755,8 @@ export const teachersService = {
     }
   },
   async create(teacher: Omit<Teacher, 'id'>): Promise<Teacher> {
+    const local = getLocalData<Teacher>('school_teachers', defaultTeachers);
+
     if (isSupabaseConfigured()) {
       try {
         const payload = makeTeacherPayload(teacher);
@@ -825,29 +765,65 @@ export const teachersService = {
           .insert([payload])
           .select()
           .single();
-        if (error) {
-          console.warn('Dual-property insert failed on teacher. Retrying with nested camelCase...');
-          const { data: retryData, error: retryError } = await supabase
-            .from('teachers')
-            .insert([{
-              name: teacher.name,
-              email: teacher.email,
-              subject: teacher.subject,
-              salary: Number(teacher.salary),
-              paymentStatus: teacher.paymentStatus,
-              lastPaymentDate: teacher.lastPaymentDate
-            }])
-            .select()
-            .single();
-          if (retryError) throw retryError;
-          return mapToTeacher(retryData);
+
+        if (!error && data) {
+          const created = mapToTeacher(data);
+          local.push(created);
+          saveLocalData('school_teachers', local);
+          return created;
         }
-        return mapToTeacher(data);
+
+        // Retry with basic payload if new columns not present on Supabase yet
+        const basicPayload = {
+          name: teacher.name,
+          email: teacher.email || null,
+          subject: teacher.subject,
+          salary: Number(teacher.salary),
+          payment_status: teacher.paymentStatus,
+          last_payment_date: teacher.lastPaymentDate || null,
+          token_id: teacher.tokenId || null,
+          current_month: teacher.currentMonth || 1
+        };
+
+        const { data: retryData, error: retryError } = await supabase
+          .from('teachers')
+          .insert([basicPayload])
+          .select()
+          .single();
+
+        if (!retryError && retryData) {
+          const res = mapToTeacher(retryData);
+          const finalCreated = {
+            ...res,
+            phone: teacher.phone,
+            secondaryPhone: teacher.secondaryPhone,
+            birthDate: teacher.birthDate,
+            address: teacher.address
+          };
+          local.push(finalCreated);
+          saveLocalData('school_teachers', local);
+          return finalCreated;
+        }
+
+        console.warn('Teacher insert error on Supabase, saving to local cache:', error || retryError);
+        const newTeacher: Teacher = {
+          ...teacher,
+          id: 'teacher-' + Date.now() + Math.random().toString(36).substring(2, 6)
+        };
+        local.push(newTeacher);
+        saveLocalData('school_teachers', local);
+        return newTeacher;
       } catch (err: any) {
-        throw new Error(err.message || 'Error inserting teacher to Supabase');
+        console.warn('Error inserting teacher to Supabase, fallback to local cache:', err);
+        const newTeacher: Teacher = {
+          ...teacher,
+          id: 'teacher-' + Date.now() + Math.random().toString(36).substring(2, 6)
+        };
+        local.push(newTeacher);
+        saveLocalData('school_teachers', local);
+        return newTeacher;
       }
     } else {
-      const local = getLocalData<Teacher>('school_teachers', defaultTeachers);
       const newTeacher: Teacher = {
         ...teacher,
         id: 'teacher-' + Date.now() + Math.random().toString(36).substring(2, 6)
@@ -947,10 +923,10 @@ export const teachersService = {
           return mapToTeacher(data);
         }
 
-        // Retry with clean snake_case payload
-        const snakePayload = {
+        // Retry with basic payload if new columns not present on Supabase DB
+        const basicPayload = {
           name: teacher.name,
-          email: teacher.email,
+          email: teacher.email || null,
           subject: teacher.subject,
           salary: Number(teacher.salary),
           payment_status: teacher.paymentStatus,
@@ -961,42 +937,20 @@ export const teachersService = {
 
         const { data: retryData, error: retryError } = await supabase
           .from('teachers')
-          .update(snakePayload)
+          .update(basicPayload)
           .eq('id', id)
           .select()
           .single();
 
         if (!retryError && retryData) {
           const res = mapToTeacher(retryData);
-          res.currentMonth = teacher.currentMonth || 1;
-          res.paidMonths = teacher.paidMonths || [];
-          return res;
+          return {
+            ...updatedTeacher,
+            ...res
+          };
         }
 
-        // Retry with camelCase payload
-        const camelPayload = {
-          name: teacher.name,
-          email: teacher.email,
-          subject: teacher.subject,
-          salary: Number(teacher.salary),
-          paymentStatus: teacher.paymentStatus,
-          lastPaymentDate: teacher.lastPaymentDate || null,
-          tokenId: teacher.tokenId || null,
-          currentMonth: teacher.currentMonth || 1
-        };
-
-        const { data: camelData, error: camelError } = await supabase
-          .from('teachers')
-          .update(camelPayload)
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (!camelError && camelData) {
-          return mapToTeacher(camelData);
-        }
-
-        console.warn('Teacher update on Supabase encountered error:', error || retryError || camelError);
+        console.warn('Teacher update on Supabase encountered error:', error || retryError);
         return updatedTeacher;
       } catch (err: any) {
         console.warn('Teacher update fallback:', err);
