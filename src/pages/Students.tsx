@@ -406,7 +406,14 @@ export function Students() {
         <form onSubmit={handleCreateStudent} className="space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t('student_name')}</label>
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t('student_name')}</label>
+                {newStudent.name && (
+                  <span className="text-[11px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
+                    Sortie: {newStudent.name}
+                  </span>
+                )}
+              </div>
               <input
                 required
                 value={newStudent.name}
@@ -417,7 +424,19 @@ export function Students() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t('parent_phone')}</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t('parent_phone')}</label>
+                  {newStudent.parentPhone && (
+                    <a 
+                      href={`tel:${newStudent.parentPhone}`} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className="text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-lg flex items-center gap-1 transition-colors"
+                    >
+                      📞 Sortie: {newStudent.parentPhone}
+                    </a>
+                  )}
+                </div>
                 <input
                   required
                   value={newStudent.parentPhone}
@@ -427,7 +446,19 @@ export function Students() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">2ème Téléphone (Optionnel)</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">2ème Téléphone (Optionnel)</label>
+                  {newStudent.secondaryPhone && (
+                    <a 
+                      href={`tel:${newStudent.secondaryPhone}`} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className="text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-lg flex items-center gap-1 transition-colors"
+                    >
+                      📱 Sortie 2: {newStudent.secondaryPhone}
+                    </a>
+                  )}
+                </div>
                 <input
                   value={newStudent.secondaryPhone || ''}
                   onChange={(e) => setNewStudent({...newStudent, secondaryPhone: e.target.value})}
@@ -439,7 +470,14 @@ export function Students() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Email (Optionnel)</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Email (Optionnel)</label>
+                  {newStudent.email && (
+                    <a href={`mailto:${newStudent.email}`} className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-lg truncate max-w-[150px]">
+                      ✉️ {newStudent.email}
+                    </a>
+                  )}
+                </div>
                 <input
                   type="email"
                   value={newStudent.email || ''}
@@ -449,7 +487,14 @@ export function Students() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Date de naissance (Optionnel)</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Date de naissance (Optionnel)</label>
+                  {newStudent.birthDate && (
+                    <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">
+                      🎂 {newStudent.birthDate}
+                    </span>
+                  )}
+                </div>
                 <input
                   type="date"
                   value={newStudent.birthDate || ''}
@@ -461,7 +506,14 @@ export function Students() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Adresse (Optionnel)</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Adresse (Optionnel)</label>
+                  {newStudent.address && (
+                    <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg truncate max-w-[150px]">
+                      📍 {newStudent.address}
+                    </span>
+                  )}
+                </div>
                 <input
                   value={newStudent.address || ''}
                   onChange={(e) => setNewStudent({...newStudent, address: e.target.value})}
@@ -470,7 +522,14 @@ export function Students() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Token ID</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Token ID</label>
+                  {newStudent.tokenId && (
+                    <span className="text-[11px] font-mono font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
+                      🏷️ {newStudent.tokenId}
+                    </span>
+                  )}
+                </div>
                 <input
                   value={newStudent.tokenId || ''}
                   onChange={(e) => setNewStudent({...newStudent, tokenId: e.target.value})}
@@ -520,6 +579,23 @@ export function Students() {
                 })}
               </div>
             </div>
+
+            {/* LIVE OUTPUT PREVIEW CARD FOR ADD STUDENT */}
+            <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-2 border border-slate-800 shadow-lg">
+              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <span>Aperçu Fiche Élève (Output Direct)</span>
+                <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-md">Temps Réel</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-200">
+                <div>Nom: <span className="text-white font-extrabold">{newStudent.name || '—'}</span></div>
+                <div>Tél Parent: <span className="text-emerald-400 font-mono">{newStudent.parentPhone || '—'}</span></div>
+                {newStudent.secondaryPhone && <div>Tél 2: <span className="text-emerald-300 font-mono">{newStudent.secondaryPhone}</span></div>}
+                {newStudent.email && <div>Email: <span className="text-slate-300">{newStudent.email}</span></div>}
+                {newStudent.birthDate && <div>Né(e) le: <span className="text-slate-300">{newStudent.birthDate}</span></div>}
+                {newStudent.address && <div>Adresse: <span className="text-slate-300">{newStudent.address}</span></div>}
+                {newStudent.tokenId && <div>Token ID: <span className="font-mono text-emerald-400">{newStudent.tokenId}</span></div>}
+              </div>
+            </div>
           </div>
 
           <button
@@ -541,7 +617,14 @@ export function Students() {
           <form onSubmit={handleUpdateStudent} className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t('student_name')}</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t('student_name')}</label>
+                  {selectedStudent.name && (
+                    <span className="text-[11px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
+                      Sortie: {selectedStudent.name}
+                    </span>
+                  )}
+                </div>
                 <input
                   required
                   value={selectedStudent.name}
@@ -552,7 +635,19 @@ export function Students() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t('parent_phone')}</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t('parent_phone')}</label>
+                    {selectedStudent.parentPhone && (
+                      <a 
+                        href={`tel:${selectedStudent.parentPhone}`} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        className="text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-lg flex items-center gap-1 transition-colors"
+                      >
+                        📞 Sortie: {selectedStudent.parentPhone}
+                      </a>
+                    )}
+                  </div>
                   <input
                     required
                     value={selectedStudent.parentPhone}
@@ -561,7 +656,19 @@ export function Students() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">2ème Téléphone (Optionnel)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">2ème Téléphone (Optionnel)</label>
+                    {selectedStudent.secondaryPhone && (
+                      <a 
+                        href={`tel:${selectedStudent.secondaryPhone}`} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        className="text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-lg flex items-center gap-1 transition-colors"
+                      >
+                        📱 Sortie 2: {selectedStudent.secondaryPhone}
+                      </a>
+                    )}
+                  </div>
                   <input
                     value={selectedStudent.secondaryPhone || ''}
                     onChange={(e) => setSelectedStudent({...selectedStudent, secondaryPhone: e.target.value})}
@@ -572,7 +679,14 @@ export function Students() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Email (Optionnel)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Email (Optionnel)</label>
+                    {selectedStudent.email && (
+                      <a href={`mailto:${selectedStudent.email}`} className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-lg truncate max-w-[150px]">
+                        ✉️ {selectedStudent.email}
+                      </a>
+                    )}
+                  </div>
                   <input
                     type="email"
                     value={selectedStudent.email || ''}
@@ -581,7 +695,14 @@ export function Students() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Date de naissance (Optionnel)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Date de naissance (Optionnel)</label>
+                    {selectedStudent.birthDate && (
+                      <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">
+                        🎂 {selectedStudent.birthDate}
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="date"
                     value={selectedStudent.birthDate || ''}
@@ -593,7 +714,14 @@ export function Students() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Adresse (Optionnel)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Adresse (Optionnel)</label>
+                    {selectedStudent.address && (
+                      <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg truncate max-w-[150px]">
+                        📍 {selectedStudent.address}
+                      </span>
+                    )}
+                  </div>
                   <input
                     value={selectedStudent.address || ''}
                     onChange={(e) => setSelectedStudent({...selectedStudent, address: e.target.value})}
@@ -601,7 +729,14 @@ export function Students() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Token ID</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Token ID</label>
+                    {selectedStudent.tokenId && (
+                      <span className="text-[11px] font-mono font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
+                        🏷️ {selectedStudent.tokenId}
+                      </span>
+                    )}
+                  </div>
                   <input
                     value={selectedStudent.tokenId || ''}
                     onChange={(e) => setSelectedStudent({...selectedStudent, tokenId: e.target.value})}
@@ -650,6 +785,23 @@ export function Students() {
                     );
                   })}
                 </div>
+              </div>
+            </div>
+
+            {/* LIVE OUTPUT PREVIEW CARD FOR EDIT STUDENT */}
+            <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-2 border border-slate-800 shadow-lg">
+              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <span>Aperçu Fiche Élève Modifiée (Output Direct)</span>
+                <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-md">En Direct</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-200">
+                <div>Nom: <span className="text-white font-extrabold">{selectedStudent.name || '—'}</span></div>
+                <div>Tél Parent: <span className="text-emerald-400 font-mono">{selectedStudent.parentPhone || '—'}</span></div>
+                {selectedStudent.secondaryPhone && <div>Tél 2: <span className="text-emerald-300 font-mono">{selectedStudent.secondaryPhone}</span></div>}
+                {selectedStudent.email && <div>Email: <span className="text-slate-300">{selectedStudent.email}</span></div>}
+                {selectedStudent.birthDate && <div>Né(e) le: <span className="text-slate-300">{selectedStudent.birthDate}</span></div>}
+                {selectedStudent.address && <div>Adresse: <span className="text-slate-300">{selectedStudent.address}</span></div>}
+                {selectedStudent.tokenId && <div>Token ID: <span className="font-mono text-emerald-400">{selectedStudent.tokenId}</span></div>}
               </div>
             </div>
 

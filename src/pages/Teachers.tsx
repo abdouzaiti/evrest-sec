@@ -479,7 +479,14 @@ export function Teachers() {
       >
         <form onSubmit={handleCreateTeacher} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Nom de l'enseignant</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Nom de l'enseignant</label>
+              {newTeacher.name && (
+                <span className="text-[11px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
+                  Sortie: {newTeacher.name}
+                </span>
+              )}
+            </div>
             <input
               required
               type="text"
@@ -490,18 +497,42 @@ export function Teachers() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Numéro de téléphone principal</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Numéro de téléphone principal</label>
+              {newTeacher.phone && (
+                <a 
+                  href={`tel:${newTeacher.phone}`} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-0.5 rounded-lg flex items-center gap-1 transition-colors"
+                >
+                  📞 Sortie: {newTeacher.phone}
+                </a>
+              )}
+            </div>
             <input
               required
               type="tel"
-              value={newTeacher.phone || (newTeacher.email && newTeacher.email.match(/^\d+$/) ? newTeacher.email : '')}
-              onChange={e => setNewTeacher({ ...newTeacher, phone: e.target.value, email: newTeacher.email && !newTeacher.email.match(/^\d+$/) ? newTeacher.email : e.target.value })}
+              value={newTeacher.phone || ''}
+              onChange={e => setNewTeacher({ ...newTeacher, phone: e.target.value })}
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
               placeholder="06XX XX XX XX"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">2ème Numéro de téléphone (Optionnel)</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">2ème Numéro de téléphone (Optionnel)</label>
+              {newTeacher.secondaryPhone && (
+                <a 
+                  href={`tel:${newTeacher.secondaryPhone}`} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-0.5 rounded-lg flex items-center gap-1 transition-colors"
+                >
+                  📱 Sortie 2: {newTeacher.secondaryPhone}
+                </a>
+              )}
+            </div>
             <input
               type="tel"
               value={newTeacher.secondaryPhone || ''}
@@ -511,17 +542,34 @@ export function Teachers() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Email (Optionnel)</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Email (Optionnel)</label>
+              {newTeacher.email && (
+                <a 
+                  href={`mailto:${newTeacher.email}`} 
+                  className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-lg truncate max-w-[180px]"
+                >
+                  ✉️ {newTeacher.email}
+                </a>
+              )}
+            </div>
             <input
               type="email"
-              value={newTeacher.email && !newTeacher.email.match(/^\d+$/) ? newTeacher.email : ''}
+              value={newTeacher.email || ''}
               onChange={e => setNewTeacher({ ...newTeacher, email: e.target.value })}
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
               placeholder="enseignant@exemple.com"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Date de Naissance (Optionnel)</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Date de Naissance (Optionnel)</label>
+              {newTeacher.birthDate && (
+                <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">
+                  🎂 {newTeacher.birthDate}
+                </span>
+              )}
+            </div>
             <input
               type="date"
               value={newTeacher.birthDate || ''}
@@ -530,7 +578,14 @@ export function Teachers() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Adresse de résidence (Optionnel)</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Adresse de résidence (Optionnel)</label>
+              {newTeacher.address && (
+                <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg truncate max-w-[180px]">
+                  📍 {newTeacher.address}
+                </span>
+              )}
+            </div>
             <input
               type="text"
               value={newTeacher.address || ''}
@@ -540,7 +595,14 @@ export function Teachers() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('subject')}</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('subject')}</label>
+              {newTeacher.subject && (
+                <span className="text-[11px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg">
+                  📚 {newTeacher.subject}
+                </span>
+              )}
+            </div>
             <input
               required
               type="text"
@@ -551,7 +613,14 @@ export function Teachers() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} (Optionnel)</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} (Optionnel)</label>
+              {newTeacher.tokenId && (
+                <span className="text-[11px] font-mono font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
+                  🏷️ {newTeacher.tokenId}
+                </span>
+              )}
+            </div>
             <input
               type="text"
               value={newTeacher.tokenId || ''}
@@ -559,6 +628,24 @@ export function Teachers() {
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold placeholder:font-medium font-mono uppercase"
               placeholder="Ex: T201"
             />
+          </div>
+
+          {/* LIVE OUTPUT PREVIEW CARD FOR TEACHER CREATION */}
+          <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-2 border border-slate-800 shadow-lg">
+            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <span>Aperçu Fiche Enseignant (Output Direct)</span>
+              <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-md">Temps Réel</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-200">
+              <div>Nom: <span className="text-white font-extrabold">{newTeacher.name || '—'}</span></div>
+              <div>Matière: <span className="text-amber-400 font-bold">{newTeacher.subject || '—'}</span></div>
+              <div>Tél 1: <span className="text-emerald-400 font-mono">{newTeacher.phone || '—'}</span></div>
+              {newTeacher.secondaryPhone && <div>Tél 2: <span className="text-emerald-300 font-mono">{newTeacher.secondaryPhone}</span></div>}
+              {newTeacher.email && <div>Email: <span className="text-slate-300">{newTeacher.email}</span></div>}
+              {newTeacher.birthDate && <div>Né(e) le: <span className="text-slate-300">{newTeacher.birthDate}</span></div>}
+              {newTeacher.address && <div>Adresse: <span className="text-slate-300">{newTeacher.address}</span></div>}
+              {newTeacher.tokenId && <div>Code Token: <span className="font-mono text-emerald-400">{newTeacher.tokenId}</span></div>}
+            </div>
           </div>
           <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
             Ajouter l'enseignant
@@ -574,7 +661,14 @@ export function Teachers() {
       >
         <form onSubmit={handleUpdateTeacher} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Nom de l'enseignant</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Nom de l'enseignant</label>
+              {editTeacher.name && (
+                <span className="text-[11px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
+                  Sortie: {editTeacher.name}
+                </span>
+              )}
+            </div>
             <input
               required
               type="text"
@@ -584,18 +678,42 @@ export function Teachers() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Numéro de téléphone principal</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Numéro de téléphone principal</label>
+              {editTeacher.phone && (
+                <a 
+                  href={`tel:${editTeacher.phone}`} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-0.5 rounded-lg flex items-center gap-1 transition-colors"
+                >
+                  📞 Sortie: {editTeacher.phone}
+                </a>
+              )}
+            </div>
             <input
               required
               type="tel"
-              value={editTeacher.phone || (editTeacher.email && editTeacher.email.match(/^\d+$/) ? editTeacher.email : '')}
-              onChange={e => setEditTeacher({ ...editTeacher, phone: e.target.value, email: editTeacher.email && !editTeacher.email.match(/^\d+$/) ? editTeacher.email : e.target.value })}
+              value={editTeacher.phone || ''}
+              onChange={e => setEditTeacher({ ...editTeacher, phone: e.target.value })}
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
               placeholder="06XX XX XX XX"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">2ème Numéro de téléphone (Optionnel)</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">2ème Numéro de téléphone (Optionnel)</label>
+              {editTeacher.secondaryPhone && (
+                <a 
+                  href={`tel:${editTeacher.secondaryPhone}`} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-0.5 rounded-lg flex items-center gap-1 transition-colors"
+                >
+                  📱 Sortie 2: {editTeacher.secondaryPhone}
+                </a>
+              )}
+            </div>
             <input
               type="tel"
               value={editTeacher.secondaryPhone || ''}
@@ -605,17 +723,34 @@ export function Teachers() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Email (Optionnel)</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Email (Optionnel)</label>
+              {editTeacher.email && (
+                <a 
+                  href={`mailto:${editTeacher.email}`} 
+                  className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-lg truncate max-w-[180px]"
+                >
+                  ✉️ {editTeacher.email}
+                </a>
+              )}
+            </div>
             <input
               type="email"
-              value={editTeacher.email && !editTeacher.email.match(/^\d+$/) ? editTeacher.email : ''}
+              value={editTeacher.email || ''}
               onChange={e => setEditTeacher({ ...editTeacher, email: e.target.value })}
               className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 transition-all font-bold"
               placeholder="enseignant@exemple.com"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Date de Naissance (Optionnel)</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Date de Naissance (Optionnel)</label>
+              {editTeacher.birthDate && (
+                <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">
+                  🎂 {editTeacher.birthDate}
+                </span>
+              )}
+            </div>
             <input
               type="date"
               value={editTeacher.birthDate || ''}
@@ -624,7 +759,14 @@ export function Teachers() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Adresse de résidence (Optionnel)</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Adresse de résidence (Optionnel)</label>
+              {editTeacher.address && (
+                <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg truncate max-w-[180px]">
+                  📍 {editTeacher.address}
+                </span>
+              )}
+            </div>
             <input
               type="text"
               value={editTeacher.address || ''}
@@ -634,7 +776,14 @@ export function Teachers() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('subject')}</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('subject')}</label>
+              {editTeacher.subject && (
+                <span className="text-[11px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg">
+                  📚 {editTeacher.subject}
+                </span>
+              )}
+            </div>
             <input
               required
               type="text"
@@ -644,7 +793,14 @@ export function Teachers() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} (Optionnel)</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} (Optionnel)</label>
+              {editTeacher.tokenId && (
+                <span className="text-[11px] font-mono font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
+                  🏷️ {editTeacher.tokenId}
+                </span>
+              )}
+            </div>
             <input
               type="text"
               value={editTeacher.tokenId || ''}
@@ -664,6 +820,25 @@ export function Teachers() {
               <option value="Unpaid">{t('unpaid')}</option>
             </select>
           </div>
+
+          {/* LIVE OUTPUT PREVIEW CARD FOR TEACHER EDIT */}
+          <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-2 border border-slate-800 shadow-lg">
+            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <span>Fiche actuelle enregistrée (Output Direct)</span>
+              <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-md">En Direct</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-200">
+              <div>Nom: <span className="text-white font-extrabold">{editTeacher.name || '—'}</span></div>
+              <div>Matière: <span className="text-amber-400 font-bold">{editTeacher.subject || '—'}</span></div>
+              <div>Tél 1: <span className="text-emerald-400 font-mono">{editTeacher.phone || '—'}</span></div>
+              {editTeacher.secondaryPhone && <div>Tél 2: <span className="text-emerald-300 font-mono">{editTeacher.secondaryPhone}</span></div>}
+              {editTeacher.email && <div>Email: <span className="text-slate-300">{editTeacher.email}</span></div>}
+              {editTeacher.birthDate && <div>Né(e) le: <span className="text-slate-300">{editTeacher.birthDate}</span></div>}
+              {editTeacher.address && <div>Adresse: <span className="text-slate-300">{editTeacher.address}</span></div>}
+              {editTeacher.tokenId && <div>Code Token: <span className="font-mono text-emerald-400">{editTeacher.tokenId}</span></div>}
+            </div>
+          </div>
+
           <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
             Enregistrer les modifications
           </button>

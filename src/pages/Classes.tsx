@@ -717,13 +717,36 @@ export function Classes() {
                             {t('monthly_price')}: <span className="text-accent">{selectedClass?.price} {t('currency')}</span>
                           </p>
                           <span className="text-slate-300">•</span>
-                          <div className="inline-flex items-center gap-1.5 bg-primary/5 border border-primary/10 px-3 py-1 rounded-xl text-xs font-bold text-primary">
-                            <GraduationCap size={15} className="text-accent" />
-                            <span>
-                              {currentTeacher 
-                                ? `Prof: ${currentTeacher.name}` 
-                                : 'Aucun enseignant assigné'}
-                            </span>
+                          <div className="inline-flex flex-wrap items-center gap-2 bg-primary/5 border border-primary/10 px-3 py-1.5 rounded-xl text-xs font-bold text-primary">
+                            <div className="flex items-center gap-1.5">
+                              <GraduationCap size={15} className="text-accent shrink-0" />
+                              <span>
+                                {currentTeacher 
+                                  ? `Prof: ${currentTeacher.name}` 
+                                  : 'Aucun enseignant assigné'}
+                              </span>
+                            </div>
+                            {currentTeacher && (
+                              <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium text-slate-500 border-l border-slate-200/80 pl-2">
+                                {(currentTeacher.phone || currentTeacher.email) && (
+                                  <span className="text-slate-700 font-bold">
+                                    📞 {currentTeacher.phone || currentTeacher.email}
+                                  </span>
+                                )}
+                                {currentTeacher.secondaryPhone && (
+                                  <span className="text-slate-500 font-medium">Tél 2: {currentTeacher.secondaryPhone}</span>
+                                )}
+                                {currentTeacher.phone && currentTeacher.email && (
+                                  <span className="text-slate-500 font-medium">✉️ {currentTeacher.email}</span>
+                                )}
+                                {currentTeacher.birthDate && (
+                                  <span className="text-slate-500 font-medium">🎂 {currentTeacher.birthDate}</span>
+                                )}
+                                {currentTeacher.address && (
+                                  <span className="text-slate-500 font-medium">📍 {currentTeacher.address}</span>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <span className="text-slate-300">•</span>
                           <span className="text-xs font-bold text-slate-500">
@@ -1499,9 +1522,22 @@ export function Classes() {
                         )}
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="font-bold text-sm text-slate-800 truncate">{st.name}</p>
-                          <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-400 font-medium mt-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-black text-sm text-slate-800 truncate">{st.name}</p>
+                            {st.tokenId && (
+                              <span className="font-mono text-[10px] bg-primary/10 text-primary px-1.5 py-0.2 rounded font-black">
+                                {st.tokenId}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 font-medium mt-1">
                             <span>📞 {st.parentPhone}</span>
+                            {st.secondaryPhone && <span>📱 {st.secondaryPhone}</span>}
+                            {st.email && <span>✉️ {st.email}</span>}
+                            {st.birthDate && <span>🎂 {st.birthDate}</span>}
+                            {st.address && <span className="truncate max-w-[150px]">📍 {st.address}</span>}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-1 mt-1.5">
                             {enrolledClasses.map(cl => (
                               <span key={cl.id} className={cn(
                                 "px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider",
@@ -1537,7 +1573,14 @@ export function Classes() {
           ) : (
             <form onSubmit={handleCreateStudent} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('student_name')}</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('student_name')}</label>
+                  {newStudent.name && (
+                    <span className="text-[11px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg animate-fade-in">
+                      Sortie: {newStudent.name}
+                    </span>
+                  )}
+                </div>
                 <input
                   required
                   type="text"
@@ -1549,7 +1592,19 @@ export function Classes() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('parent_phone')}</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('parent_phone')}</label>
+                    {newStudent.parentPhone && (
+                      <a 
+                        href={`tel:${newStudent.parentPhone}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-lg flex items-center gap-1 transition-colors"
+                      >
+                        📞 Sortie: {newStudent.parentPhone}
+                      </a>
+                    )}
+                  </div>
                   <input
                     required
                     type="tel"
@@ -1560,7 +1615,19 @@ export function Classes() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">2ème Tél. (Optionnel)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-400">2ème Tél. (Optionnel)</label>
+                    {newStudent.secondaryPhone && (
+                      <a 
+                        href={`tel:${newStudent.secondaryPhone}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-lg flex items-center gap-1 transition-colors"
+                      >
+                        📱 Sortie 2: {newStudent.secondaryPhone}
+                      </a>
+                    )}
+                  </div>
                   <input
                     type="tel"
                     value={newStudent.secondaryPhone || ''}
@@ -1572,7 +1639,14 @@ export function Classes() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">Email (Optionnel)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-400">Email (Optionnel)</label>
+                    {newStudent.email && (
+                      <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg truncate max-w-[150px]">
+                        ✉️ {newStudent.email}
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="email"
                     value={newStudent.email || ''}
@@ -1582,7 +1656,14 @@ export function Classes() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">Date de naissance (Optionnel)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-400">Date de naissance (Optionnel)</label>
+                    {newStudent.birthDate && (
+                      <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">
+                        🎂 {newStudent.birthDate}
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="date"
                     value={newStudent.birthDate || ''}
@@ -1593,7 +1674,14 @@ export function Classes() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">Adresse (Optionnel)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-400">Adresse (Optionnel)</label>
+                    {newStudent.address && (
+                      <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg truncate max-w-[150px]">
+                        📍 {newStudent.address}
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={newStudent.address || ''}
@@ -1603,7 +1691,14 @@ export function Classes() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} (Optionnel)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} (Optionnel)</label>
+                    {newStudent.tokenId && (
+                      <span className="text-[11px] font-mono font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
+                        🏷️ {newStudent.tokenId}
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={newStudent.tokenId || ''}
@@ -1613,6 +1708,24 @@ export function Classes() {
                   />
                 </div>
               </div>
+
+              {/* LIVE OUTPUT PREVIEW CARD */}
+              <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-2 border border-slate-800 shadow-lg">
+                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <span>Aperçu de la fiche (Output direct)</span>
+                  <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-md">Temps Réel</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-200">
+                  <div>Nom: <span className="text-white font-extrabold">{newStudent.name || '—'}</span></div>
+                  <div>Tél Parent: <span className="text-accent">{newStudent.parentPhone || '—'}</span></div>
+                  {newStudent.secondaryPhone && <div>Tél 2: <span className="text-slate-300">{newStudent.secondaryPhone}</span></div>}
+                  {newStudent.email && <div>Email: <span className="text-slate-300">{newStudent.email}</span></div>}
+                  {newStudent.birthDate && <div>Né(e) le: <span className="text-slate-300">{newStudent.birthDate}</span></div>}
+                  {newStudent.address && <div>Adresse: <span className="text-slate-300">{newStudent.address}</span></div>}
+                  {newStudent.tokenId && <div>Code Token: <span className="font-mono text-emerald-400">{newStudent.tokenId}</span></div>}
+                </div>
+              </div>
+
               <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
                 {t('add_student')}
               </button>
@@ -1686,7 +1799,14 @@ export function Classes() {
       >
         <form onSubmit={handleUpdateStudent} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('student_name')}</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('student_name')}</label>
+              {editStudent.name && (
+                <span className="text-[11px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
+                  Sortie: {editStudent.name}
+                </span>
+              )}
+            </div>
             <input
               required
               type="text"
@@ -1697,7 +1817,14 @@ export function Classes() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('parent_phone')}</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('parent_phone')}</label>
+                {editStudent.parentPhone && (
+                  <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">
+                    📞 {editStudent.parentPhone}
+                  </span>
+                )}
+              </div>
               <input
                 required
                 type="tel"
@@ -1707,7 +1834,14 @@ export function Classes() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-black uppercase tracking-widest text-slate-400">2ème Tél. (Optionnel)</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">2ème Tél. (Optionnel)</label>
+                {editStudent.secondaryPhone && (
+                  <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">
+                    📱 {editStudent.secondaryPhone}
+                  </span>
+                )}
+              </div>
               <input
                 type="tel"
                 value={editStudent.secondaryPhone || ''}
@@ -1718,7 +1852,14 @@ export function Classes() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Email (Optionnel)</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">Email (Optionnel)</label>
+                {editStudent.email && (
+                  <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg truncate max-w-[150px]">
+                    ✉️ {editStudent.email}
+                  </span>
+                )}
+              </div>
               <input
                 type="email"
                 value={editStudent.email || ''}
@@ -1727,7 +1868,14 @@ export function Classes() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Date de naissance (Optionnel)</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">Date de naissance (Optionnel)</label>
+                {editStudent.birthDate && (
+                  <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">
+                    🎂 {editStudent.birthDate}
+                  </span>
+                )}
+              </div>
               <input
                 type="date"
                 value={editStudent.birthDate || ''}
@@ -1738,7 +1886,14 @@ export function Classes() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Adresse (Optionnel)</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">Adresse (Optionnel)</label>
+                {editStudent.address && (
+                  <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg truncate max-w-[150px]">
+                    📍 {editStudent.address}
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
                 value={editStudent.address || ''}
@@ -1747,7 +1902,14 @@ export function Classes() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} (Optionnel)</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">{t('token_id')} (Optionnel)</label>
+                {editStudent.tokenId && (
+                  <span className="text-[11px] font-mono font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
+                    🏷️ {editStudent.tokenId}
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
                 value={editStudent.tokenId || ''}
@@ -1769,6 +1931,24 @@ export function Classes() {
               ))}
             </select>
           </div>
+
+          {/* LIVE OUTPUT PREVIEW CARD FOR EDIT */}
+          <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-2 border border-slate-800 shadow-lg">
+            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <span>Fiche actuelle enregistrée (Output Direct)</span>
+              <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-md">Direct</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-200">
+              <div>Nom: <span className="text-white font-extrabold">{editStudent.name || '—'}</span></div>
+              <div>Tél Parent: <span className="text-accent">{editStudent.parentPhone || '—'}</span></div>
+              {editStudent.secondaryPhone && <div>Tél 2: <span className="text-slate-300">{editStudent.secondaryPhone}</span></div>}
+              {editStudent.email && <div>Email: <span className="text-slate-300">{editStudent.email}</span></div>}
+              {editStudent.birthDate && <div>Né(e) le: <span className="text-slate-300">{editStudent.birthDate}</span></div>}
+              {editStudent.address && <div>Adresse: <span className="text-slate-300">{editStudent.address}</span></div>}
+              {editStudent.tokenId && <div>Code Token: <span className="font-mono text-emerald-400">{editStudent.tokenId}</span></div>}
+            </div>
+          </div>
+
           <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
             Enregistrer les modifications
           </button>
