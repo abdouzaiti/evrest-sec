@@ -856,54 +856,7 @@ export function Classes() {
                       </div>
                     </div>
 
-                    {/* Quick Bulk Actions for the Selected Month */}
-                    <div className="pt-3 border-t border-slate-200/70 flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                          Actions groupées (Mois {selectedAttendanceMonth}) :
-                        </span>
-
-                        <button
-                          type="button"
-                          disabled={isBulkSaving}
-                          onClick={() => handleBulkAllSessions(true)}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-                          title="Marquer toutes les 4 séances de toute la classe comme présentes"
-                        >
-                          <CheckCheck size={14} />
-                          <span>Tous Présents (S1 à S4)</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          disabled={isBulkSaving}
-                          onClick={() => handleBulkAllSessions(false)}
-                          className="px-3 py-1.5 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-rose-600 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-                          title="Réinitialiser le pointage du mois (tous absents)"
-                        >
-                          <XCircle size={14} />
-                          <span>Réinitialiser (Tous Absents)</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          disabled={isBulkSaving}
-                          onClick={() => handleBulkMonthPayment(true)}
-                          className="px-3 py-1.5 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 text-emerald-700 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-                          title="Marquer tous les élèves comme ayant payé ce mois"
-                        >
-                          <Sparkles size={13} />
-                          <span>Tous Payés</span>
-                        </button>
-                      </div>
-
-                      {isBulkSaving && (
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-primary animate-pulse">
-                          <Loader2 size={13} className="animate-spin" />
-                          <span>Enregistrement en cours...</span>
-                        </div>
-                      )}
-                    </div>
+                    {/* Quick Bulk Actions for the Selected Month - Removed per user request */}
                   </div>
                 )}
 
