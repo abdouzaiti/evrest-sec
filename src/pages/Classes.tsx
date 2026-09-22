@@ -511,11 +511,13 @@ export function Classes() {
       const newClassIds = currentClassIds.includes(selectedClassId)
         ? currentClassIds
         : [...currentClassIds, selectedClassId];
+      
+      // If student has no primary classId, set the new class as primary.
+      const newClassId = targetStudent.classId || selectedClassId;
 
       const updated = await studentsService.update(targetStudent.id, {
         ...targetStudent,
-        // Ensure classId is updated to the selectedClassId if it was empty/undefined
-        classId: targetStudent.classId || selectedClassId,
+        classId: newClassId,
         classIds: newClassIds
       });
       
@@ -1114,13 +1116,13 @@ export function Classes() {
 
                               {/* Actions */}
                               <td className={cn("px-5 py-4", isRTL ? "text-left" : "text-right")}>
-                                <div className={cn("flex items-center gap-2 justify-end", isRTL && "justify-start")}>
+                                <div className={cn("relative z-50 flex items-center gap-2 justify-end", isRTL && "justify-start")}>
                                   <button
                                     onClick={() => {
                                       console.log("Printer clicked");
                                       handlePrintMonthReceipt(s, selectedAttendanceMonth);
                                     }}
-                                    className="p-2 text-slate-400 hover:text-primary hover:bg-slate-100 rounded-xl transition-all"
+                                    className="p-2 text-slate-400 hover:text-primary hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
                                     title="Imprimer le reçu de paiement"
                                   >
                                     <Printer size={15} />
@@ -1130,7 +1132,7 @@ export function Classes() {
                                       console.log("Calendar clicked");
                                       setAttendanceStudent(s);
                                     }}
-                                    className="p-2 text-slate-400 hover:text-accent hover:bg-slate-100 rounded-xl transition-all"
+                                    className="p-2 text-slate-400 hover:text-accent hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
                                     title="Voir l'historique annuel complet"
                                   >
                                     <Calendar size={15} />
@@ -1151,7 +1153,7 @@ export function Classes() {
                                       });
                                       setIsEditStudentModalOpen(true);
                                     }}
-                                    className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all"
+                                    className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
                                     title="Modifier l'élève"
                                   >
                                     <Pencil size={15} />
@@ -1161,7 +1163,7 @@ export function Classes() {
                                       console.log("Trash clicked");
                                       handleDeleteStudent(s.id);
                                     }}
-                                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
                                     title="Supprimer l'étudiant"
                                   >
                                     <Trash2 size={15} />
