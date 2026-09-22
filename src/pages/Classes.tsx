@@ -348,7 +348,7 @@ export function Classes() {
     });
     setTimeout(() => {
       window.print();
-    }, 150);
+    }, 500);
   };
 
   const handleToggleMonthPayment = async (student: Student, month: number) => {
