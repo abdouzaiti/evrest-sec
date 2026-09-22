@@ -504,10 +504,9 @@ export function Classes() {
   const handleAssignExistingStudent = async (studentId: string) => {
     const targetStudent = students.find(s => s.id === studentId);
     if (!targetStudent) return;
+
     try {
-      const currentClassIds = (targetStudent.classIds && targetStudent.classIds.length > 0)
-        ? targetStudent.classIds
-        : (targetStudent.classId ? [targetStudent.classId] : []);
+      const currentClassIds = Array.isArray(targetStudent.classIds) ? targetStudent.classIds : [];
       
       const newClassIds = currentClassIds.includes(selectedClassId)
         ? currentClassIds
@@ -515,9 +514,11 @@ export function Classes() {
 
       const updated = await studentsService.update(targetStudent.id, {
         ...targetStudent,
+        // Ensure classId is updated to the selectedClassId if it was empty/undefined
         classId: targetStudent.classId || selectedClassId,
         classIds: newClassIds
       });
+      
       setStudents(prev => prev.map(s => s.id === studentId ? updated : s));
     } catch (error) {
       console.error('Error assigning student:', error);
