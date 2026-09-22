@@ -527,13 +527,21 @@ export function Classes() {
     }
   };
 
-  const handleDeleteStudent = async (id: string) => {
-    if (!confirm(isRTL ? 'Supprimer cet étudiant ?' : 'Delete this student?')) return;
+  const handleRemoveStudentFromClass = async (student: Student) => {
+    if (!confirm(isRTL ? 'Retirer cet étudiant de cette classe ?' : 'Remove this student from this class?')) return;
     try {
-      await studentsService.delete(id);
-      setStudents(prev => prev.filter(s => s.id !== id));
+      const newClassIds = (student.classIds || []).filter(id => id !== selectedClassId);
+      const newClassId = student.classId === selectedClassId ? (newClassIds.length > 0 ? newClassIds[0] : '') : student.classId;
+
+      const updated = await studentsService.update(student.id, {
+        ...student,
+        classId: newClassId,
+        classIds: newClassIds
+      });
+
+      setStudents(prev => prev.map(s => s.id === student.id ? updated : s));
     } catch (error) {
-      console.error('Error deleting student:', error);
+      console.error('Error removing student from class:', error);
     }
   };
 
@@ -1161,10 +1169,10 @@ export function Classes() {
                                   <button
                                     onClick={() => {
                                       console.log("Trash clicked");
-                                      handleDeleteStudent(s.id);
+                                      handleRemoveStudentFromClass(s);
                                     }}
                                     className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
-                                    title="Supprimer l'étudiant"
+                                    title="Retirer l'étudiant de cette classe"
                                   >
                                     <Trash2 size={15} />
                                   </button>
