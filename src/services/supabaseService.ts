@@ -665,12 +665,7 @@ export const studentsService = {
         const snakePayloadNoAttendance = {
           name: student.name,
           parent_phone: student.parentPhone,
-          class_id: student.classId,
-          token_id: student.tokenId || null,
-          current_month: student.currentMonth || 1,
-          sessions_completed: student.sessionsCompleted || 0,
-          payment_status: student.paymentStatus || 'Paid',
-          paid_months: student.paidMonths || []
+          class_id: student.classId
         };
 
         const { data: retry1Data, error: retry1Error } = await supabase
@@ -694,8 +689,7 @@ export const studentsService = {
         const minimalPayload = {
           name: student.name,
           parent_phone: student.parentPhone,
-          class_id: student.classId,
-          token_id: student.tokenId || null
+          class_id: student.classId
         };
 
         const { data: retry3Data, error: retry3Error } = await supabase
@@ -704,6 +698,10 @@ export const studentsService = {
           .eq('id', id)
           .select()
           .single();
+
+        if (retry3Error) {
+          console.error('All Supabase update attempts failed. Error details:', { error, retry1Error, retry3Error });
+        }
 
         if (!retry3Error && retry3Data) {
           const res = mapToStudent(retry3Data);
