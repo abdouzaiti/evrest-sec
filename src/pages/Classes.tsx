@@ -1116,14 +1116,20 @@ export function Classes() {
                               <td className={cn("px-5 py-4", isRTL ? "text-left" : "text-right")}>
                                 <div className={cn("flex items-center gap-2 justify-end", isRTL && "justify-start")}>
                                   <button
-                                    onClick={() => handlePrintMonthReceipt(s, selectedAttendanceMonth)}
+                                    onClick={() => {
+                                      console.log("Printer clicked");
+                                      handlePrintMonthReceipt(s, selectedAttendanceMonth);
+                                    }}
                                     className="p-2 text-slate-400 hover:text-primary hover:bg-slate-100 rounded-xl transition-all"
                                     title="Imprimer le reçu de paiement"
                                   >
                                     <Printer size={15} />
                                   </button>
                                   <button
-                                    onClick={() => setAttendanceStudent(s)}
+                                    onClick={() => {
+                                      console.log("Calendar clicked");
+                                      setAttendanceStudent(s);
+                                    }}
                                     className="p-2 text-slate-400 hover:text-accent hover:bg-slate-100 rounded-xl transition-all"
                                     title="Voir l'historique annuel complet"
                                   >
@@ -1131,6 +1137,7 @@ export function Classes() {
                                   </button>
                                   <button
                                     onClick={() => {
+                                      console.log("Pencil clicked");
                                       setEditingStudentId(s.id);
                                       setEditStudent({
                                         name: s.name,
@@ -1150,7 +1157,10 @@ export function Classes() {
                                     <Pencil size={15} />
                                   </button>
                                   <button
-                                    onClick={() => handleDeleteStudent(s.id)}
+                                    onClick={() => {
+                                      console.log("Trash clicked");
+                                      handleDeleteStudent(s.id);
+                                    }}
                                     className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                                     title="Supprimer l'étudiant"
                                   >
