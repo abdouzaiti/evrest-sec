@@ -317,7 +317,9 @@ export const classesService = {
   async getAll(): Promise<SchoolClass[]> {
     const local = getLocalData<SchoolClass>('school_classes', defaultClasses);
     const localMap = new Map(local.map(c => [c.id, c]));
-    const mapping = getTeacherMapping();
+    
+    // Only use local mapping if Supabase is NOT configured
+    const mapping = isSupabaseConfigured() ? {} : getTeacherMapping();
 
     if (isSupabaseConfigured()) {
       try {
@@ -328,7 +330,9 @@ export const classesService = {
         const fetched = (data || []).map(mapToClass);
         const merged = fetched.map(c => {
           const loc = localMap.get(c.id);
-          const teacherId = c.teacherId || loc?.teacherId || mapping[c.id];
+          // If Supabase returns teacher_id/teacherId, use it. 
+          // Otherwise, fall back to local (only if not configured or as a last resort)
+          const teacherId = c.teacherId || loc?.teacherId;
           return {
             ...c,
             teacherId: teacherId || undefined
@@ -341,7 +345,10 @@ export const classesService = {
         return local;
       }
     } else {
-      return local;
+      return local.map(c => ({
+        ...c,
+        teacherId: c.teacherId || mapping[c.id]
+      }));
     }
   },
   async create(schoolClass: Omit<SchoolClass, 'id'>): Promise<SchoolClass> {
@@ -440,7 +447,7 @@ export const classesService = {
     }
   },
   async update(id: string, schoolClass: Omit<SchoolClass, 'id'>): Promise<SchoolClass> {
-    if (schoolClass.teacherId) {
+    if (schoolClass.teacherId && schoolClass.teacherId !== '') {
       saveTeacherMapping(id, schoolClass.teacherId);
     } else {
       saveTeacherMapping(id, undefined);
@@ -450,7 +457,6 @@ export const classesService = {
       try {
         let updatedRow: any = null;
 
-        // Strategy 1: Attempt update with teacher_id (snake_case)
         const { data: d1, error: e1 } = await supabase
           .from('classes')
           .update({
