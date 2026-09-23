@@ -77,7 +77,10 @@ export function Teachers() {
     const teacherClasses = classes.filter(c => c.teacherId === teacherId);
     let totalPayment = 0;
     teacherClasses.forEach(c => {
-        const studentsInClass = students.filter(s => s.classId === c.id);
+        const studentsInClass = students.filter(s => {
+          const sClassIds = (s.classIds && s.classIds.length > 0) ? s.classIds : (s.classId ? [s.classId] : []);
+          return sClassIds.includes(c.id) || sClassIds.includes(c.name) || s.classId === c.id;
+        });
         // Assuming each student pays the full class price
         totalPayment += studentsInClass.length * c.price;
     });

@@ -31,15 +31,15 @@ const defaultClasses: SchoolClass[] = [
 ];
 
 const defaultStudents: Student[] = [
-  { id: 'student-1', name: 'Abderrahmane Zaiti', parentPhone: '0661245892', classId: 'class-1', classIds: ['class-1', 'class-2'], tokenId: 'S101', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
-  { id: 'student-2', name: 'Leila Kaddour', parentPhone: '0555321456', classId: 'class-1', classIds: ['class-1', 'class-3'], tokenId: 'S102', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
-  { id: 'student-3', name: 'Yanis Amrani', parentPhone: '0772183495', classId: 'class-2', classIds: ['class-2'], tokenId: 'S103', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
-  { id: 'student-4', name: 'Fatma-Zohra Mansouri', parentPhone: '0561234567', classId: 'class-3', classIds: ['class-3', 'class-4'], tokenId: 'S104', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
-  { id: 'student-5', name: 'Mohamed Amine Bouzidi', parentPhone: '0662895412', classId: 'class-4', classIds: ['class-4', 'class-5'], tokenId: 'S105', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
-  { id: 'student-6', name: 'Meriem Ouchene', parentPhone: '0770987654', classId: 'class-5', classIds: ['class-5'], tokenId: 'S106', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
-  { id: 'student-7', name: 'Anis Belkacem', parentPhone: '0551743621', classId: 'class-2', classIds: ['class-2', 'class-1'], tokenId: 'S107', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
-  { id: 'student-8', name: 'Khadidja Haddad', parentPhone: '0663152436', classId: 'class-3', classIds: ['class-3'], tokenId: 'S108', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } },
-  { id: 'student-9', name: 'Oussama Sifi', parentPhone: '0792345678', classId: 'class-5', classIds: ['class-5'], tokenId: 'S109', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 1: [true, false, false, false] } }
+  { id: 'student-1', name: 'Abderrahmane Zaiti', parentPhone: '0661245892', classId: 'class-1', classIds: ['class-1', 'class-2'], tokenId: 'S101', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-1': { 1: [true, false, false, false] } } },
+  { id: 'student-2', name: 'Leila Kaddour', parentPhone: '0555321456', classId: 'class-1', classIds: ['class-1', 'class-3'], tokenId: 'S102', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-1': { 1: [true, false, false, false] } } },
+  { id: 'student-3', name: 'Yanis Amrani', parentPhone: '0772183495', classId: 'class-2', classIds: ['class-2'], tokenId: 'S103', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-2': { 1: [true, false, false, false] } } },
+  { id: 'student-4', name: 'Fatma-Zohra Mansouri', parentPhone: '0561234567', classId: 'class-3', classIds: ['class-3', 'class-4'], tokenId: 'S104', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-3': { 1: [true, false, false, false] } } },
+  { id: 'student-5', name: 'Mohamed Amine Bouzidi', parentPhone: '0662895412', classId: 'class-4', classIds: ['class-4', 'class-5'], tokenId: 'S105', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-4': { 1: [true, false, false, false] } } },
+  { id: 'student-6', name: 'Meriem Ouchene', parentPhone: '0770987654', classId: 'class-5', classIds: ['class-5'], tokenId: 'S106', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-5': { 1: [true, false, false, false] } } },
+  { id: 'student-7', name: 'Anis Belkacem', parentPhone: '0551743621', classId: 'class-2', classIds: ['class-2', 'class-1'], tokenId: 'S107', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-2': { 1: [true, false, false, false] } } },
+  { id: 'student-8', name: 'Khadidja Haddad', parentPhone: '0663152436', classId: 'class-3', classIds: ['class-3'], tokenId: 'S108', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-3': { 1: [true, false, false, false] } } },
+  { id: 'student-9', name: 'Oussama Sifi', parentPhone: '0792345678', classId: 'class-5', classIds: ['class-5'], tokenId: 'S109', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-5': { 1: [true, false, false, false] } } }
 ];
 
 const defaultTeachers: Teacher[] = [
@@ -75,7 +75,19 @@ const saveLocalData = <T>(key: string, items: T[]) => {
  */
 const getTeacherMapping = (): Record<string, string> => {
   const raw = localStorage.getItem('class_teacher_mapping');
-  if (!raw) return {};
+  if (!raw) {
+    const initial: Record<string, string> = {
+      'class-1': 'teacher-1',
+      'class-2': 'teacher-2',
+      'class-3': 'teacher-1',
+      'class-4': 'teacher-4',
+      'class-5': 'teacher-3'
+    };
+    try {
+      localStorage.setItem('class_teacher_mapping', JSON.stringify(initial));
+    } catch {}
+    return initial;
+  }
   try {
     return JSON.parse(raw);
   } catch (e) {
@@ -94,12 +106,49 @@ const saveTeacherMapping = (classId: string, teacherId?: string) => {
   localStorage.setItem('class_teacher_mapping', JSON.stringify(current));
 };
 
+const getStudentClassesMapping = (): Record<string, string[]> => {
+  const raw = localStorage.getItem('student_classes_mapping');
+  if (!raw) {
+    const initial: Record<string, string[]> = {
+      'student-1': ['class-1', 'class-2'],
+      'student-2': ['class-1', 'class-3'],
+      'student-3': ['class-2'],
+      'student-4': ['class-3', 'class-4'],
+      'student-5': ['class-4', 'class-5'],
+      'student-6': ['class-5'],
+      'student-7': ['class-2', 'class-1'],
+      'student-8': ['class-3'],
+      'student-9': ['class-5']
+    };
+    try {
+      localStorage.setItem('student_classes_mapping', JSON.stringify(initial));
+    } catch {}
+    return initial;
+  }
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    return {};
+  }
+};
+
+const saveStudentClassesMapping = (studentId: string, classIds: string[]) => {
+  if (!studentId) return;
+  const current = getStudentClassesMapping();
+  if (classIds && classIds.length > 0) {
+    current[studentId] = classIds;
+  } else {
+    delete current[studentId];
+  }
+  localStorage.setItem('student_classes_mapping', JSON.stringify(current));
+};
+
 const mapToClass = (row: any): SchoolClass => {
   if (!row) return row;
   const mapping = getTeacherMapping();
-  const teacherId = (row.teacherId !== undefined && row.teacherId !== null) 
+  const teacherId = (row.teacherId !== undefined && row.teacherId !== null && row.teacherId !== '') 
     ? row.teacherId 
-    : ((row.teacher_id !== undefined && row.teacher_id !== null) ? row.teacher_id : mapping[row.id]);
+    : ((row.teacher_id !== undefined && row.teacher_id !== null && row.teacher_id !== '') ? row.teacher_id : mapping[row.id]);
 
   return {
     id: row.id,
@@ -126,7 +175,7 @@ const parsePaidMonths = (val: any): number[] => {
   return [];
 };
 
-const parseAttendance = (val: any): Record<number, boolean[]> => {
+const parseAttendance = (val: any): Record<string, any> => {
   if (!val) return {};
   if (typeof val === 'object' && !Array.isArray(val)) return val;
   if (typeof val === 'string') {
@@ -143,14 +192,20 @@ const mapToStudent = (row: any): Student => {
 
   const parsedPaidMonths = parsePaidMonths(row.paid_months ?? row.paidMonths);
   const parsedAttendance = parseAttendance(row.attendance_data ?? row.attendance);
+  const classMapping = getStudentClassesMapping();
+  const cachedClassIds = classMapping[row.id] || [];
   
   let parsedClassIds: string[] = [];
-  if (Array.isArray(row.classIds)) parsedClassIds = row.classIds;
-  else if (Array.isArray(row.class_ids)) parsedClassIds = row.class_ids;
+  if (Array.isArray(row.classIds) && row.classIds.length > 0) parsedClassIds = row.classIds;
+  else if (Array.isArray(row.class_ids) && row.class_ids.length > 0) parsedClassIds = row.class_ids;
   else if (typeof row.classIds === 'string') {
     try { parsedClassIds = JSON.parse(row.classIds); } catch {}
   } else if (typeof row.class_ids === 'string') {
     try { parsedClassIds = JSON.parse(row.class_ids); } catch {}
+  }
+
+  if (parsedClassIds.length === 0 && cachedClassIds.length > 0) {
+    parsedClassIds = cachedClassIds;
   }
 
   const primaryClassId = row.classId !== undefined ? row.classId : (row.class_id !== undefined ? row.class_id : '');
@@ -260,19 +315,33 @@ const makeClassPayload = (c: Omit<SchoolClass, 'id'>) => {
 
 export const classesService = {
   async getAll(): Promise<SchoolClass[]> {
+    const local = getLocalData<SchoolClass>('school_classes', defaultClasses);
+    const localMap = new Map(local.map(c => [c.id, c]));
+    const mapping = getTeacherMapping();
+
     if (isSupabaseConfigured()) {
       try {
         const { data, error } = await supabase
           .from('classes')
           .select('*');
         if (error) throw error;
-        return (data || []).map(mapToClass);
+        const fetched = (data || []).map(mapToClass);
+        const merged = fetched.map(c => {
+          const loc = localMap.get(c.id);
+          const teacherId = c.teacherId || loc?.teacherId || mapping[c.id];
+          return {
+            ...c,
+            teacherId: teacherId || undefined
+          };
+        });
+        saveLocalData('school_classes', merged);
+        return merged;
       } catch (err) {
         console.warn('Failed to fetch from Supabase classes table, falling back to LocalStorage', err);
-        return getLocalData<SchoolClass>('school_classes', defaultClasses);
+        return local;
       }
     } else {
-      return getLocalData<SchoolClass>('school_classes', defaultClasses);
+      return local;
     }
   },
   async create(schoolClass: Omit<SchoolClass, 'id'>): Promise<SchoolClass> {
@@ -455,6 +524,7 @@ export const studentsService = {
   async getAll(): Promise<Student[]> {
     const local = getLocalData<Student>('school_students', defaultStudents);
     const localMap = new Map(local.map(s => [s.id, s]));
+    const classMapping = getStudentClassesMapping();
 
     if (isSupabaseConfigured()) {
       try {
@@ -463,12 +533,19 @@ export const studentsService = {
           .select('*');
         if (error) throw error;
         const fetched = (data || []).map(mapToStudent);
-        return fetched.map(s => {
+        const merged = fetched.map(s => {
           const loc = localMap.get(s.id);
+          const cachedClassIds = classMapping[s.id] || [];
+          const finalClassIds = (s.classIds && s.classIds.length > 0)
+            ? s.classIds
+            : (loc?.classIds && loc.classIds.length > 0 ? loc.classIds : (cachedClassIds.length > 0 ? cachedClassIds : (s.classId ? [s.classId] : [])));
+          
           const finalPaidMonths = (s.paidMonths && s.paidMonths.length > 0) ? s.paidMonths : (loc?.paidMonths || []);
           const finalAttendance = (s.attendance && Object.keys(s.attendance).length > 0) ? s.attendance : (loc?.attendance || {});
+          
           return {
             ...s,
+            classIds: finalClassIds,
             currentMonth: loc?.currentMonth || s.currentMonth || 1,
             sessionsCompleted: loc?.sessionsCompleted !== undefined ? loc.sessionsCompleted : (s.sessionsCompleted || 0),
             paymentStatus: loc?.paymentStatus || s.paymentStatus || 'Paid',
@@ -477,6 +554,8 @@ export const studentsService = {
             attendance: finalAttendance
           };
         });
+        saveLocalData('school_students', merged);
+        return merged;
       } catch (err) {
         console.warn('Failed to fetch from Supabase students table, falling back to LocalStorage', err);
         return local;
@@ -487,7 +566,7 @@ export const studentsService = {
   },
   async getByClass(classId: string): Promise<Student[]> {
     const allStudents = await this.getAll();
-    return allStudents.filter(s => s.classId === classId);
+    return allStudents.filter(s => s.classId === classId || (s.classIds && s.classIds.includes(classId)));
   },
   async create(student: Omit<Student, 'id'>): Promise<Student> {
     const local = getLocalData<Student>('school_students', defaultStudents);
@@ -627,6 +706,12 @@ export const studentsService = {
   async update(id: string, student: Omit<Student, 'id'>): Promise<Student> {
     const updatedStudentObj: Student = { ...student, id };
 
+    if (student.classIds && student.classIds.length > 0) {
+      saveStudentClassesMapping(id, student.classIds);
+    } else if (student.classId) {
+      saveStudentClassesMapping(id, [student.classId]);
+    }
+
     // Always sync local storage first
     const local = getLocalData<Student>('school_students', defaultStudents);
     const index = local.findIndex(s => s.id === id);
@@ -653,11 +738,15 @@ export const studentsService = {
 
         if (!error && data) {
           const res = mapToStudent(data);
+          const finalClassIds = (updatedStudentObj.classIds && updatedStudentObj.classIds.length > 0)
+            ? updatedStudentObj.classIds
+            : res.classIds;
           return {
-            ...updatedStudentObj,
             ...res,
-            paidMonths: (res.paidMonths && res.paidMonths.length > 0) ? res.paidMonths : updatedStudentObj.paidMonths,
-            attendance: (res.attendance && Object.keys(res.attendance).length > 0) ? res.attendance : updatedStudentObj.attendance
+            ...updatedStudentObj,
+            classIds: finalClassIds,
+            paidMonths: (updatedStudentObj.paidMonths && updatedStudentObj.paidMonths.length > 0) ? updatedStudentObj.paidMonths : res.paidMonths,
+            attendance: (updatedStudentObj.attendance && Object.keys(updatedStudentObj.attendance).length > 0) ? updatedStudentObj.attendance : res.attendance
           };
         }
 
@@ -677,11 +766,15 @@ export const studentsService = {
 
         if (!retry1Error && retry1Data) {
           const res = mapToStudent(retry1Data);
+          const finalClassIds = (updatedStudentObj.classIds && updatedStudentObj.classIds.length > 0)
+            ? updatedStudentObj.classIds
+            : res.classIds;
           return {
-            ...updatedStudentObj,
             ...res,
-            paidMonths: (res.paidMonths && res.paidMonths.length > 0) ? res.paidMonths : updatedStudentObj.paidMonths,
-            attendance: updatedStudentObj.attendance
+            ...updatedStudentObj,
+            classIds: finalClassIds,
+            paidMonths: (updatedStudentObj.paidMonths && updatedStudentObj.paidMonths.length > 0) ? updatedStudentObj.paidMonths : res.paidMonths,
+            attendance: (updatedStudentObj.attendance && Object.keys(updatedStudentObj.attendance).length > 0) ? updatedStudentObj.attendance : res.attendance
           };
         }
 
@@ -705,9 +798,13 @@ export const studentsService = {
 
         if (!retry3Error && retry3Data) {
           const res = mapToStudent(retry3Data);
+          const finalClassIds = (updatedStudentObj.classIds && updatedStudentObj.classIds.length > 0)
+            ? updatedStudentObj.classIds
+            : res.classIds;
           return {
-            ...updatedStudentObj,
             ...res,
+            ...updatedStudentObj,
+            classIds: finalClassIds,
             paidMonths: updatedStudentObj.paidMonths,
             attendance: updatedStudentObj.attendance
           };
@@ -722,7 +819,7 @@ export const studentsService = {
     } else {
       return updatedStudentObj;
     }
-  }
+  },
 };
 
 export const teachersService = {

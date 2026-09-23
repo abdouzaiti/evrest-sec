@@ -7,6 +7,54 @@ import { useAuth } from '../context/AuthContext';
 import { classesService, studentsService, pointageService, teachersService, paymentsService } from '../services/supabaseService';
 import { Modal } from '../components/Modal';
 
+const findTeacher = (teachersList: Teacher[], identifier?: string): Teacher | undefined => {
+  if (!identifier) return undefined;
+  return teachersList.find(t => 
+    t.id === identifier || 
+    t.name.toLowerCase() === identifier.toLowerCase() ||
+    t.tokenId === identifier ||
+    t.email?.toLowerCase() === identifier.toLowerCase()
+  );
+};
+
+const getStudentAttendance = (s: Student, classId: string, month: number): (boolean | string)[] => {
+  if (!s || !s.attendance) return [false, false, false, false];
+  
+  if (classId) {
+    const classObj = (s.attendance as any)[classId];
+    if (classObj && typeof classObj === 'object' && !Array.isArray(classObj)) {
+      if (classObj[month] && Array.isArray(classObj[month])) {
+        return classObj[month];
+      }
+    }
+  }
+
+  if ((s.attendance as any)[month] && Array.isArray((s.attendance as any)[month])) {
+    return (s.attendance as any)[month];
+  }
+
+  return [false, false, false, false];
+};
+
+const getStudentAttendanceDates = (s: Student, classId: string, month: number): string[] => {
+  if (!s || !s.attendanceDates) return ['', '', '', ''];
+
+  if (classId) {
+    const classObj = (s.attendanceDates as any)[classId];
+    if (classObj && typeof classObj === 'object' && !Array.isArray(classObj)) {
+      if (classObj[month] && Array.isArray(classObj[month])) {
+        return classObj[month];
+      }
+    }
+  }
+
+  if ((s.attendanceDates as any)[month] && Array.isArray((s.attendanceDates as any)[month])) {
+    return (s.attendanceDates as any)[month];
+  }
+
+  return ['', '', '', ''];
+};
+
 export function Classes() {
   const { t, isRTL, language } = useLanguage();
   const { activeRole } = useAuth();
@@ -153,12 +201,11 @@ export function Classes() {
     const attendance = { ...(student.attendance || {}) };
     const attendanceDates = { ...(student.attendanceDates || {}) };
 
-    // Get attendance for current classId
-    const classAttendance = { ...(attendance[selectedClassId] || {}) };
-    const classDates = { ...(attendanceDates[selectedClassId] || {}) };
+    const currentAttendanceList = getStudentAttendance(student, selectedClassId, month);
+    const currentDatesList = getStudentAttendanceDates(student, selectedClassId, month);
 
-    const monthAttendance: (boolean | string)[] = [...(classAttendance[month] || [false, false, false, false])];
-    const monthDates = [...(classDates[month] || ['', '', '', ''])];
+    const monthAttendance: (boolean | string)[] = [...currentAttendanceList];
+    const monthDates: string[] = [...currentDatesList];
     
     const currentVal: any = monthAttendance[sessionIndex];
     let nextState: boolean | string;
@@ -182,8 +229,16 @@ export function Classes() {
     monthDates[sessionIndex] = nextDate;
     
     // Update nested structure
+    const classAttendance = typeof attendance[selectedClassId] === 'object' && !Array.isArray(attendance[selectedClassId])
+      ? { ...(attendance[selectedClassId] as any) }
+      : {};
     classAttendance[month] = monthAttendance;
+
+    const classDates = typeof attendanceDates[selectedClassId] === 'object' && !Array.isArray(attendanceDates[selectedClassId])
+      ? { ...(attendanceDates[selectedClassId] as any) }
+      : {};
     classDates[month] = monthDates;
+
     attendance[selectedClassId] = classAttendance;
     attendanceDates[selectedClassId] = classDates;
     
@@ -210,9 +265,10 @@ export function Classes() {
   // Bulk Attendance: Mark ALL students in this class Present or Absent for a specific session (S1, S2, S3, or S4)
   const handleBulkSessionAttendance = async (sessionIndex: number, isPresent: boolean) => {
     if (!selectedClassId) return;
+    const currentClass = classes.find(c => c.id === selectedClassId);
     const targetStudents = students.filter(s => {
       const studentClassIds = (s.classIds && s.classIds.length > 0) ? s.classIds : (s.classId ? [s.classId] : []);
-      return studentClassIds.includes(selectedClassId);
+      return studentClassIds.includes(selectedClassId) || (currentClass && studentClassIds.includes(currentClass.name)) || s.classId === selectedClassId;
     });
     if (targetStudents.length === 0) return;
 
@@ -223,19 +279,25 @@ export function Classes() {
       const attendance = { ...(student.attendance || {}) };
       const attendanceDates = { ...(student.attendanceDates || {}) };
 
-      // Get attendance for current classId
-      const classAttendance = { ...(attendance[selectedClassId] || {}) };
-      const classDates = { ...(attendanceDates[selectedClassId] || {}) };
+      const currentList = getStudentAttendance(student, selectedClassId, selectedAttendanceMonth);
+      const currentDates = getStudentAttendanceDates(student, selectedClassId, selectedAttendanceMonth);
 
-      const monthAttendance = [...(classAttendance[selectedAttendanceMonth] || [false, false, false, false])];
-      const monthDates = [...(classDates[selectedAttendanceMonth] || ['', '', '', ''])];
+      const monthAttendance = [...currentList];
+      const monthDates = [...currentDates];
 
       monthAttendance[sessionIndex] = isPresent;
       monthDates[sessionIndex] = isPresent ? (monthDates[sessionIndex] || now) : '';
 
-      // Update nested structure
+      const classAttendance = typeof attendance[selectedClassId] === 'object' && !Array.isArray(attendance[selectedClassId])
+        ? { ...(attendance[selectedClassId] as any) }
+        : {};
       classAttendance[selectedAttendanceMonth] = monthAttendance;
+
+      const classDates = typeof attendanceDates[selectedClassId] === 'object' && !Array.isArray(attendanceDates[selectedClassId])
+        ? { ...(attendanceDates[selectedClassId] as any) }
+        : {};
       classDates[selectedAttendanceMonth] = monthDates;
+
       attendance[selectedClassId] = classAttendance;
       attendanceDates[selectedClassId] = classDates;
 
@@ -263,9 +325,10 @@ export function Classes() {
   // Bulk Attendance: Mark ALL sessions (S1..S4) for ALL students in this class
   const handleBulkAllSessions = async (isPresent: boolean) => {
     if (!selectedClassId) return;
+    const currentClass = classes.find(c => c.id === selectedClassId);
     const targetStudents = students.filter(s => {
       const studentClassIds = (s.classIds && s.classIds.length > 0) ? s.classIds : (s.classId ? [s.classId] : []);
-      return studentClassIds.includes(selectedClassId);
+      return studentClassIds.includes(selectedClassId) || (currentClass && studentClassIds.includes(currentClass.name)) || s.classId === selectedClassId;
     });
     if (targetStudents.length === 0) return;
 
@@ -276,8 +339,18 @@ export function Classes() {
       const attendance = { ...(student.attendance || {}) };
       const attendanceDates = { ...(student.attendanceDates || {}) };
 
-      attendance[selectedAttendanceMonth] = [isPresent, isPresent, isPresent, isPresent];
-      attendanceDates[selectedAttendanceMonth] = isPresent ? [now, now, now, now] : ['', '', '', ''];
+      const classAttendance = typeof attendance[selectedClassId] === 'object' && !Array.isArray(attendance[selectedClassId])
+        ? { ...(attendance[selectedClassId] as any) }
+        : {};
+      classAttendance[selectedAttendanceMonth] = [isPresent, isPresent, isPresent, isPresent];
+
+      const classDates = typeof attendanceDates[selectedClassId] === 'object' && !Array.isArray(attendanceDates[selectedClassId])
+        ? { ...(attendanceDates[selectedClassId] as any) }
+        : {};
+      classDates[selectedAttendanceMonth] = isPresent ? [now, now, now, now] : ['', '', '', ''];
+
+      attendance[selectedClassId] = classAttendance;
+      attendanceDates[selectedClassId] = classDates;
 
       return {
         ...student,
@@ -303,9 +376,10 @@ export function Classes() {
   // Bulk Payment: Mark all students in class as Paid/Unpaid for the selected month
   const handleBulkMonthPayment = async (isPaid: boolean) => {
     if (!selectedClassId) return;
+    const currentClass = classes.find(c => c.id === selectedClassId);
     const targetStudents = students.filter(s => {
       const studentClassIds = (s.classIds && s.classIds.length > 0) ? s.classIds : (s.classId ? [s.classId] : []);
-      return studentClassIds.includes(selectedClassId);
+      return studentClassIds.includes(selectedClassId) || (currentClass && studentClassIds.includes(currentClass.name)) || s.classId === selectedClassId;
     });
     if (targetStudents.length === 0) return;
 
@@ -340,7 +414,7 @@ export function Classes() {
   };
 
   const handlePrintMonthReceipt = (student: Student, month: number) => {
-    const currentClass = classes.find(c => c.id === (student.classId || selectedClassId)) || undefined;
+    const currentClass = classes.find(c => c.id === selectedClassId || c.id === student.classId || (student.classIds && student.classIds.includes(c.id))) || undefined;
     setPrintReceiptData({
       student,
       month,
@@ -356,9 +430,9 @@ export function Classes() {
     if (!currentClass) return;
     const classSts = students.filter(s => {
       const studentClassIds = (s.classIds && s.classIds.length > 0) ? s.classIds : (s.classId ? [s.classId] : []);
-      return studentClassIds.includes(selectedClassId);
+      return studentClassIds.includes(selectedClassId) || (currentClass && studentClassIds.includes(currentClass.name)) || s.classId === selectedClassId;
     });
-    const currentTeacher = teachers.find(t => t.id === currentClass.teacherId);
+    const currentTeacher = findTeacher(teachers, currentClass.teacherId);
     
     setPrintClassAttendanceData({
       schoolClass: currentClass,
@@ -592,7 +666,11 @@ export function Classes() {
     const studentClassIds = (s.classIds && s.classIds.length > 0)
       ? s.classIds
       : (s.classId ? [s.classId] : []);
-    const inThisClass = studentClassIds.includes(selectedClassId);
+    const inThisClass = 
+      studentClassIds.includes(selectedClassId) ||
+      (selectedClass && studentClassIds.includes(selectedClass.name)) ||
+      s.classId === selectedClassId ||
+      (selectedClass && s.classId === selectedClass.name);
     return inThisClass && (search === '' || s.name.toLowerCase().includes(search.toLowerCase()));
   });
 
@@ -635,7 +713,7 @@ export function Classes() {
             {classes.length === 0 ? (
               <p className="p-5 text-sm text-slate-400 italic font-medium">{isRTL ? "Aucune classe trouvée" : "No classes found"}</p>
             ) : classes.map((c) => {
-              const assignedTeacher = teachers.find(t => t.id === c.teacherId);
+              const assignedTeacher = findTeacher(teachers, c.teacherId);
               return (
               <div key={c.id} className="group relative">
                 <button
@@ -711,7 +789,7 @@ export function Classes() {
           <div className="min-h-[500px] flex flex-col">
             {selectedClass ? (
               (() => {
-                const currentTeacher = teachers.find(t => t.id === selectedClass.teacherId);
+                const currentTeacher = findTeacher(teachers, selectedClass.teacherId);
                 return (
                 <>
                 <div className={cn("pb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6", isRTL && "md:flex-row-reverse")}>
@@ -858,8 +936,8 @@ export function Classes() {
                           const isSelected = selectedAttendanceMonth === m;
                           // Calculate present count for this month
                           const totalPresentThisMonth = classStudents.reduce((acc, s) => {
-                            const att = (s.attendance || {})[m] || [false, false, false, false];
-                            return acc + att.filter(Boolean).length;
+                            const att = getStudentAttendance(s, selectedClassId, m);
+                            return acc + att.filter(val => val === true || val === 'present').length;
                           }, 0);
 
                           return (
@@ -1014,8 +1092,8 @@ export function Classes() {
                             </td>
                           </tr>
                         ) : classStudents.map((s, index) => {
-                          const attendanceList = ((s.attendance || {})[selectedClassId] || {})[selectedAttendanceMonth] || [false, false, false, false];
-                          const datesList = ((s.attendanceDates || {})[selectedClassId] || {})[selectedAttendanceMonth] || ['', '', '', ''];
+                          const attendanceList = getStudentAttendance(s, selectedClassId, selectedAttendanceMonth);
+                          const datesList = getStudentAttendanceDates(s, selectedClassId, selectedAttendanceMonth);
                           const isPaidThisMonth = (s.paidMonths || []).includes(selectedAttendanceMonth);
                           const totalPresent = attendanceList.filter(val => val === true || val === 'present').length;
 
@@ -1331,8 +1409,9 @@ export function Classes() {
                                    <Pencil size={15} />
                                  </button>
                                  <button 
-                                   onClick={() => handleDeleteStudent(s.id)}
+                                   onClick={() => handleRemoveStudentFromClass(s)}
                                    className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
+                                   title={isRTL ? "Retirer de cette classe" : "Retirer de cette classe"}
                                  >
                                    <Trash2 size={16} />
                                  </button>
@@ -1964,8 +2043,8 @@ export function Classes() {
             </div>
             {[...Array(12)].map((_, monthIdx) => {
                const month = monthIdx + 1;
-               const monthAttendance = (attendanceStudent.attendance || {})[month] || [false, false, false, false];
-               const monthDates = (attendanceStudent.attendanceDates || {})[month] || ['', '', '', ''];
+               const monthAttendance = getStudentAttendance(attendanceStudent, selectedClassId, month);
+               const monthDates = getStudentAttendanceDates(attendanceStudent, selectedClassId, month);
                const isPaid = (attendanceStudent.paidMonths || []).includes(month);
                return (
                  <div key={month} className="grid grid-cols-6 gap-2 items-center py-1.5 border-b border-slate-100 last:border-none hover:bg-slate-50/50 rounded-lg px-1 transition-colors">
@@ -2125,8 +2204,8 @@ export function Classes() {
             
             <div className="space-y-2">
               {[0, 1, 2, 3].map((sessionIdx) => {
-                const attendanceList = (printReceiptData.student.attendance || {})[printReceiptData.month] || [false, false, false, false];
-                const datesList = (printReceiptData.student.attendanceDates || {})[printReceiptData.month] || ['', '', '', ''];
+                const attendanceList = getStudentAttendance(printReceiptData.student, printReceiptData.schoolClass?.id || selectedClassId, printReceiptData.month);
+                const datesList = getStudentAttendanceDates(printReceiptData.student, printReceiptData.schoolClass?.id || selectedClassId, printReceiptData.month);
                 const sessionVal = attendanceList[sessionIdx];
                 const isPresent = sessionVal === true || sessionVal === 'present';
                 const isAbsent = sessionVal === 'absent';
@@ -2267,7 +2346,7 @@ export function Classes() {
             </thead>
             <tbody>
               {printClassAttendanceData.students.map((s, idx) => {
-                const att = (s.attendance || {})[printClassAttendanceData.month] || [false, false, false, false];
+                const att = getStudentAttendance(s, printClassAttendanceData.schoolClass.id, printClassAttendanceData.month);
                 const isPaid = (s.paidMonths || []).includes(printClassAttendanceData.month);
                 const totalPresent = att.filter(val => val === true || val === 'present').length;
 
