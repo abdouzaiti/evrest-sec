@@ -222,9 +222,7 @@ const makeStudentPayload = (s: Omit<Student, 'id'>) => {
     birth_date: s.birthDate || null,
     address: s.address || null,
     class_id: s.classId || (classIds[0] || ''),
-    class_ids: classIds,
     token_id: s.tokenId || null,
-    current_month: s.currentMonth || 1,
     sessions_completed: s.sessionsCompleted || 0,
     payment_status: s.paymentStatus || 'Paid',
     paid_months: s.paidMonths || [],
@@ -641,12 +639,14 @@ export const studentsService = {
 
     if (isSupabaseConfigured()) {
       try {
-        // Attempt 1: Full snake_case payload
+        // Attempt 1: Full snake_case payload (excluding problematic columns)
         const snakePayload = makeStudentPayload(student);
+        // Remove columns causing PGRST204 errors
+        const { class_ids, current_month, ...safePayload } = snakePayload as any;
 
         const { data, error } = await supabase
           .from('students')
-          .update(snakePayload)
+          .update(safePayload)
           .eq('id', id)
           .select()
           .single();
