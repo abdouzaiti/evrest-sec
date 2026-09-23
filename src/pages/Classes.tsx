@@ -152,8 +152,13 @@ export function Classes() {
   const handleToggleAttendance = async (student: Student, month: number, sessionIndex: number) => {
     const attendance = { ...(student.attendance || {}) };
     const attendanceDates = { ...(student.attendanceDates || {}) };
-    const monthAttendance: (boolean | string)[] = [...(attendance[month] || [false, false, false, false])];
-    const monthDates = [...(attendanceDates[month] || ['', '', '', ''])];
+
+    // Get attendance for current classId
+    const classAttendance = { ...(attendance[selectedClassId] || {}) };
+    const classDates = { ...(attendanceDates[selectedClassId] || {}) };
+
+    const monthAttendance: (boolean | string)[] = [...(classAttendance[month] || [false, false, false, false])];
+    const monthDates = [...(classDates[month] || ['', '', '', ''])];
     
     const currentVal: any = monthAttendance[sessionIndex];
     let nextState: boolean | string;
@@ -175,8 +180,12 @@ export function Classes() {
 
     monthAttendance[sessionIndex] = nextState;
     monthDates[sessionIndex] = nextDate;
-    attendance[month] = monthAttendance;
-    attendanceDates[month] = monthDates;
+    
+    // Update nested structure
+    classAttendance[month] = monthAttendance;
+    classDates[month] = monthDates;
+    attendance[selectedClassId] = classAttendance;
+    attendanceDates[selectedClassId] = classDates;
     
     const updatedStudent: Student = {
       ...student,
@@ -193,6 +202,8 @@ export function Classes() {
       await studentsService.update(student.id, updatedStudent);
     } catch (error) {
       console.error('Error updating attendance:', error);
+      // Revert on error
+      setStudents(prev => prev.map(s => s.id === student.id ? student : s));
     }
   };
 
@@ -211,13 +222,22 @@ export function Classes() {
     const updatedStudents = targetStudents.map(student => {
       const attendance = { ...(student.attendance || {}) };
       const attendanceDates = { ...(student.attendanceDates || {}) };
-      const monthAttendance = [...(attendance[selectedAttendanceMonth] || [false, false, false, false])];
-      const monthDates = [...(attendanceDates[selectedAttendanceMonth] || ['', '', '', ''])];
+
+      // Get attendance for current classId
+      const classAttendance = { ...(attendance[selectedClassId] || {}) };
+      const classDates = { ...(attendanceDates[selectedClassId] || {}) };
+
+      const monthAttendance = [...(classAttendance[selectedAttendanceMonth] || [false, false, false, false])];
+      const monthDates = [...(classDates[selectedAttendanceMonth] || ['', '', '', ''])];
 
       monthAttendance[sessionIndex] = isPresent;
       monthDates[sessionIndex] = isPresent ? (monthDates[sessionIndex] || now) : '';
-      attendance[selectedAttendanceMonth] = monthAttendance;
-      attendanceDates[selectedAttendanceMonth] = monthDates;
+
+      // Update nested structure
+      classAttendance[selectedAttendanceMonth] = monthAttendance;
+      classDates[selectedAttendanceMonth] = monthDates;
+      attendance[selectedClassId] = classAttendance;
+      attendanceDates[selectedClassId] = classDates;
 
       return {
         ...student,
@@ -994,8 +1014,8 @@ export function Classes() {
                             </td>
                           </tr>
                         ) : classStudents.map((s, index) => {
-                          const attendanceList = (s.attendance || {})[selectedAttendanceMonth] || [false, false, false, false];
-                          const datesList = (s.attendanceDates || {})[selectedAttendanceMonth] || ['', '', '', ''];
+                          const attendanceList = ((s.attendance || {})[selectedClassId] || {})[selectedAttendanceMonth] || [false, false, false, false];
+                          const datesList = ((s.attendanceDates || {})[selectedClassId] || {})[selectedAttendanceMonth] || ['', '', '', ''];
                           const isPaidThisMonth = (s.paidMonths || []).includes(selectedAttendanceMonth);
                           const totalPresent = attendanceList.filter(val => val === true || val === 'present').length;
 
