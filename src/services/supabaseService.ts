@@ -175,15 +175,36 @@ const parsePaidMonths = (val: any): number[] => {
   return [];
 };
 
-const parseAttendance = (val: any): Record<string, any> => {
+const parseAttendance = (val: any): Record<string, { date: string, present: boolean }[]> => {
   if (!val) return {};
-  if (typeof val === 'object' && !Array.isArray(val)) return val;
-  if (typeof val === 'string') {
-    try {
-      const parsed = JSON.parse(val);
-      if (typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
-    } catch {}
+  
+  // If it's already the new structure, return it
+  if (typeof val === 'object' && !Array.isArray(val) && Object.values(val).every(v => Array.isArray(v))) {
+     // Check if values look like new structure (array of objects)
+     const firstVal = Object.values(val)[0];
+     if (Array.isArray(firstVal) && (firstVal.length === 0 || (typeof firstVal[0] === 'object' && 'date' in firstVal[0]))) {
+         return val;
+     }
   }
+
+  // If it's the old structure, convert it
+  // Old structure: Record<string, Record<number, (boolean | string)[]>>
+  if (typeof val === 'object' && !Array.isArray(val)) {
+    const newStructure: Record<string, { date: string, present: boolean }[]> = {};
+    for (const [classId, months] of Object.entries(val as Record<string, Record<string, (boolean | string)[]>>)) {
+      newStructure[classId] = [];
+      for (const [month, sessions] of Object.entries(months)) {
+        sessions.forEach((s, index) => {
+          newStructure[classId].push({
+            date: `2026-${month}-${(index + 1) * 7}`, // Placeholder date calculation
+            present: s === true || s === 'true'
+          });
+        });
+      }
+    }
+    return newStructure;
+  }
+
   return {};
 };
 

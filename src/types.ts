@@ -42,8 +42,8 @@ export interface Student {
   paidMonths: number[];
   sessionsCompleted: number;
   paymentStatus: PaymentStatus;
-  attendance?: Record<string, Record<number, (boolean | string)[]>>; // classId -> month -> attendance
-  attendanceDates?: Record<string, Record<number, string[]>>; // classId -> month -> attendanceDates
+  // New flexible structure: classId -> array of sessions
+  attendance?: Record<string, { date: string, present: boolean }[]>; 
 }
 
 export interface SchoolClass {
