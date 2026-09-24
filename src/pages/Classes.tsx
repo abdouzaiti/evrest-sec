@@ -2107,179 +2107,58 @@ export function Classes() {
 
       {/* Printable Official Payment Receipt (Single Month) */}
       {printReceiptData && (
-        <div id="print-receipt-section" className="hidden print:block w-full bg-white text-slate-900 font-sans p-2">
+        <div id="print-receipt-section" className="hidden print:block w-[105mm] min-h-[148mm] bg-white text-slate-900 font-sans p-4 border border-slate-200">
           {/* Logo & Institution Header */}
-          <div className="flex items-center justify-between pb-6 mb-6 border-b border-slate-300">
-            <div className="flex items-center gap-4">
-              <img 
-                src="/logo.png" 
-                alt="Logo" 
-                className="h-20 max-h-20 w-auto object-contain"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }}
-              />
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-300">
+            <div className="flex items-center gap-2">
+              <div className="h-10 w-10 bg-slate-900 rounded-full flex items-center justify-center text-white font-black text-xl">A</div>
               <div>
-                <h1 className="text-2xl font-black uppercase tracking-wider text-slate-900">REÇU DE PAIEMENT</h1>
-                <p className="text-xs font-semibold text-slate-500 tracking-wide mt-0.5">Centre & Académie de Soutien Scolaire</p>
+                <h1 className="text-sm font-black uppercase tracking-wider text-slate-900">REÇU</h1>
+                <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wide">Académie de Soutien</p>
               </div>
             </div>
 
-            <div className="text-right space-y-1">
-              <span className="inline-block bg-emerald-600 text-white font-black text-xs px-3.5 py-1 rounded-full uppercase tracking-wider">
-                PAYÉ
-              </span>
-              <p className="text-xs font-bold text-slate-700 font-mono mt-1">
-                REC-M{printReceiptData.month}-{printReceiptData.student.id.slice(0, 6).toUpperCase()}
-              </p>
-              <p className="text-[11px] text-slate-500 font-medium">
-                {new Date().toLocaleDateString('fr-FR')} {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-              </p>
-            </div>
-          </div>
-
-          {/* Student & Class Information Grid */}
-          <div className="grid grid-cols-2 gap-4 mb-6 bg-slate-50 p-5 rounded-2xl border border-slate-200">
-            <div className="space-y-1">
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Nom & Prénom de l'Élève</p>
-              <p className="font-black text-base text-slate-900">{printReceiptData.student.name}</p>
-              <div className="space-y-0.5 text-xs font-semibold text-slate-600 pt-1">
-                {printReceiptData.student.parentPhone && (
-                  <p>
-                    <span className="text-slate-400 font-bold">Tél. Parent: </span>
-                    {printReceiptData.student.parentPhone}
-                    {printReceiptData.student.secondaryPhone && ` / ${printReceiptData.student.secondaryPhone}`}
-                  </p>
-                )}
-                {printReceiptData.student.email && (
-                  <p>
-                    <span className="text-slate-400 font-bold">Email: </span>
-                    {printReceiptData.student.email}
-                  </p>
-                )}
-                {printReceiptData.student.birthDate && (
-                  <p>
-                    <span className="text-slate-400 font-bold">Date de N.: </span>
-                    {printReceiptData.student.birthDate}
-                  </p>
-                )}
-                {printReceiptData.student.address && (
-                  <p>
-                    <span className="text-slate-400 font-bold">Adresse: </span>
-                    {printReceiptData.student.address}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Classe & Matière</p>
-              <p className="font-black text-base text-slate-900">{printReceiptData.schoolClass?.name || 'Classe'}</p>
-              {printReceiptData.schoolClass?.description && (
-                <p className="text-xs font-semibold text-slate-600 pt-1">{printReceiptData.schoolClass.description}</p>
-              )}
-            </div>
-
-            <div className="pt-3 border-t border-slate-200">
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Période Réglée</p>
-              <p className="font-black text-sm text-primary mt-0.5">Mois {printReceiptData.month}</p>
-            </div>
-
-            <div className="pt-3 border-t border-slate-200">
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Statut de la transaction</p>
-              <p className="font-bold text-xs text-emerald-700 mt-0.5 flex items-center gap-1">
-                <span>●</span> Règlement Validé & Enregistré
-              </p>
-            </div>
-          </div>
-
-          {/* 4 Sessions Detail for THIS Month */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3 border-b border-slate-200 pb-2">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
-                Assiduité & Pointage des 4 Séances (Mois {printReceiptData.month})
-              </h3>
-              <span className="text-[11px] font-semibold text-slate-500">4 séances / mois</span>
-            </div>
-            
-            <div className="space-y-2">
-              {[0, 1, 2, 3].map((sessionIdx) => {
-                const attendanceList = getStudentAttendance(printReceiptData.student, printReceiptData.schoolClass?.id || selectedClassId, printReceiptData.month);
-                const datesList = getStudentAttendanceDates(printReceiptData.student, printReceiptData.schoolClass?.id || selectedClassId, printReceiptData.month);
-                const sessionVal = attendanceList[sessionIdx];
-                const isPresent = sessionVal === true || sessionVal === 'present';
-                const isAbsent = sessionVal === 'absent';
-                const dateStr = datesList[sessionIdx] 
-                  ? new Date(datesList[sessionIdx]).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
-                  : null;
-
-                return (
-                  <div key={sessionIdx} className="flex justify-between items-center px-4 py-3 rounded-xl border border-slate-200 bg-white">
-                    <div className="flex items-center gap-3">
-                      <span className={cn(
-                        "w-7 h-7 rounded-full font-black text-xs flex items-center justify-center border",
-                        isPresent 
-                          ? "bg-emerald-100 text-emerald-800 border-emerald-300" 
-                          : isAbsent 
-                          ? "bg-rose-100 text-rose-800 border-rose-300" 
-                          : "bg-slate-100 text-slate-600 border-slate-300"
-                      )}>
-                        S{sessionIdx + 1}
-                      </span>
-                      <div>
-                        <p className="font-bold text-xs text-slate-800">
-                          Séance {sessionIdx + 1}
-                        </p>
-                        <p className="text-[10px] text-slate-400">
-                          {isPresent ? "Séance effectuée" : isAbsent ? "Absence enregistrée" : "En attente / Non renseignée"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <span className="text-xs text-slate-500 font-mono">
-                        {dateStr ? dateStr : (isPresent ? 'Pointage enregistré' : '—')}
-                      </span>
-                      <span className={cn(
-                        "px-3 py-1 text-[10px] font-black rounded-full border tracking-wider uppercase",
-                        isPresent 
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-300" 
-                          : isAbsent 
-                          ? "bg-rose-50 text-rose-700 border-rose-300" 
-                          : "bg-slate-50 text-slate-600 border-slate-200"
-                      )}>
-                        {isPresent ? "PRÉSENT" : isAbsent ? "ABSENT" : "NON RENSEIGNÉ"}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Prominent Class Total Price Section at the bottom */}
-          <div className="bg-slate-900 text-white px-6 py-5 rounded-2xl mb-8 flex justify-between items-center shadow-xs">
-            <div>
-              <p className="text-[11px] uppercase font-black tracking-widest text-slate-400">PRIX TOTAL DE LA CLASSE</p>
-              <p className="text-xs text-slate-300 font-medium mt-0.5">Montant réglé pour le Mois {printReceiptData.month}</p>
-            </div>
             <div className="text-right">
-              <span className="text-3xl font-black tracking-tight text-emerald-400">
-                {(printReceiptData.schoolClass?.price || 0).toLocaleString()} DZD
-              </span>
+              <p className="text-[10px] font-black text-slate-900 font-mono">
+                REC-M{printReceiptData.month}-{printReceiptData.student.id.slice(0, 4).toUpperCase()}
+              </p>
+              <p className="text-[9px] text-slate-500 font-medium">
+                {new Date().toLocaleDateString('fr-FR')}
+              </p>
             </div>
           </div>
 
-          {/* Footer Signature & Stamp */}
-          <div className="border-t border-slate-300 pt-6 flex justify-between items-end text-xs">
-            <div className="space-y-1">
-              <p className="font-black text-slate-800 uppercase tracking-wide text-xs">Administration & Direction</p>
-              <p className="text-[11px] text-slate-500 italic">Document officiel servant de preuve de paiement.</p>
+          {/* Student & Class Information */}
+          <div className="space-y-3 mb-4 text-xs">
+            <div>
+              <p className="text-[9px] text-slate-400 font-black uppercase tracking-wider">Élève</p>
+              <p className="font-bold text-slate-900">{printReceiptData.student.name}</p>
             </div>
-            <div className="text-center">
-              <p className="text-[11px] font-black uppercase text-slate-500 mb-12">Cachet & Signature de l'établissement</p>
-              <div className="border-b-2 border-dashed border-slate-400 w-48"></div>
+            <div className="flex justify-between">
+              <div>
+                <p className="text-[9px] text-slate-400 font-black uppercase tracking-wider">Classe</p>
+                <p className="font-bold text-slate-900">{printReceiptData.schoolClass?.name}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[9px] text-slate-400 font-black uppercase tracking-wider">Mois</p>
+                <p className="font-bold text-primary">{printReceiptData.month}</p>
+              </div>
             </div>
+          </div>
+
+          {/* Amount Section */}
+          <div className="bg-slate-900 text-white p-3 rounded-lg flex justify-between items-center mb-4">
+            <p className="text-[10px] uppercase font-bold tracking-widest text-slate-300">TOTAL RÉGLÉ</p>
+            <span className="text-lg font-black tracking-tight text-emerald-400">
+              {(printReceiptData.schoolClass?.price || 0).toLocaleString()} DZD
+            </span>
+          </div>
+
+          {/* Footer */}
+          <div className="text-center mt-auto pt-4 border-t border-dashed border-slate-300">
+            <p className="text-[9px] font-black uppercase text-slate-500">Cachet & Signature</p>
+            <div className="h-12"></div>
+            <p className="text-[8px] text-slate-400">Document officiel de paiement</p>
           </div>
         </div>
       )}
