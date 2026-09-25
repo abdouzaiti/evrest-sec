@@ -617,6 +617,11 @@ export const studentsService = {
             paidMonths: (created.paidMonths && created.paidMonths.length > 0) ? created.paidMonths : (student.paidMonths || []),
             attendance: (created.attendance && Object.keys(created.attendance).length > 0) ? created.attendance : (student.attendance || {})
           };
+          if (student.classIds && student.classIds.length > 0) {
+            saveStudentClassesMapping(finalCreated.id, student.classIds);
+          } else if (student.classId) {
+            saveStudentClassesMapping(finalCreated.id, [student.classId]);
+          }
           local.push(finalCreated);
           saveLocalData('school_students', local);
           return finalCreated;
