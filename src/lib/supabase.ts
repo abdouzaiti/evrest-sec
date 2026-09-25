@@ -1,25 +1,32 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-let supabaseInstance: SupabaseClient | null = null;
+// Dedicated credentials for Everest Academy Supabase project
+const SUPABASE_PROJECT_URL = 'https://exoewaxtjfopqgxolqph.supabase.co';
+const SUPABASE_PROJECT_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4b2V3YXh0amZvcHFneG9scXBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MDI2NzUsImV4cCI6MjA5NzI3ODY3NX0.1XX-Nlfkmj4XSiiwAVYGz-QfmyjUxikr8yUFEufRWpQ';
 
-export const isSupabaseConfigured = (): boolean => {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  return !!(supabaseUrl && supabaseAnonKey);
+export const getSupabaseConfig = () => {
+  const url = import.meta.env.VITE_SUPABASE_URL || SUPABASE_PROJECT_URL;
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || SUPABASE_PROJECT_ANON_KEY;
+  return { url, anonKey };
 };
 
-export const getSupabase = () => {
+export const isSupabaseConfigured = (): boolean => {
+  const { url, anonKey } = getSupabaseConfig();
+  return !!(url && anonKey);
+};
+
+let supabaseInstance: SupabaseClient | null = null;
+
+export const getSupabase = (): SupabaseClient => {
   if (supabaseInstance) return supabaseInstance;
 
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const { url, anonKey } = getSupabaseConfig();
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    // Return a dummy object if missing to support proxy getters without throwing at import time
+  if (!url || !anonKey) {
     return {} as SupabaseClient;
   }
 
-  supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
+  supabaseInstance = createClient(url, anonKey);
   return supabaseInstance;
 };
 
@@ -30,4 +37,3 @@ export const supabase = new Proxy({} as SupabaseClient, {
     return (instance as any)[prop];
   }
 });
-

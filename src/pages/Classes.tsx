@@ -1652,9 +1652,12 @@ export function Classes() {
               <div className="max-h-[320px] overflow-y-auto space-y-2 pr-1">
                 {(() => {
                   const availableStudents = students.filter(s => {
-                    const matchesSearch = !existingStudentSearch || 
-                      s.name.toLowerCase().includes(existingStudentSearch.toLowerCase()) || 
-                      s.parentPhone.includes(existingStudentSearch);
+                    const searchLower = existingStudentSearch.toLowerCase().trim();
+                    const matchesSearch = !searchLower || 
+                      (s.name || '').toLowerCase().includes(searchLower) || 
+                      (s.parentPhone || '').includes(searchLower) ||
+                      (s.secondaryPhone || '').includes(searchLower) ||
+                      (s.tokenId || '').toLowerCase().includes(searchLower);
                     return matchesSearch;
                   });
 

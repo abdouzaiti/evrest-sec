@@ -106,25 +106,65 @@ const saveTeacherMapping = (classId: string, teacherId?: string) => {
   localStorage.setItem('class_teacher_mapping', JSON.stringify(current));
 };
 
+const getFirstValidString = (...candidates: any[]): string => {
+  for (const c of candidates) {
+    if (c !== undefined && c !== null && String(c).trim() !== '') {
+      return String(c).trim();
+    }
+  }
+  return '';
+};
+
+const getFirstValidOptionalString = (...candidates: any[]): string | undefined => {
+  for (const c of candidates) {
+    if (c !== undefined && c !== null && String(c).trim() !== '') {
+      return String(c).trim();
+    }
+  }
+  return undefined;
+};
+
+const normalizePaymentStatus = (val: any): 'Paid' | 'Pending' | 'Unpaid' => {
+  if (!val) return 'Pending';
+  const str = String(val).toLowerCase().trim();
+  if (str === 'paid' || str === 'payé' || str === 'paye') return 'Paid';
+  if (str === 'unpaid' || str === 'non payé' || str === 'non paye') return 'Unpaid';
+  return 'Pending';
+};
+
+const parseClassIds = (val: any): string[] => {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.map(String).filter(Boolean);
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      return trimmed.slice(1, -1).split(',').map(s => s.trim().replace(/^"|"$/g, '')).filter(Boolean);
+    }
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+    } catch {}
+  }
+  return [];
+};
+
 const mapToClass = (row: any): SchoolClass => {
   if (!row) return row;
   const mapping = getTeacherMapping();
-  const teacherId = (row.teacherId !== undefined && row.teacherId !== null && row.teacherId !== '') 
-    ? row.teacherId 
-    : ((row.teacher_id !== undefined && row.teacher_id !== null && row.teacher_id !== '') ? row.teacher_id : mapping[row.id]);
+  const rawTeacherId = getFirstValidString(row.teacher_id, row.teacherId, mapping[row.id]);
 
   return {
     id: row.id,
     name: row.name || '',
-    price: row.price !== undefined ? Number(row.price) : 0,
+    price: row.price !== undefined && row.price !== null ? Number(row.price) : 0,
     description: row.description || '',
-    teacherId: teacherId || undefined
+    teacherId: rawTeacherId || undefined
   };
 };
 
 const parsePaidMonths = (val: any): number[] => {
   if (!val) return [];
-  if (Array.isArray(val)) return val.map(Number);
+  if (Array.isArray(val)) return val.map(Number).filter(n => !isNaN(n));
   if (typeof val === 'string') {
     val = val.trim();
     if (val.startsWith('{') && val.endsWith('}')) {
@@ -132,7 +172,7 @@ const parsePaidMonths = (val: any): number[] => {
     }
     try {
       const parsed = JSON.parse(val);
-      if (Array.isArray(parsed)) return parsed.map(Number);
+      if (Array.isArray(parsed)) return parsed.map(Number).filter(n => !isNaN(n));
     } catch {}
   }
   return [];
@@ -143,7 +183,6 @@ const parseAttendance = (val: any): Record<string, { date: string, present: bool
   
   // If it's already the new structure, return it
   if (typeof val === 'object' && !Array.isArray(val) && Object.values(val).every(v => Array.isArray(v))) {
-     // Check if values look like new structure (array of objects)
      const firstVal = Object.values(val)[0];
      if (Array.isArray(firstVal) && (firstVal.length === 0 || (typeof firstVal[0] === 'object' && 'date' in firstVal[0]))) {
          return val;
@@ -151,18 +190,21 @@ const parseAttendance = (val: any): Record<string, { date: string, present: bool
   }
 
   // If it's the old structure, convert it
-  // Old structure: Record<string, Record<number, (boolean | string)[]>>
   if (typeof val === 'object' && !Array.isArray(val)) {
     const newStructure: Record<string, { date: string, present: boolean }[]> = {};
     for (const [classId, months] of Object.entries(val as Record<string, Record<string, (boolean | string)[]>>)) {
       newStructure[classId] = [];
-      for (const [month, sessions] of Object.entries(months)) {
-        sessions.forEach((s, index) => {
-          newStructure[classId].push({
-            date: `2026-${month}-${(index + 1) * 7}`, // Placeholder date calculation
-            present: s === true || s === 'true'
-          });
-        });
+      if (months && typeof months === 'object') {
+        for (const [month, sessions] of Object.entries(months)) {
+          if (Array.isArray(sessions)) {
+            sessions.forEach((s, index) => {
+              newStructure[classId].push({
+                date: `2026-${month}-${(index + 1) * 7}`,
+                present: s === true || s === 'true'
+              });
+            });
+          }
+        }
       }
     }
     return newStructure;
@@ -177,36 +219,31 @@ const mapToStudent = (row: any): Student => {
   const parsedPaidMonths = parsePaidMonths(row.paid_months ?? row.paidMonths);
   const parsedAttendance = parseAttendance(row.attendance_data ?? row.attendance);
   
-  let parsedClassIds: string[] = [];
-  if (Array.isArray(row.classIds) && row.classIds.length > 0) parsedClassIds = row.classIds;
-  else if (Array.isArray(row.class_ids) && row.class_ids.length > 0) parsedClassIds = row.class_ids;
-  else if (typeof row.classIds === 'string') {
-    try { parsedClassIds = JSON.parse(row.classIds); } catch {}
-  } else if (typeof row.class_ids === 'string') {
-    try { parsedClassIds = JSON.parse(row.class_ids); } catch {}
+  let parsedClassIds = parseClassIds(row.class_ids ?? row.classIds);
+  const primaryClassId = getFirstValidString(row.class_id, row.classId);
+
+  if (primaryClassId && !parsedClassIds.includes(primaryClassId)) {
+    parsedClassIds = [primaryClassId, ...parsedClassIds];
+  } else if (parsedClassIds.length > 0 && !primaryClassId) {
+    // If primary is empty but class_ids has values, make first class primary
   }
 
-  const primaryClassId = row.classId !== undefined ? row.classId : (row.class_id !== undefined ? row.class_id : '');
-  if (parsedClassIds.length === 0 && primaryClassId) {
-    parsedClassIds = [primaryClassId];
-  } else if (primaryClassId && !parsedClassIds.includes(primaryClassId)) {
-    parsedClassIds = [primaryClassId, ...parsedClassIds];
-  }
+  const finalPrimary = primaryClassId || (parsedClassIds[0] || '');
 
   return {
     id: row.id,
     name: row.name || '',
-    parentPhone: row.parentPhone !== undefined ? row.parentPhone : (row.parent_phone !== undefined ? row.parent_phone : ''),
-    secondaryPhone: row.secondaryPhone !== undefined ? row.secondaryPhone : (row.secondary_phone !== undefined ? row.secondary_phone : (row.phone2 !== undefined ? row.phone2 : undefined)),
-    email: row.email !== undefined ? row.email : undefined,
-    birthDate: row.birthDate !== undefined ? row.birthDate : (row.birth_date !== undefined ? row.birth_date : undefined),
-    address: row.address !== undefined ? row.address : undefined,
-    classId: primaryClassId,
-    classIds: parsedClassIds,
-    tokenId: row.tokenId !== undefined ? row.tokenId : (row.token_id !== undefined ? row.token_id : undefined),
-    currentMonth: row.currentMonth !== undefined ? Number(row.currentMonth) : (row.current_month !== undefined ? Number(row.current_month) : 1),
-    sessionsCompleted: row.sessionsCompleted !== undefined ? Number(row.sessionsCompleted) : (row.sessions_completed !== undefined ? Number(row.sessions_completed) : 0),
-    paymentStatus: row.paymentStatus !== undefined ? row.paymentStatus : (row.payment_status !== undefined ? row.payment_status : 'Paid'),
+    parentPhone: getFirstValidString(row.parent_phone, row.parentPhone),
+    secondaryPhone: getFirstValidOptionalString(row.secondary_phone, row.secondaryPhone, row.phone2),
+    email: getFirstValidOptionalString(row.email),
+    birthDate: getFirstValidOptionalString(row.birth_date, row.birthDate),
+    address: getFirstValidOptionalString(row.address),
+    classId: finalPrimary,
+    classIds: parsedClassIds.length > 0 ? parsedClassIds : (finalPrimary ? [finalPrimary] : []),
+    tokenId: getFirstValidOptionalString(row.token_id, row.tokenId),
+    currentMonth: Number(row.current_month ?? row.currentMonth) || 1,
+    sessionsCompleted: Number(row.sessions_completed ?? row.sessionsCompleted) || 0,
+    paymentStatus: normalizePaymentStatus(row.payment_status ?? row.paymentStatus),
     paidMonths: parsedPaidMonths,
     attendance: parsedAttendance,
     attendanceDates: row.attendance_dates ?? row.attendanceDates ?? {}
@@ -215,29 +252,22 @@ const mapToStudent = (row: any): Student => {
 
 const mapToTeacher = (row: any): Teacher => {
   if (!row) return row;
-  let parsedPaidMonths: number[] = [];
-  if (Array.isArray(row.paidMonths)) parsedPaidMonths = row.paidMonths;
-  else if (Array.isArray(row.paid_months)) parsedPaidMonths = row.paid_months;
-  else if (typeof row.paidMonths === 'string') {
-    try { parsedPaidMonths = JSON.parse(row.paidMonths); } catch {}
-  } else if (typeof row.paid_months === 'string') {
-    try { parsedPaidMonths = JSON.parse(row.paid_months); } catch {}
-  }
+  const parsedPaidMonths = parsePaidMonths(row.paid_months ?? row.paidMonths);
 
   return {
     id: row.id,
     name: row.name || '',
-    email: row.email || '',
-    phone: row.phone !== undefined ? row.phone : (row.parentPhone !== undefined ? row.parentPhone : (row.parent_phone !== undefined ? row.parent_phone : undefined)),
-    secondaryPhone: row.secondaryPhone !== undefined ? row.secondaryPhone : (row.secondary_phone !== undefined ? row.secondary_phone : (row.phone2 !== undefined ? row.phone2 : undefined)),
-    birthDate: row.birthDate !== undefined ? row.birthDate : (row.birth_date !== undefined ? row.birth_date : undefined),
-    address: row.address !== undefined ? row.address : undefined,
+    email: getFirstValidString(row.email),
+    phone: getFirstValidOptionalString(row.phone, row.parent_phone, row.parentPhone),
+    secondaryPhone: getFirstValidOptionalString(row.secondary_phone, row.secondaryPhone, row.phone2),
+    birthDate: getFirstValidOptionalString(row.birth_date, row.birthDate),
+    address: getFirstValidOptionalString(row.address),
     subject: row.subject || '',
-    salary: row.salary !== undefined ? Number(row.salary) : 0,
-    paymentStatus: row.paymentStatus !== undefined ? row.paymentStatus : (row.payment_status !== undefined ? row.payment_status : 'Unpaid'),
-    lastPaymentDate: row.lastPaymentDate !== undefined ? row.lastPaymentDate : (row.last_payment_date !== undefined ? row.last_payment_date : undefined),
-    tokenId: row.tokenId !== undefined ? row.tokenId : (row.token_id !== undefined ? row.token_id : undefined),
-    currentMonth: row.currentMonth !== undefined ? Number(row.currentMonth) : (row.current_month !== undefined ? Number(row.current_month) : 1),
+    salary: Number(row.salary) || 0,
+    paymentStatus: normalizePaymentStatus(row.payment_status ?? row.paymentStatus),
+    lastPaymentDate: getFirstValidOptionalString(row.last_payment_date, row.lastPaymentDate),
+    tokenId: getFirstValidOptionalString(row.token_id, row.tokenId),
+    currentMonth: Number(row.current_month ?? row.currentMonth) || 1,
     paidMonths: parsedPaidMonths
   };
 };
@@ -249,19 +279,13 @@ const mapToTeacher = (row: any): Teacher => {
 const makeStudentPayload = (s: Omit<Student, 'id'>) => {
   const classIds = Array.isArray(s.classIds) && s.classIds.length > 0 ? s.classIds : (s.classId ? [s.classId] : []);
   const primaryClass = s.classId || (classIds[0] || '');
-
-  let normalizedPaymentStatus: 'Paid' | 'Pending' | 'Unpaid' = 'Pending';
-  if (s.paymentStatus) {
-    const ps = String(s.paymentStatus).toLowerCase();
-    if (ps === 'paid') normalizedPaymentStatus = 'Paid';
-    else if (ps === 'unpaid') normalizedPaymentStatus = 'Unpaid';
-    else normalizedPaymentStatus = 'Pending';
-  }
+  const phone = s.parentPhone ? s.parentPhone.trim() : '';
+  const normalizedPaymentStatus = normalizePaymentStatus(s.paymentStatus);
 
   return {
     name: s.name ? s.name.trim() : '',
-    parent_phone: s.parentPhone ? s.parentPhone.trim() : '',
-    parentPhone: s.parentPhone ? s.parentPhone.trim() : '',
+    parent_phone: phone,
+    parentPhone: phone,
     secondary_phone: s.secondaryPhone ? s.secondaryPhone.trim() : null,
     email: s.email ? s.email.trim() : null,
     birth_date: s.birthDate || null,
@@ -282,6 +306,7 @@ const makeStudentPayload = (s: Omit<Student, 'id'>) => {
 };
 
 const makeTeacherPayload = (t: Omit<Teacher, 'id'>) => {
+  const normalizedPaymentStatus = normalizePaymentStatus(t.paymentStatus);
   return {
     name: t.name ? t.name.trim() : '',
     email: t.email ? t.email.trim() : null,
@@ -291,9 +316,11 @@ const makeTeacherPayload = (t: Omit<Teacher, 'id'>) => {
     address: t.address ? t.address.trim() : null,
     subject: t.subject || '',
     salary: Number(t.salary) || 0,
-    payment_status: t.paymentStatus || 'Unpaid',
+    payment_status: normalizedPaymentStatus,
+    paymentStatus: normalizedPaymentStatus,
     last_payment_date: t.lastPaymentDate || null,
     token_id: t.tokenId ? t.tokenId.trim() : null,
+    tokenId: t.tokenId ? t.tokenId.trim() : null,
     current_month: Number(t.currentMonth) || 1,
     paid_months: Array.isArray(t.paidMonths) ? t.paidMonths : []
   };
@@ -304,7 +331,8 @@ const makeClassPayload = (c: Omit<SchoolClass, 'id'>) => {
     name: c.name ? c.name.trim() : '',
     price: Number(c.price) || 0,
     description: c.description || '',
-    teacher_id: c.teacherId || null
+    teacher_id: c.teacherId || null,
+    teacherId: c.teacherId || null
   };
 };
 
@@ -556,18 +584,24 @@ export const studentsService = {
         // Attempt 2: Core payload with essential and safe columns
         const classIds = Array.isArray(student.classIds) && student.classIds.length > 0 ? student.classIds : (student.classId ? [student.classId] : []);
         const primaryClass = student.classId || (classIds[0] || '');
+        const phone = student.parentPhone ? student.parentPhone.trim() : '';
+        const paymentStatus = normalizePaymentStatus(student.paymentStatus);
         const corePayload = {
           name: student.name ? student.name.trim() : '',
-          parent_phone: student.parentPhone ? student.parentPhone.trim() : '',
+          parent_phone: phone,
+          parentPhone: phone,
           secondary_phone: student.secondaryPhone ? student.secondaryPhone.trim() : null,
           email: student.email ? student.email.trim() : null,
           birth_date: student.birthDate || null,
           address: student.address ? student.address.trim() : null,
           class_id: primaryClass,
+          classId: primaryClass,
           class_ids: classIds,
           token_id: student.tokenId ? student.tokenId.trim() : null,
+          tokenId: student.tokenId ? student.tokenId.trim() : null,
           sessions_completed: Number(student.sessionsCompleted) || 0,
-          payment_status: student.paymentStatus || 'Pending',
+          payment_status: paymentStatus,
+          paymentStatus: paymentStatus,
           current_month: Number(student.currentMonth) || 1,
           paid_months: Array.isArray(student.paidMonths) ? student.paidMonths : [],
           attendance_data: student.attendance || {},
@@ -685,21 +719,27 @@ export const studentsService = {
 
         console.warn('Attempt 1 update failed, retrying with core snake_case payload:', e1);
 
-        // Attempt 2: Core snake_case payload
+        // Attempt 2: Core dual-case payload
         const classIds = Array.isArray(student.classIds) && student.classIds.length > 0 ? student.classIds : (student.classId ? [student.classId] : []);
         const primaryClass = student.classId || (classIds[0] || '');
+        const phone = student.parentPhone ? student.parentPhone.trim() : '';
+        const paymentStatus = normalizePaymentStatus(student.paymentStatus);
         const corePayload = {
           name: student.name ? student.name.trim() : '',
-          parent_phone: student.parentPhone ? student.parentPhone.trim() : '',
+          parent_phone: phone,
+          parentPhone: phone,
           secondary_phone: student.secondaryPhone ? student.secondaryPhone.trim() : null,
           email: student.email ? student.email.trim() : null,
           birth_date: student.birthDate || null,
           address: student.address ? student.address.trim() : null,
           class_id: primaryClass,
+          classId: primaryClass,
           class_ids: classIds,
           token_id: student.tokenId ? student.tokenId.trim() : null,
+          tokenId: student.tokenId ? student.tokenId.trim() : null,
           sessions_completed: Number(student.sessionsCompleted) || 0,
-          payment_status: student.paymentStatus || 'Pending',
+          payment_status: paymentStatus,
+          paymentStatus: paymentStatus,
           current_month: Number(student.currentMonth) || 1,
           paid_months: Array.isArray(student.paidMonths) ? student.paidMonths : [],
           attendance_data: student.attendance || {},
@@ -727,8 +767,10 @@ export const studentsService = {
         // Attempt 3: Minimal essential payload
         const minimalPayload = {
           name: student.name ? student.name.trim() : '',
-          parent_phone: student.parentPhone ? student.parentPhone.trim() : '',
+          parent_phone: phone,
+          parentPhone: phone,
           class_id: primaryClass,
+          classId: primaryClass,
           class_ids: classIds
         };
 
