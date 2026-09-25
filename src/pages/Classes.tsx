@@ -5,6 +5,7 @@ import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { classesService, studentsService, pointageService, teachersService, paymentsService } from '../services/supabaseService';
+import { isSupabaseConfigured, getSupabase } from '../lib/supabase';
 import { Modal } from '../components/Modal';
 
 const findTeacher = (teachersList: Teacher[], identifier?: string): Teacher | undefined => {
@@ -62,10 +63,14 @@ export function Classes() {
   const [students, setStudents] = useState<Student[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [allLogs, setAllLogs] = useState<any[]>([]);
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [selectedClassId, setSelectedClassId] = useState<string>(() => {
+    return localStorage.getItem('everest_selected_class_id') || '';
+  });
   const [search, setSearch] = useState('');
   const [openMonthDropdownId, setOpenMonthDropdownId] = useState<string | null>(null);
   const [attendanceStudent, setAttendanceStudent] = useState<Student | null>(null);
+  const [isSubmittingStudent, setIsSubmittingStudent] = useState(false);
+  const [studentActionSuccess, setStudentActionSuccess] = useState<string | null>(null);
 
   // Multi-column attendance view state
   const [viewMode, setViewMode] = useState<'attendance' | 'details'>('attendance');
@@ -136,13 +141,9 @@ export function Classes() {
     paymentStatus: 'Pending'
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = async (isBackground = false) => {
     try {
-      setLoading(true);
+      if (!isBackground) setLoading(true);
       const [classesData, studentsData, logsData, teachersData] = await Promise.all([
         classesService.getAll(),
         studentsService.getAll(),
@@ -153,15 +154,63 @@ export function Classes() {
       setStudents(studentsData);
       setAllLogs(logsData);
       setTeachers(teachersData);
-      if (classesData.length > 0 && !selectedClassId) {
-        setSelectedClassId(classesData[0].id);
+
+      const savedId = localStorage.getItem('everest_selected_class_id');
+      if (savedId && classesData.some(c => c.id === savedId)) {
+        setSelectedClassId(savedId);
+      } else if (classesData.length > 0) {
+        setSelectedClassId(prev => (prev && classesData.some(c => c.id === prev)) ? prev : classesData[0].id);
       }
     } catch (error: any) {
       console.error('Error fetching data:', error);
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+
+    // Multi-browser / tab focus refresh
+    const handleFocus = () => {
+      fetchData(true);
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // Periodic synchronization to ensure live data across different devices/browsers
+    const interval = setInterval(() => {
+      fetchData(true);
+    }, 8000);
+
+    // Supabase Realtime channel subscription
+    let channel: any = null;
+    if (isSupabaseConfigured()) {
+      try {
+        const client = getSupabase();
+        if (client && typeof client.channel === 'function') {
+          channel = client
+            .channel('classes-sync-' + Math.random().toString(36).substring(2, 7))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
+              fetchData(true);
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'classes' }, () => {
+              fetchData(true);
+            })
+            .subscribe();
+        }
+      } catch (err) {
+        console.warn('Realtime subscription notice:', err);
+      }
+    }
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
+      if (channel && typeof channel.unsubscribe === 'function') {
+        try { channel.unsubscribe(); } catch {}
+      }
+    };
+  }, []);
 
   const handleIncrementSession = async (student: Student) => {
     try {
@@ -568,13 +617,25 @@ export function Classes() {
 
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newStudent.name.trim() || !newStudent.parentPhone.trim()) {
+      alert('Veuillez renseigner le nom et le numéro de téléphone.');
+      return;
+    }
+    const targetClassId = selectedClassId || (classes[0]?.id || '');
+    if (!targetClassId) {
+      alert('Veuillez d\'abord sélectionner une classe.');
+      return;
+    }
+
     try {
+      setIsSubmittingStudent(true);
       const created = await studentsService.create({ 
         ...newStudent, 
-        classId: selectedClassId,
-        classIds: [selectedClassId]
+        classId: targetClassId,
+        classIds: [targetClassId],
+        paymentStatus: newStudent.paymentStatus || 'Pending'
       });
-      setStudents(prev => [...prev, created]);
+      setStudents(prev => [...prev.filter(s => s.id !== created.id), created]);
       setIsStudentModalOpen(false);
       setNewStudent({
         name: '',
@@ -590,17 +651,25 @@ export function Classes() {
         sessionsCompleted: 0,
         paymentStatus: 'Pending'
       });
-    } catch (error) {
+      setStudentActionSuccess('Élève créé et inscrit avec succès !');
+      setTimeout(() => setStudentActionSuccess(null), 3500);
+      await fetchData(true);
+    } catch (error: any) {
       console.error('Error creating student:', error);
+      alert('Erreur lors de la création de l\'élève : ' + (error?.message || 'Erreur réseau'));
+    } finally {
+      setIsSubmittingStudent(false);
     }
   };
 
   const handleAssignExistingStudent = async (studentId: string) => {
     const targetStudent = students.find(s => s.id === studentId);
-    if (!targetStudent) return;
+    if (!targetStudent || !selectedClassId) return;
 
     try {
-      const currentClassIds = Array.isArray(targetStudent.classIds) ? targetStudent.classIds : [];
+      const currentClassIds = Array.isArray(targetStudent.classIds) && targetStudent.classIds.length > 0
+        ? targetStudent.classIds 
+        : (targetStudent.classId ? [targetStudent.classId] : []);
       
       const newClassIds = currentClassIds.includes(selectedClassId)
         ? currentClassIds
@@ -616,15 +685,22 @@ export function Classes() {
       });
       
       setStudents(prev => prev.map(s => s.id === studentId ? updated : s));
-    } catch (error) {
+      setStudentActionSuccess(`${targetStudent.name} inscrit(e) dans cette classe !`);
+      setTimeout(() => setStudentActionSuccess(null), 3500);
+      await fetchData(true);
+    } catch (error: any) {
       console.error('Error assigning student:', error);
+      alert('Erreur lors de l\'inscription de l\'élève : ' + (error?.message || 'Erreur réseau'));
     }
   };
 
   const handleRemoveStudentFromClass = async (student: Student) => {
     if (!confirm(isRTL ? 'Retirer cet étudiant de cette classe ?' : 'Remove this student from this class?')) return;
     try {
-      const newClassIds = (student.classIds || []).filter(id => id !== selectedClassId);
+      const currentClassIds = Array.isArray(student.classIds) && student.classIds.length > 0
+        ? student.classIds
+        : (student.classId ? [student.classId] : []);
+      const newClassIds = currentClassIds.filter(id => id !== selectedClassId);
       const newClassId = student.classId === selectedClassId ? (newClassIds.length > 0 ? newClassIds[0] : '') : student.classId;
 
       const updated = await studentsService.update(student.id, {
@@ -634,6 +710,9 @@ export function Classes() {
       });
 
       setStudents(prev => prev.map(s => s.id === student.id ? updated : s));
+      setStudentActionSuccess(`${student.name} retiré(e) de la classe.`);
+      setTimeout(() => setStudentActionSuccess(null), 3500);
+      await fetchData(true);
     } catch (error) {
       console.error('Error removing student from class:', error);
     }
@@ -717,7 +796,10 @@ export function Classes() {
               return (
               <div key={c.id} className="group relative">
                 <button
-                  onClick={() => setSelectedClassId(c.id)}
+                  onClick={() => {
+                    setSelectedClassId(c.id);
+                    localStorage.setItem('everest_selected_class_id', c.id);
+                  }}
                   className={cn(
                     "w-full text-left p-5 rounded-2xl transition-all relative overflow-hidden pr-20",
                     selectedClassId === c.id 
@@ -1519,6 +1601,13 @@ export function Classes() {
         title="Inscrire un élève dans cette classe"
       >
         <div className="space-y-5">
+          {studentActionSuccess && (
+            <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-bold flex items-center gap-2.5 animate-fade-in shadow-xs">
+              <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+              <span>{studentActionSuccess}</span>
+            </div>
+          )}
+
           {/* Tabs */}
           <div className="flex bg-slate-100 p-1.5 rounded-2xl gap-1">
             <button
@@ -1799,8 +1888,19 @@ export function Classes() {
                 </div>
               </div>
 
-              <button type="submit" className="w-full bg-primary text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
-                {t('add_student')}
+              <button 
+                type="submit" 
+                disabled={isSubmittingStudent}
+                className="w-full bg-primary disabled:opacity-60 text-white p-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              >
+                {isSubmittingStudent ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>Inscription en cours...</span>
+                  </>
+                ) : (
+                  <span>{t('add_student')}</span>
+                )}
               </button>
             </form>
           )}

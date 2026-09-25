@@ -5,6 +5,7 @@ import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { studentsService, classesService, pointageService } from '../services/supabaseService';
+import { isSupabaseConfigured, getSupabase } from '../lib/supabase';
 import { Modal } from '../components/Modal';
 import { motion } from 'motion/react';
 
@@ -41,13 +42,9 @@ export function Students() {
     sessionsCompleted: 0
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = async (isBackground = false) => {
     try {
-      setLoading(true);
+      if (!isBackground) setLoading(true);
       const [studentsData, classesData, logsData] = await Promise.all([
         studentsService.getAll(),
         classesService.getAll(),
@@ -59,12 +56,57 @@ export function Students() {
     } catch (error) {
       console.error('Error loading students data:', error);
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadData();
+
+    const handleFocus = () => {
+      loadData(true);
+    };
+    window.addEventListener('focus', handleFocus);
+
+    const interval = setInterval(() => {
+      loadData(true);
+    }, 8000);
+
+    let channel: any = null;
+    if (isSupabaseConfigured()) {
+      try {
+        const client = getSupabase();
+        if (client && typeof client.channel === 'function') {
+          channel = client
+            .channel('students-page-sync-' + Math.random().toString(36).substring(2, 7))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
+              loadData(true);
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'classes' }, () => {
+              loadData(true);
+            })
+            .subscribe();
+        }
+      } catch (err) {
+        console.warn('Realtime subscription notice in Students page:', err);
+      }
+    }
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
+      if (channel && typeof channel.unsubscribe === 'function') {
+        try { channel.unsubscribe(); } catch {}
+      }
+    };
+  }, []);
+
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newStudent.name.trim() || !newStudent.parentPhone.trim()) {
+      alert('Veuillez renseigner le nom et le numéro de téléphone.');
+      return;
+    }
     try {
       await studentsService.create(newStudent);
       setIsModalOpen(false);
@@ -83,9 +125,10 @@ export function Students() {
         paidMonths: [],
         sessionsCompleted: 0
       });
-      loadData();
-    } catch (error) {
+      await loadData(true);
+    } catch (error: any) {
       console.error('Error creating student:', error);
+      alert('Erreur lors de la création de l\'élève : ' + (error?.message || 'Erreur réseau'));
     }
   };
 
