@@ -334,8 +334,9 @@ export function Classes() {
       const monthAttendance = [...currentList];
       const monthDates = [...currentDates];
 
-      monthAttendance[sessionIndex] = isPresent;
-      monthDates[sessionIndex] = isPresent ? (monthDates[sessionIndex] || now) : '';
+      const attVal = isPresent ? true : 'absent';
+      monthAttendance[sessionIndex] = attVal;
+      monthDates[sessionIndex] = now;
 
       const classAttendance = typeof attendance[selectedClassId] === 'object' && !Array.isArray(attendance[selectedClassId])
         ? { ...(attendance[selectedClassId] as any) }
@@ -383,6 +384,7 @@ export function Classes() {
 
     setIsBulkSaving(true);
     const now = new Date().toISOString();
+    const attVal = isPresent ? true : 'absent';
 
     const updatedStudents = targetStudents.map(student => {
       const attendance = { ...(student.attendance || {}) };
@@ -391,12 +393,12 @@ export function Classes() {
       const classAttendance = typeof attendance[selectedClassId] === 'object' && !Array.isArray(attendance[selectedClassId])
         ? { ...(attendance[selectedClassId] as any) }
         : {};
-      classAttendance[selectedAttendanceMonth] = [isPresent, isPresent, isPresent, isPresent];
+      classAttendance[selectedAttendanceMonth] = [attVal, attVal, attVal, attVal];
 
       const classDates = typeof attendanceDates[selectedClassId] === 'object' && !Array.isArray(attendanceDates[selectedClassId])
         ? { ...(attendanceDates[selectedClassId] as any) }
         : {};
-      classDates[selectedAttendanceMonth] = isPresent ? [now, now, now, now] : ['', '', '', ''];
+      classDates[selectedAttendanceMonth] = [now, now, now, now];
 
       attendance[selectedClassId] = classAttendance;
       attendanceDates[selectedClassId] = classDates;

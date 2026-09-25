@@ -178,38 +178,37 @@ const parsePaidMonths = (val: any): number[] => {
   return [];
 };
 
-const parseAttendance = (val: any): Record<string, { date: string, present: boolean }[]> => {
+const parseAttendance = (val: any): Record<string, any> => {
   if (!val) return {};
-  
-  // If it's already the new structure, return it
-  if (typeof val === 'object' && !Array.isArray(val) && Object.values(val).every(v => Array.isArray(v))) {
-     const firstVal = Object.values(val)[0];
-     if (Array.isArray(firstVal) && (firstVal.length === 0 || (typeof firstVal[0] === 'object' && 'date' in firstVal[0]))) {
-         return val;
-     }
-  }
-
-  // If it's the old structure, convert it
-  if (typeof val === 'object' && !Array.isArray(val)) {
-    const newStructure: Record<string, { date: string, present: boolean }[]> = {};
-    for (const [classId, months] of Object.entries(val as Record<string, Record<string, (boolean | string)[]>>)) {
-      newStructure[classId] = [];
-      if (months && typeof months === 'object') {
-        for (const [month, sessions] of Object.entries(months)) {
-          if (Array.isArray(sessions)) {
-            sessions.forEach((s, index) => {
-              newStructure[classId].push({
-                date: `2026-${month}-${(index + 1) * 7}`,
-                present: s === true || s === 'true'
-              });
-            });
-          }
-        }
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+        return parsed;
       }
-    }
-    return newStructure;
+    } catch {}
+    return {};
   }
+  if (typeof val === 'object' && !Array.isArray(val)) {
+    return val;
+  }
+  return {};
+};
 
+const parseAttendanceDates = (val: any): Record<string, any> => {
+  if (!val) return {};
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {}
+    return {};
+  }
+  if (typeof val === 'object' && !Array.isArray(val)) {
+    return val;
+  }
   return {};
 };
 
@@ -218,14 +217,13 @@ const mapToStudent = (row: any): Student => {
 
   const parsedPaidMonths = parsePaidMonths(row.paid_months ?? row.paidMonths);
   const parsedAttendance = parseAttendance(row.attendance_data ?? row.attendance);
+  const parsedAttendanceDates = parseAttendanceDates(row.attendance_dates ?? row.attendanceDates);
   
   let parsedClassIds = parseClassIds(row.class_ids ?? row.classIds);
   const primaryClassId = getFirstValidString(row.class_id, row.classId);
 
   if (primaryClassId && !parsedClassIds.includes(primaryClassId)) {
     parsedClassIds = [primaryClassId, ...parsedClassIds];
-  } else if (parsedClassIds.length > 0 && !primaryClassId) {
-    // If primary is empty but class_ids has values, make first class primary
   }
 
   const finalPrimary = primaryClassId || (parsedClassIds[0] || '');
@@ -246,7 +244,7 @@ const mapToStudent = (row: any): Student => {
     paymentStatus: normalizePaymentStatus(row.payment_status ?? row.paymentStatus),
     paidMonths: parsedPaidMonths,
     attendance: parsedAttendance,
-    attendanceDates: row.attendance_dates ?? row.attendanceDates ?? {}
+    attendanceDates: parsedAttendanceDates
   };
 };
 
