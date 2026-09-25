@@ -106,43 +106,6 @@ const saveTeacherMapping = (classId: string, teacherId?: string) => {
   localStorage.setItem('class_teacher_mapping', JSON.stringify(current));
 };
 
-const getStudentClassesMapping = (): Record<string, string[]> => {
-  const raw = localStorage.getItem('student_classes_mapping');
-  if (!raw) {
-    const initial: Record<string, string[]> = {
-      'student-1': ['class-1', 'class-2'],
-      'student-2': ['class-1', 'class-3'],
-      'student-3': ['class-2'],
-      'student-4': ['class-3', 'class-4'],
-      'student-5': ['class-4', 'class-5'],
-      'student-6': ['class-5'],
-      'student-7': ['class-2', 'class-1'],
-      'student-8': ['class-3'],
-      'student-9': ['class-5']
-    };
-    try {
-      localStorage.setItem('student_classes_mapping', JSON.stringify(initial));
-    } catch {}
-    return initial;
-  }
-  try {
-    return JSON.parse(raw);
-  } catch (e) {
-    return {};
-  }
-};
-
-const saveStudentClassesMapping = (studentId: string, classIds: string[]) => {
-  if (!studentId) return;
-  const current = getStudentClassesMapping();
-  if (classIds && classIds.length > 0) {
-    current[studentId] = classIds;
-  } else {
-    delete current[studentId];
-  }
-  localStorage.setItem('student_classes_mapping', JSON.stringify(current));
-};
-
 const mapToClass = (row: any): SchoolClass => {
   if (!row) return row;
   const mapping = getTeacherMapping();
@@ -213,8 +176,6 @@ const mapToStudent = (row: any): Student => {
 
   const parsedPaidMonths = parsePaidMonths(row.paid_months ?? row.paidMonths);
   const parsedAttendance = parseAttendance(row.attendance_data ?? row.attendance);
-  const classMapping = getStudentClassesMapping();
-  const cachedClassIds = classMapping[row.id] || [];
   
   let parsedClassIds: string[] = [];
   if (Array.isArray(row.classIds) && row.classIds.length > 0) parsedClassIds = row.classIds;
@@ -223,10 +184,6 @@ const mapToStudent = (row: any): Student => {
     try { parsedClassIds = JSON.parse(row.classIds); } catch {}
   } else if (typeof row.class_ids === 'string') {
     try { parsedClassIds = JSON.parse(row.class_ids); } catch {}
-  }
-
-  if (parsedClassIds.length === 0 && cachedClassIds.length > 0) {
-    parsedClassIds = cachedClassIds;
   }
 
   const primaryClassId = row.classId !== undefined ? row.classId : (row.class_id !== undefined ? row.class_id : '');
@@ -552,7 +509,6 @@ export const studentsService = {
   async getAll(): Promise<Student[]> {
     const local = getLocalData<Student>('school_students', defaultStudents);
     const localMap = new Map(local.map(s => [s.id, s]));
-    const classMapping = getStudentClassesMapping();
 
     if (isSupabaseConfigured()) {
       try {
@@ -563,17 +519,12 @@ export const studentsService = {
         const fetched = (data || []).map(mapToStudent);
         const merged = fetched.map(s => {
           const loc = localMap.get(s.id);
-          const cachedClassIds = classMapping[s.id] || [];
-          const finalClassIds = (s.classIds && s.classIds.length > 0)
-            ? s.classIds
-            : (loc?.classIds && loc.classIds.length > 0 ? loc.classIds : (cachedClassIds.length > 0 ? cachedClassIds : (s.classId ? [s.classId] : [])));
           
           const finalPaidMonths = (s.paidMonths && s.paidMonths.length > 0) ? s.paidMonths : (loc?.paidMonths || []);
           const finalAttendance = (s.attendance && Object.keys(s.attendance).length > 0) ? s.attendance : (loc?.attendance || {});
           
           return {
             ...s,
-            classIds: finalClassIds,
             currentMonth: loc?.currentMonth || s.currentMonth || 1,
             sessionsCompleted: loc?.sessionsCompleted !== undefined ? loc.sessionsCompleted : (s.sessionsCompleted || 0),
             paymentStatus: loc?.paymentStatus || s.paymentStatus || 'Paid',
@@ -597,8 +548,6 @@ export const studentsService = {
     return allStudents.filter(s => s.classId === classId || (s.classIds && s.classIds.includes(classId)));
   },
   async create(student: Omit<Student, 'id'>): Promise<Student> {
-    const local = getLocalData<Student>('school_students', defaultStudents);
-
     if (isSupabaseConfigured()) {
       try {
         // Attempt 1: Full snake_case payload
@@ -610,106 +559,24 @@ export const studentsService = {
           .select()
           .single();
 
-        if (!error && data) {
-          const created = mapToStudent(data);
-          const finalCreated = {
-            ...created,
-            paidMonths: (created.paidMonths && created.paidMonths.length > 0) ? created.paidMonths : (student.paidMonths || []),
-            attendance: (created.attendance && Object.keys(created.attendance).length > 0) ? created.attendance : (student.attendance || {})
-          };
-          if (student.classIds && student.classIds.length > 0) {
-            saveStudentClassesMapping(finalCreated.id, student.classIds);
-          } else if (student.classId) {
-            saveStudentClassesMapping(finalCreated.id, [student.classId]);
-          }
-          local.push(finalCreated);
-          saveLocalData('school_students', local);
-          return finalCreated;
+        if (error) {
+          console.error('Supabase creation error:', error);
+          throw error;
         }
 
-        // Attempt 2: Without optional secondary fields if table has not been updated with SQL yet
-        const snakePayloadNoAttendance = {
-          name: student.name,
-          parent_phone: student.parentPhone,
-          class_id: student.classId,
-          token_id: student.tokenId || null,
-          current_month: student.currentMonth || 1,
-          sessions_completed: student.sessionsCompleted || 0,
-          payment_status: student.paymentStatus || 'Paid',
-          paid_months: student.paidMonths || []
+        const created = mapToStudent(data);
+        const finalCreated = {
+          ...created,
+          paidMonths: (created.paidMonths && created.paidMonths.length > 0) ? created.paidMonths : (student.paidMonths || []),
+          attendance: (created.attendance && Object.keys(created.attendance).length > 0) ? created.attendance : (student.attendance || {})
         };
-
-        const { data: retry1Data, error: retry1Error } = await supabase
-          .from('students')
-          .insert([snakePayloadNoAttendance])
-          .select()
-          .single();
-
-        if (!retry1Error && retry1Data) {
-          const created = mapToStudent(retry1Data);
-          const finalCreated = {
-            ...created,
-            secondaryPhone: student.secondaryPhone,
-            email: student.email,
-            birthDate: student.birthDate,
-            address: student.address,
-            paidMonths: (created.paidMonths && created.paidMonths.length > 0) ? created.paidMonths : (student.paidMonths || []),
-            attendance: student.attendance || {}
-          };
-          local.push(finalCreated);
-          saveLocalData('school_students', local);
-          return finalCreated;
-        }
-
-        // Attempt 3: Minimal core payload
-        const minimalPayload = {
-          name: student.name,
-          parent_phone: student.parentPhone,
-          class_id: student.classId
-        };
-
-        const { data: retry2Data, error: retry2Error } = await supabase
-          .from('students')
-          .insert([minimalPayload])
-          .select()
-          .single();
-
-        if (!retry2Error && retry2Data) {
-          const created = mapToStudent(retry2Data);
-          created.secondaryPhone = student.secondaryPhone;
-          created.email = student.email;
-          created.birthDate = student.birthDate;
-          created.address = student.address;
-          created.tokenId = student.tokenId;
-          created.currentMonth = student.currentMonth;
-          created.sessionsCompleted = student.sessionsCompleted;
-          created.paymentStatus = student.paymentStatus;
-          created.paidMonths = student.paidMonths || [];
-          created.attendance = student.attendance || {};
-          local.push(created);
-          saveLocalData('school_students', local);
-          return created;
-        }
-
-        console.warn('Student creation fallback to local storage due to Supabase schema constraint:', error || retry1Error || retry2Error);
-        const newStudent: Student = {
-          ...student,
-          id: 'student-' + Date.now() + Math.random().toString(36).substring(2, 6)
-        };
-        local.push(newStudent);
-        saveLocalData('school_students', local);
-        return newStudent;
+        return finalCreated;
       } catch (err: any) {
-        console.warn('Supabase student insertion fallback to local storage:', err);
-        const newStudent: Student = {
-          ...student,
-          id: 'student-' + Date.now() + Math.random().toString(36).substring(2, 6)
-        };
-        local.push(newStudent);
-        saveLocalData('school_students', local);
-        return newStudent;
+        console.error('Error inserting student to Supabase:', err);
+        throw err;
       }
     } else {
+      const local = getLocalData<Student>('school_students', defaultStudents);
       const newStudent: Student = {
         ...student,
         id: 'student-' + Date.now() + Math.random().toString(36).substring(2, 6)
@@ -739,28 +606,14 @@ export const studentsService = {
   async update(id: string, student: Omit<Student, 'id'>): Promise<Student> {
     const updatedStudentObj: Student = { ...student, id };
 
-    if (student.classIds && student.classIds.length > 0) {
-      saveStudentClassesMapping(id, student.classIds);
-    } else if (student.classId) {
-      saveStudentClassesMapping(id, [student.classId]);
-    }
-
-    // Always sync local storage first
-    const local = getLocalData<Student>('school_students', defaultStudents);
-    const index = local.findIndex(s => s.id === id);
-    if (index !== -1) {
-      local[index] = updatedStudentObj;
-    } else {
-      local.push(updatedStudentObj);
-    }
-    saveLocalData('school_students', local);
-
     if (isSupabaseConfigured()) {
       try {
         // Attempt 1: Full snake_case payload (excluding problematic columns)
         const snakePayload = makeStudentPayload(student);
         // Remove columns causing PGRST204 errors
         const { current_month, ...safePayload } = snakePayload as any;
+
+        console.log('Attempting to update student in Supabase:', id, safePayload);
 
         const { data, error } = await supabase
           .from('students')
@@ -769,87 +622,38 @@ export const studentsService = {
           .select()
           .single();
 
-        if (!error && data) {
-          const res = mapToStudent(data);
-          const finalClassIds = (updatedStudentObj.classIds && updatedStudentObj.classIds.length > 0)
-            ? updatedStudentObj.classIds
-            : res.classIds;
-          return {
-            ...res,
-            ...updatedStudentObj,
-            classIds: finalClassIds,
-            paidMonths: (updatedStudentObj.paidMonths && updatedStudentObj.paidMonths.length > 0) ? updatedStudentObj.paidMonths : res.paidMonths,
-            attendance: (updatedStudentObj.attendance && Object.keys(updatedStudentObj.attendance).length > 0) ? updatedStudentObj.attendance : res.attendance
-          };
+        if (error) {
+          console.error('Supabase update error:', error);
+          throw error;
         }
 
-        // Attempt 2: Without optional secondary fields if column missing
-        const snakePayloadNoAttendance = {
-          name: student.name,
-          parent_phone: student.parentPhone,
-          class_id: student.classId
+        console.log('Supabase update successful:', data);
+        
+        const res = mapToStudent(data);
+        const finalClassIds = (updatedStudentObj.classIds && updatedStudentObj.classIds.length > 0)
+          ? updatedStudentObj.classIds
+          : res.classIds;
+        return {
+          ...res,
+          ...updatedStudentObj,
+          classIds: finalClassIds,
+          paidMonths: (updatedStudentObj.paidMonths && updatedStudentObj.paidMonths.length > 0) ? updatedStudentObj.paidMonths : res.paidMonths,
+          attendance: (updatedStudentObj.attendance && Object.keys(updatedStudentObj.attendance).length > 0) ? updatedStudentObj.attendance : res.attendance
         };
-
-        const { data: retry1Data, error: retry1Error } = await supabase
-          .from('students')
-          .update(snakePayloadNoAttendance)
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (!retry1Error && retry1Data) {
-          const res = mapToStudent(retry1Data);
-          const finalClassIds = (updatedStudentObj.classIds && updatedStudentObj.classIds.length > 0)
-            ? updatedStudentObj.classIds
-            : res.classIds;
-          return {
-            ...res,
-            ...updatedStudentObj,
-            classIds: finalClassIds,
-            paidMonths: (updatedStudentObj.paidMonths && updatedStudentObj.paidMonths.length > 0) ? updatedStudentObj.paidMonths : res.paidMonths,
-            attendance: (updatedStudentObj.attendance && Object.keys(updatedStudentObj.attendance).length > 0) ? updatedStudentObj.attendance : res.attendance
-          };
-        }
-
-        // Attempt 3: Minimal core payload
-        const minimalPayload = {
-          name: student.name,
-          parent_phone: student.parentPhone,
-          class_id: student.classId
-        };
-
-        const { data: retry3Data, error: retry3Error } = await supabase
-          .from('students')
-          .update(minimalPayload)
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (retry3Error) {
-          console.error('All Supabase update attempts failed. Error details:', { error, retry1Error, retry3Error });
-        }
-
-        if (!retry3Error && retry3Data) {
-          const res = mapToStudent(retry3Data);
-          const finalClassIds = (updatedStudentObj.classIds && updatedStudentObj.classIds.length > 0)
-            ? updatedStudentObj.classIds
-            : res.classIds;
-          return {
-            ...res,
-            ...updatedStudentObj,
-            classIds: finalClassIds,
-            paidMonths: updatedStudentObj.paidMonths,
-            attendance: updatedStudentObj.attendance
-          };
-        }
-
-        console.warn('Student update on Supabase schema notice, saved to local cache:', error || retry1Error || retry3Error);
-        return updatedStudentObj;
       } catch (err: any) {
-        console.warn('Error updating student on Supabase, using local storage cache:', err);
-        return updatedStudentObj;
+        console.error('Error updating student on Supabase:', err);
+        throw err;
       }
     } else {
+      // Local storage fallback for non-Supabase config
+      const local = getLocalData<Student>('school_students', defaultStudents);
+      const index = local.findIndex(s => s.id === id);
+      if (index !== -1) {
+        local[index] = updatedStudentObj;
+      } else {
+        local.push(updatedStudentObj);
+      }
+      saveLocalData('school_students', local);
       return updatedStudentObj;
     }
   },
