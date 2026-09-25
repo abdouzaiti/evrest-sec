@@ -31,15 +31,15 @@ const defaultClasses: SchoolClass[] = [
 ];
 
 const defaultStudents: Student[] = [
-  { id: 'student-1', name: 'Abderrahmane Zaiti', parentPhone: '0661245892', classId: 'class-1', classIds: ['class-1', 'class-2'], tokenId: 'S101', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-1': { 1: [true, false, false, false] } } },
-  { id: 'student-2', name: 'Leila Kaddour', parentPhone: '0555321456', classId: 'class-1', classIds: ['class-1', 'class-3'], tokenId: 'S102', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-1': { 1: [true, false, false, false] } } },
-  { id: 'student-3', name: 'Yanis Amrani', parentPhone: '0772183495', classId: 'class-2', classIds: ['class-2'], tokenId: 'S103', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-2': { 1: [true, false, false, false] } } },
-  { id: 'student-4', name: 'Fatma-Zohra Mansouri', parentPhone: '0561234567', classId: 'class-3', classIds: ['class-3', 'class-4'], tokenId: 'S104', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-3': { 1: [true, false, false, false] } } },
-  { id: 'student-5', name: 'Mohamed Amine Bouzidi', parentPhone: '0662895412', classId: 'class-4', classIds: ['class-4', 'class-5'], tokenId: 'S105', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-4': { 1: [true, false, false, false] } } },
-  { id: 'student-6', name: 'Meriem Ouchene', parentPhone: '0770987654', classId: 'class-5', classIds: ['class-5'], tokenId: 'S106', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-5': { 1: [true, false, false, false] } } },
-  { id: 'student-7', name: 'Anis Belkacem', parentPhone: '0551743621', classId: 'class-2', classIds: ['class-2', 'class-1'], tokenId: 'S107', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-2': { 1: [true, false, false, false] } } },
-  { id: 'student-8', name: 'Khadidja Haddad', parentPhone: '0663152436', classId: 'class-3', classIds: ['class-3'], tokenId: 'S108', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-3': { 1: [true, false, false, false] } } },
-  { id: 'student-9', name: 'Oussama Sifi', parentPhone: '0792345678', classId: 'class-5', classIds: ['class-5'], tokenId: 'S109', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-5': { 1: [true, false, false, false] } } }
+  { id: 'student-1', name: 'Abderrahmane Zaiti', parentPhone: '0661245892', classId: 'class-1', classIds: ['class-1', 'class-2'], tokenId: 'S101', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-1': [{ date: '2026-01-07', present: true }, { date: '2026-01-14', present: false }, { date: '2026-01-21', present: false }, { date: '2026-01-28', present: false }] } },
+  { id: 'student-2', name: 'Leila Kaddour', parentPhone: '0555321456', classId: 'class-1', classIds: ['class-1', 'class-3'], tokenId: 'S102', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-1': [{ date: '2026-01-07', present: true }, { date: '2026-01-14', present: false }, { date: '2026-01-21', present: false }, { date: '2026-01-28', present: false }] } },
+  { id: 'student-3', name: 'Yanis Amrani', parentPhone: '0772183495', classId: 'class-2', classIds: ['class-2'], tokenId: 'S103', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-2': [{ date: '2026-01-07', present: true }, { date: '2026-01-14', present: false }, { date: '2026-01-21', present: false }, { date: '2026-01-28', present: false }] } },
+  { id: 'student-4', name: 'Fatma-Zohra Mansouri', parentPhone: '0561234567', classId: 'class-3', classIds: ['class-3', 'class-4'], tokenId: 'S104', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-3': [{ date: '2026-01-07', present: true }, { date: '2026-01-14', present: false }, { date: '2026-01-21', present: false }, { date: '2026-01-28', present: false }] } },
+  { id: 'student-5', name: 'Mohamed Amine Bouzidi', parentPhone: '0662895412', classId: 'class-4', classIds: ['class-4', 'class-5'], tokenId: 'S105', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-4': [{ date: '2026-01-07', present: true }, { date: '2026-01-14', present: false }, { date: '2026-01-21', present: false }, { date: '2026-01-28', present: false }] } },
+  { id: 'student-6', name: 'Meriem Ouchene', parentPhone: '0770987654', classId: 'class-5', classIds: ['class-5'], tokenId: 'S106', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-5': [{ date: '2026-01-07', present: true }, { date: '2026-01-14', present: false }, { date: '2026-01-21', present: false }, { date: '2026-01-28', present: false }] } },
+  { id: 'student-7', name: 'Anis Belkacem', parentPhone: '0551743621', classId: 'class-2', classIds: ['class-2', 'class-1'], tokenId: 'S107', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-2': [{ date: '2026-01-07', present: true }, { date: '2026-01-14', present: false }, { date: '2026-01-21', present: false }, { date: '2026-01-28', present: false }] } },
+  { id: 'student-8', name: 'Khadidja Haddad', parentPhone: '0663152436', classId: 'class-3', classIds: ['class-3'], tokenId: 'S108', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-3': [{ date: '2026-01-07', present: true }, { date: '2026-01-14', present: false }, { date: '2026-01-21', present: false }, { date: '2026-01-28', present: false }] } },
+  { id: 'student-9', name: 'Oussama Sifi', parentPhone: '0792345678', classId: 'class-5', classIds: ['class-5'], tokenId: 'S109', currentMonth: 1, sessionsCompleted: 0, paymentStatus: 'Paid', paidMonths: [1], attendance: { 'class-5': [{ date: '2026-01-07', present: true }, { date: '2026-01-14', present: false }, { date: '2026-01-21', present: false }, { date: '2026-01-28', present: false }] } }
 ];
 
 const defaultTeachers: Teacher[] = [
@@ -208,7 +208,8 @@ const mapToStudent = (row: any): Student => {
     sessionsCompleted: row.sessionsCompleted !== undefined ? Number(row.sessionsCompleted) : (row.sessions_completed !== undefined ? Number(row.sessions_completed) : 0),
     paymentStatus: row.paymentStatus !== undefined ? row.paymentStatus : (row.payment_status !== undefined ? row.payment_status : 'Paid'),
     paidMonths: parsedPaidMonths,
-    attendance: parsedAttendance
+    attendance: parsedAttendance,
+    attendanceDates: row.attendance_dates ?? row.attendanceDates ?? {}
   };
 };
 
@@ -260,7 +261,8 @@ const makeStudentPayload = (s: Omit<Student, 'id'>) => {
     sessions_completed: s.sessionsCompleted || 0,
     payment_status: s.paymentStatus || 'Paid',
     paid_months: s.paidMonths || [],
-    attendance_data: s.attendance || {}
+    attendance_data: s.attendance || {},
+    attendance_dates: s.attendanceDates || {}
   };
 };
 

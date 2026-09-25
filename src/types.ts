@@ -43,7 +43,8 @@ export interface Student {
   sessionsCompleted: number;
   paymentStatus: PaymentStatus;
   // New flexible structure: classId -> array of sessions
-  attendance?: Record<string, { date: string, present: boolean }[]>; 
+  attendance?: Record<string, { date: string, present: boolean }[]>;
+  attendanceDates?: Record<string, string[]>;
 }
 
 export interface SchoolClass {
