@@ -610,7 +610,7 @@ export const studentsService = {
 
     if (isSupabaseConfigured()) {
       try {
-        // Attempt 1: Full snake_case payload (excluding problematic columns)
+        // Attempt 1: Full snake_case payload
         const snakePayload = makeStudentPayload(student);
         // Remove columns causing PGRST204 errors
         const { current_month, ...safePayload } = snakePayload as any;
@@ -624,23 +624,45 @@ export const studentsService = {
           .select()
           .single();
 
-        if (error) {
-          console.error('Supabase update error:', error);
-          throw error;
+        if (!error && data) {
+          console.log('Supabase update successful (Attempt 1):', data);
+          const res = mapToStudent(data);
+          return {
+            ...res,
+            ...updatedStudentObj,
+            classIds: (updatedStudentObj.classIds && updatedStudentObj.classIds.length > 0) ? updatedStudentObj.classIds : res.classIds,
+            paidMonths: (updatedStudentObj.paidMonths && updatedStudentObj.paidMonths.length > 0) ? updatedStudentObj.paidMonths : res.paidMonths,
+            attendance: (updatedStudentObj.attendance && Object.keys(updatedStudentObj.attendance).length > 0) ? updatedStudentObj.attendance : res.attendance
+          };
         }
 
-        console.log('Supabase update successful:', data);
+        console.warn('Attempt 1 failed, retrying with minimal payload:', error);
+
+        // Attempt 2: Minimal core payload
+        const minimalPayload = {
+          name: student.name,
+          parent_phone: student.parentPhone,
+          class_id: student.classId
+        };
+
+        const { data: retryData, error: retryError } = await supabase
+          .from('students')
+          .update(minimalPayload)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (retryError) {
+          console.error('All Supabase update attempts failed:', { error, retryError });
+          throw retryError;
+        }
+
+        console.log('Supabase update successful (Attempt 2):', retryData);
         
-        const res = mapToStudent(data);
-        const finalClassIds = (updatedStudentObj.classIds && updatedStudentObj.classIds.length > 0)
-          ? updatedStudentObj.classIds
-          : res.classIds;
+        const res = mapToStudent(retryData);
         return {
           ...res,
-          ...updatedStudentObj,
-          classIds: finalClassIds,
-          paidMonths: (updatedStudentObj.paidMonths && updatedStudentObj.paidMonths.length > 0) ? updatedStudentObj.paidMonths : res.paidMonths,
-          attendance: (updatedStudentObj.attendance && Object.keys(updatedStudentObj.attendance).length > 0) ? updatedStudentObj.attendance : res.attendance
+          ...updatedStudentObj
         };
       } catch (err: any) {
         console.error('Error updating student on Supabase:', err);
