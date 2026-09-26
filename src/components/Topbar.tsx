@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Search, UserCircle, Globe, Menu } from 'lucide-react';
+import { Bell, Search, UserCircle, Menu } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { cn } from '../lib/utils';
+import { studentsService } from '../services/supabaseService';
+import { Student } from '../types';
 
 interface TopbarProps {
   onMenuClick: () => void;
@@ -13,6 +15,48 @@ export function Topbar({ onMenuClick }: TopbarProps) {
   const { user } = useAuth();
   const { language, setLanguage, isRTL } = useLanguage();
   const navigate = useNavigate();
+  const [alertCount, setAlertCount] = useState<number>(0);
+
+  useEffect(() => {
+    const calculateAlerts = async () => {
+      try {
+        const students = await studentsService.getAll();
+        let count = 0;
+
+        students.forEach((s: Student) => {
+          const classIds = Array.isArray(s.classIds) && s.classIds.length > 0
+            ? s.classIds
+            : (s.classId ? [s.classId] : []);
+          const attData: any = s.attendance || {};
+          const paidMonths = Array.isArray(s.paidMonths) ? s.paidMonths : [];
+
+          classIds.forEach(cid => {
+            const classAtt = attData[cid] || {};
+            for (let m = 1; m <= 12; m++) {
+              const sessions = classAtt[m] || classAtt[String(m)] || [];
+              if (Array.isArray(sessions) && sessions.length > 0) {
+                const completedCount = sessions.filter(
+                  x => x === true || x === 'present' || x === 'absent'
+                ).length;
+                const isPaid = paidMonths.includes(m);
+                if (completedCount >= 3 && !isPaid) {
+                  count++;
+                }
+              }
+            }
+          });
+        });
+
+        setAlertCount(count);
+      } catch (err) {
+        console.warn('Topbar alert count notice:', err);
+      }
+    };
+
+    calculateAlerts();
+    const interval = setInterval(calculateAlerts, 12000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <header className="h-16 bg-white/80 backdrop-blur-md sticky top-0 z-20 px-3 sm:px-6 flex items-center justify-between border-b border-slate-100">
@@ -53,12 +97,23 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           ))}
         </div>
 
+        {/* Notifications Bell */}
         <button 
           onClick={() => navigate('/notifications')}
-          className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors"
+          className="relative p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors group cursor-pointer"
+          title={alertCount > 0 ? `${alertCount} élèves avec 3+ séances impayées` : "Notifications"}
         >
-          <Bell size={19} />
-          <span className={cn("absolute top-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white", isRTL ? "left-2" : "right-2")}></span>
+          <Bell size={20} className="group-hover:text-primary transition-colors" />
+          {alertCount > 0 ? (
+            <span className={cn(
+              "absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white rounded-full text-[10px] font-black flex items-center justify-center border-2 border-white shadow-xs animate-pulse",
+              isRTL && "-left-0.5 -right-auto"
+            )}>
+              {alertCount > 99 ? '99+' : alertCount}
+            </span>
+          ) : (
+            <span className={cn("absolute top-2 w-2 h-2 bg-slate-300 rounded-full border-2 border-white", isRTL ? "left-2" : "right-2")}></span>
+          )}
         </button>
 
         <div className={cn("flex items-center gap-2.5", isRTL ? "pr-2 sm:pr-6" : "pl-2 sm:pl-6")}>
